@@ -1,0 +1,62 @@
+import Link from 'next/link';
+import { redirect } from 'next/navigation';
+import { DashboardSidebar } from '@/components/dashboard-sidebar';
+import { createClient } from '@/utils/supabase/server';
+import { SchoolForm } from './school-form';
+
+type AddSchoolPageProps = {
+    searchParams: Promise<{
+        error?: string;
+        state?: string;
+    }>;
+};
+
+export default async function AddSchoolPage({
+    searchParams,
+}: AddSchoolPageProps) {
+    const{ error, state } = await searchParams;
+
+    const supabase = await createClient();
+
+    const {
+        data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+        redirect("/login");
+    }
+
+    const { data: districts } = await supabase
+        .from("districts")
+        .select("id, name, state")
+        .order("name", { ascending: true });
+
+    const { data: rpms } = await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .order("full_name", { ascending: true });
+
+    return (
+        <main className='min-h-screen bg-[#f8f4f4] text-zinc-950'>
+            <DashboardSidebar />
+
+            <section className='ml-64 min-h-screen px-8 py-6'>
+                <div className='mx-auto max-w-5xl'>
+                    <Link
+                        href='/schools'
+                        className='text-sm font-semibold text-[#c8102e] hover:text-[#a70d25]'
+                    >
+                        Back to Schools
+                    </Link>
+
+                    <SchoolForm
+                        districts={districts ?? []}
+                        rpms={rpms ?? []}
+                        error={error}
+                        initialState={state}
+                    />
+                </div>
+            </section>
+        </main>
+    );
+}

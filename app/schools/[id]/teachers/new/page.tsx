@@ -1,0 +1,156 @@
+import Link from 'next/link';
+import { redirect } from 'next/navigation';
+import { DashboardSidebar } from '@/components/dashboard-sidebar';
+import { createClient } from '@/utils/supabase/server';
+import { createTeacher } from './actions';
+
+type  AddTeacherPageProps = {
+    params: Promise<{
+        id: string;
+    }>;
+    searchParams: Promise<{
+        error?: string;
+    }>;
+};
+
+export default async function AddTeacherPage({
+    params,
+    searchParams,
+}: AddTeacherPageProps) {
+    const { id } = await params;
+    const { error } = await searchParams;
+
+    const supabase = await createClient();
+
+    const {
+        data: {user},
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+        redirect('/login');
+    }
+
+    const { data: school } = await supabase
+        .from("schools")
+        .select("id, name")
+        .eq("id", id)
+        .maybeSingle();
+
+    if (!school) {
+        redirect('/schools');
+    }
+
+    const createTeacherForSchool = createTeacher.bind(null, school.id);
+
+    return (
+        <main className='min-h-screen bg-[#f8f4f4] text-zinc-950'>
+            <DashboardSidebar />
+
+            <section className='ml-64 min-h-screen px-8 py-6'>
+                <div className='mx-auto max-w-3xl'>
+                    <Link
+                    href={`/schools/${school.id}`}
+                    className='text-sm font-semibold text-[#c8102e] hover:text-[#a70d25]'
+                    >
+                        Back to {school.name}
+                    </Link>
+
+                    <section className='mt-5 rounded-lg border border-red-100 bg-white p-6 shadow-sm'>
+                        <div className='mb-6'>
+                            <p className='text-sm font-medium uppercase tracking-wide text-[#c8102e]'>
+                                Add Teacher
+                            </p>
+                            <h1 className='mt-2 text-3xl font-semibold'>{school.name}</h1>
+                            <p className='mt-1 text-sm text-zinc-600'>
+                                Add a teacher record for this school.
+                            </p>
+                        </div>
+
+                        {error ? (
+                            <div className='mb-5 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sem text-red-700'>
+                                {error === "missing-fields"
+                                    ? "Name and Email are required."
+                                    : "Something went wrong. Please try again."
+                                }
+                            </div>
+                        ) : null}
+
+                        <form action={createTeacherForSchool} className='space-y-5'>
+                            <label className='block'>
+                                <span className='text-sm font-medium text-zinc-800'>
+                                    Name
+                                </span>
+                                <input
+                                    name="name"
+                                    required
+                                    className='mt-2 h-11 w-full rounded-md border border-zinc-300 px-3 text-sm outline-none focus:border-[#c8102e] focus:ring-4 focus:ring-red-100'
+                                />
+                            </label>
+
+                            <div className='grid gap-5 sm:grid-cols-2'>
+                                <label className='block'>
+                                    <span className='text-sm font-medium text-zinc-800'>
+                                        Email
+                                    </span>
+                                    <input
+                                        name="email"
+                                        type="email"
+                                        required
+                                        className='mt-2 h-11 w-full rounded-md border border-zinc-300 px-3 text-sm outline-none focus:border-[#c8102e] focus:ring-4 focus:ring-red-100'
+                                    />
+                                </label>
+
+                                <label className='block'>
+                                    <span className='text-sm font-medium text-zinc-800'>
+                                        Phone
+                                    </span>
+                                    <input
+                                        name="phone"
+                                        className='mt-2 h-11 w-full rounded-md border border-zinc-300 px-3 text-sm outline-none focus:border-[#c8102e] focus:ring-4 focus:ring-red-100'
+                                    />
+                                </label>
+                            </div>
+
+                            <label className='block'>
+                                <span className='text-sm font-medium text-zinc-800'>
+                                    Username
+                                </span>
+                                <input
+                                    name='username'
+                                    className='mt-2 h-11 w-full rounded-md border border-zinc-300 px-3 text-sm outline-none focus:border-[#c8102e] focus:ring-4 focus:ring-red-100'
+                                />
+                            </label>
+
+                            <label className='flex items-center gap-3 rounded-md border border-zinc-200 bg-zinc-50 px-4 py-3'>
+                                <input
+                                    name="is_new_teacher"
+                                    type="checkbox"
+                                    className='h-4 w-4 accent-[#c8102e]'
+                                />
+                                <span className='text-sm font-medium text-zinc-800'>
+                                    This is the teacher&apos;s first year with LIA 
+                                </span>
+                            </label>
+
+                            <div className='flex justify-end gap-3 border-t border-zinc-100 pt-5'>
+                                <Link
+                                    href={`/schools/${school.id}`}
+                                    className='rounded-md border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-red-50 hover:text-[#c8102e]'
+                                >
+                                    Cancel
+                                </Link>
+
+                                <button
+                                    type='submit'
+                                    className='rounded-md bg-[#c8102e px-4 py-2 text-sm font-semibold text-white hover: bg-[#a70d25]'
+                                >
+                                    Save Teacher
+                                </button>
+                            </div>
+                        </form>
+                    </section>
+                </div>
+            </section>
+        </main>
+    );
+}
