@@ -35,7 +35,7 @@ export default async function SchoolProfilePage({
             id,
             name,
             year_lia_started,
-            city,
+            address:city,
             state,
             region,
             status,
@@ -105,7 +105,7 @@ export default async function SchoolProfilePage({
                             </div>
 
                             <p className='text-sm text-zinc-600'>
-                                {school.city}, {school.state}
+                                {school.address ?? "No address listed"}, {school.state}
                             </p>
                         </div>
 

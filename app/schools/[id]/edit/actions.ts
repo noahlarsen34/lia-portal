@@ -8,7 +8,7 @@ export async function updateSchool(schoolId: string, formData: FormData) {
 
     const name = String(formData.get("name") ?? "").trim();
     const yearLiaStarted = String(formData.get("year_lia_started") ?? "").trim();
-    const city = String(formData.get("city") ?? "").trim();
+    const address = String(formData.get("address") ?? "").trim();
     const state = String(formData.get("state") ?? "").trim();
     const region = String(formData.get("region") ?? "").trim();
     const districtId = String(formData.get("district_id") ?? "").trim();
@@ -29,7 +29,7 @@ export async function updateSchool(schoolId: string, formData: FormData) {
         .update({
             name,
             year_lia_started: yearLiaStarted ? Number(yearLiaStarted): null,
-            city: city || null,
+            city: address || null,
             state,
             region: region || null,
             district_id: districtId || null,

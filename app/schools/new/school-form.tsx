@@ -113,9 +113,9 @@ export function SchoolForm({
 
                 <div className="grid gap-5 sm:grid-cols-3">
                     <label className="block">
-                        <span className="text-sm font-medium text-zinc-800">City</span>
+                        <span className="text-sm font-medium text-zinc-800">Address</span>
                         <input
-                            name="city"
+                            name="address"
                             className="mt-2 h-11 w-full rounded-md border border-zinc-300 px-3 text-sm outline-none focus:border-[#c8102e] focus:ring-4 focus:ring-red-100"
                         />
                     </label>

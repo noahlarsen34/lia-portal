@@ -54,7 +54,7 @@ export default async function EditSchoolPage({
             id,
             name,
             year_lia_started,
-            city,
+            address:city,
             state,
             region,
             district_id,
@@ -146,11 +146,11 @@ export default async function EditSchoolPage({
                             <div className='grid gap-5 sm:grid-cols-3'>
                                 <label className='block'>
                                     <span className='text-sm font-medium text-zinc-800'>
-                                        City
+                                        Address
                                     </span>
                                     <input
-                                        name = "city"
-                                        defaultValue={school.city ?? ""}
+                                        name = "address"
+                                        defaultValue={school.address ?? ""}
                                         className='mt-2 h-11 w-full rounded-md border border-zinc-300 px-3 text-sm outline-none focus:border-[#c8102e] focus:ring-4 focus:ring-red-100'
                                     />
                                 </label>

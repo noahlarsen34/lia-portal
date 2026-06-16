@@ -246,15 +246,18 @@ export default async function DashboardPage() {
         </section>
 
         <section className="mt-5 rounded-lg border border-red-100 bg-white p-5 shadow-sm">
-          <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h2 className="text-xl font-semibold">Schools Database (List View)</h2>
-              {/* <p className="text-sm text-zinc-500">List view</p> */}
+              <p className="mt-1 text-sm text-zinc-500">Recent school records</p>
             </div>
 
-            {/* <button className="w-fit rounded-md bg-[#c8102e] px-4 py-2 text-sm font-semibold text-white">
-              Add School
-            </button> */}
+            <Link
+              href="/schools"
+              className="inline-flex h-10 items-center justify-center rounded-md border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-700 hover:bg-red-50 hover:text-[#c8102e]"
+            >
+              View All
+            </Link>
           </div>
 
           <div className="mb-4 flex flex-wrap gap-3">
@@ -305,7 +308,14 @@ export default async function DashboardPage() {
             <tbody>
               {dashboardSchools.map((school) => (
                 <tr key={school.id} className="border-b border-zinc-100">
-                  <td className="px-4 py-4 font-semibold">{school.name}</td>
+                  <td className="px-4 py-4 font-semibold">
+                    <Link 
+                      href={`/schools/${school.id}`}
+                      className="text-zinc-950 hover:text-[#c8102e]"
+                    >
+                      {school.name}
+                    </Link>
+                  </td>
                   <td className="px-4 py-4">{school.state}</td>
                   <td className="px-4 py-4">{school.region}</td>
                   <td className="px-4 py-4">{school.district}</td>
