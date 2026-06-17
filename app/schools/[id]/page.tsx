@@ -206,12 +206,12 @@ export default async function SchoolProfilePage({
                                     className="rounded-md border border-zinc-100 bg-zinc-50 p-3"
                                     >
                                     <div className="flex items-start justify-between gap-3">
-                                        <div>
-                                            <p className="font-semibold">{contactDisplayName}</p>
+                                        <div className="min-w-0">
+                                            <p className="break-words font-semibold [overflow-wrap:anywhere]">{contactDisplayName}</p>
                                             <p className="text-sm text-zinc-500">{contact.role}</p>
                                             </div>
 
-                                            <div className='flex items-center gap-2'>
+                                            <div className='flex shrink-0 items-center gap-2'>
                                                 <Link
                                                     href={`/schools/${school.id}/contacts/${contact.id}/edit`}
                                                     className='inline-flex h-6 items-center text-xs font-semibold text-zinc-400 hover:text-[#c8102e]'
@@ -238,8 +238,8 @@ export default async function SchoolProfilePage({
                                         </div>
                                     </div>
 
-                                    <p className="mt-2 text-sm text-zinc-600">{contact.email}</p>
-                                    <p className="text-sm text-zinc-600">{contact.phone}</p>
+                                    <p className="mt-2 break-words text-sm text-zinc-600 [overflow-wrap:anywhere]">{contact.email}</p>
+                                    <p className="break-words text-sm text-zinc-600 [overflow-wrap:anywhere]">{contact.phone}</p>
                                     </div>
                                 );
                                 })}
@@ -276,8 +276,8 @@ export default async function SchoolProfilePage({
                                 className="rounded-md border border-zinc-100 bg-zinc-50 p-3"
                                 >
                                 <div className="flex items-start justify-between gap-3">
-                                    <div className="flex items-center gap-2">
-                                    <p className="font-semibold">{teacherDisplayName}</p>
+                                    <div className="flex min-w-0 flex-wrap items-center gap-2">
+                                    <p className="break-words font-semibold [overflow-wrap:anywhere]">{teacherDisplayName}</p>
 
                                     {teacher.is_new_teacher ? (
                                         <span className="whitespace-nowrap rounded-full bg-red-50 px-2 py-1 text-xs font-semibold text-[#c8102e]">
@@ -286,7 +286,7 @@ export default async function SchoolProfilePage({
                                     ) : null}
                                     </div>
 
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex shrink-0 items-center gap-2">
                                         <Link
                                             href={`/schools/${school.id}/teachers/${teacher.id}/edit`}
                                             className="inline-flex h-6 items-center text-xs font-semibold text-zinc-400 hover:text-[#c8102e]"
@@ -314,8 +314,8 @@ export default async function SchoolProfilePage({
                                     </div>
                                 </div>
 
-                                <p className="mt-2 text-sm text-zinc-600">{teacher.email}</p>
-                                <p className="text-sm text-zinc-600">{teacher.phone}</p>
+                                <p className="mt-2 break-words text-sm text-zinc-600 [overflow-wrap:anywhere]">{teacher.email}</p>
+                                <p className="break-words text-sm text-zinc-600 [overflow-wrap:anywhere]">{teacher.phone}</p>
                                 <div className='mt-3 flex flex-wrap items-center gap-2'>
                                     <span
                                         className={`rounded-full px-2 py-1 text-xs font-semibold capitalize ${
