@@ -134,6 +134,20 @@ export default async function AddTeacherPage({
                                 />
                             </label>
 
+                            <label className='block'>
+                                <span className='text-sm font-medium text-zinc-800'>
+                                    Status
+                                </span>
+                                <select
+                                    name='status'
+                                    defaultValue='active'
+                                    className='mt-2 h-11 w-full rounded-md border border-zinc-300 bg-white px-3 text-sm outline-none focus:border-[#c8102e] focus:ring-4 focus:ring-red-100'
+                                >
+                                    <option value='active'>Active</option>
+                                    <option value='inactive'>Inactive</option>
+                                </select>
+                            </label>
+
                             <label className='flex items-center gap-3 rounded-md border border-zinc-200 bg-zinc-50 px-4 py-3'>
                                 <input
                                     name="is_new_teacher"
