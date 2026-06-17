@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { createClient } from "@/utils/supabase/server";
+import { DistrictsTable } from "./districts-table";
 
 export default async function DistrictsPage() {
   const supabase = await createClient();
@@ -47,59 +48,7 @@ export default async function DistrictsPage() {
             </Link>
           </div>
 
-          <section className="mt-6 rounded-lg border border-red-100 bg-white p-6 shadow-sm">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[720px] border-collapse text-left text-sm">
-                <thead>
-                  <tr className="border-b border-zinc-100 text-xs uppercase text-zinc-500">
-                    <th className="px-4 py-3 font-semibold">District Name</th>
-                    <th className="px-4 py-3 font-semibold">State</th>
-                    <th className="px-4 py-3 text-right font-semibold">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {districtRows.map((district) => (
-                    <tr
-                      key={district.id}
-                      className="border-b border-zinc-100 last:border-0"
-                    >
-                      <td className="px-4 py-4 font-semibold">
-                        {district.name}
-                      </td>
-                      <td className="px-4 py-4 text-zinc-600">
-                        {district.state ?? "N/A"}
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="flex justify-end gap-2">
-                          <Link
-                            href={`/districts/${district.id}/edit`}
-                            className="inline-flex h-8 items-center rounded-md border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-700 hover:bg-red-50 hover:text-[#c8102e]"
-                          >
-                            Edit
-                          </Link>
-                          <Link
-                            href={`/districts/${district.id}/delete`}
-                            className="inline-flex h-8 items-center rounded-md border border-red-200 bg-white px-3 text-xs font-semibold text-[#c8102e] hover:bg-red-50"
-                          >
-                            Delete
-                          </Link>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {districtRows.length === 0 ? (
-              <p className="mt-4 text-sm text-zinc-500">
-                No districts added yet.
-              </p>
-            ) : null}
-          </section>
+          <DistrictsTable districts={districtRows} />
         </div>
       </section>
     </main>

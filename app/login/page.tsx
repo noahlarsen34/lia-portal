@@ -2,6 +2,7 @@ import Image from "next/image";
 import { redirect } from "next/navigation";
 import { signIn } from "./actions";
 import { createClient } from "@/utils/supabase/server";
+import { PasswordInput } from "./password-input";
 
 type LoginPageProps = {
   searchParams: Promise<{
@@ -66,16 +67,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             />
           </label>
 
-          <label className="block">
-            <span className="text-sm font-medium text-zinc-800">Password</span>
-            <input
-              className="mt-2 h-11 w-full rounded-md border border-zinc-300 px-3 text-sm outline-none transition focus:border-[#c8102e] focus:ring-4 focus:ring-red-100"
-              name="password"
-              type="password"
-              autoComplete="current-password"
-              required
-            />
-          </label>
+          <PasswordInput />
 
           <button
             className="h-11 w-full rounded-md bg-[#c8102e] px-4 text-sm font-semibold text-white transition hover:bg-[#a70d25] focus:outline-none focus:ring-4 focus:ring-red-100"

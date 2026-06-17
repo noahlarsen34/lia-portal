@@ -69,23 +69,36 @@ export default async function AddTeacherPage({
                         {error ? (
                             <div className='mb-5 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sem text-red-700'>
                                 {error === "missing-fields"
-                                    ? "Name and Email are required."
+                                    ? "First name, last name, and email are required."
                                     : "Something went wrong. Please try again."
                                 }
                             </div>
                         ) : null}
 
                         <form action={createTeacherForSchool} className='space-y-5'>
-                            <label className='block'>
-                                <span className='text-sm font-medium text-zinc-800'>
-                                    Name
-                                </span>
-                                <input
-                                    name="name"
-                                    required
-                                    className='mt-2 h-11 w-full rounded-md border border-zinc-300 px-3 text-sm outline-none focus:border-[#c8102e] focus:ring-4 focus:ring-red-100'
-                                />
-                            </label>
+                            <div className='grid gap-5 sm:grid-cols-2'>
+                                <label className='block'>
+                                    <span className='text-sm font-medium text-zinc-800'>
+                                        First Name
+                                    </span>
+                                    <input
+                                        name="first_name"
+                                        required
+                                        className='mt-2 h-11 w-full rounded-md border border-zinc-300 px-3 text-sm outline-none focus:border-[#c8102e] focus:ring-4 focus:ring-red-100'
+                                    />
+                                </label>
+
+                                <label className='block'>
+                                    <span className='text-sm font-medium text-zinc-800'>
+                                        Last Name
+                                    </span>
+                                    <input
+                                        name="last_name"
+                                        required
+                                        className='mt-2 h-11 w-full rounded-md border border-zinc-300 px-3 text-sm outline-none focus:border-[#c8102e] focus:ring-4 focus:ring-red-100'
+                                    />
+                                </label>
+                            </div>
 
                             <div className='grid gap-5 sm:grid-cols-2'>
                                 <label className='block'>
@@ -142,7 +155,7 @@ export default async function AddTeacherPage({
 
                                 <button
                                     type='submit'
-                                    className='rounded-md bg-[#c8102e px-4 py-2 text-sm font-semibold text-white hover: bg-[#a70d25]'
+                                    className='rounded-md bg-[#c8102e] px-4 py-2 text-sm font-semibold text-white hover:bg-[#a70d25]'
                                 >
                                     Save Teacher
                                 </button>

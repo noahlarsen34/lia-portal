@@ -44,7 +44,7 @@ export default async function EditTeacherPage({
     const { data: teacher } = await supabase
         .from("teachers")
         .select(
-            "id, name, email, phone, status, username, password_status, is_new_teacher",
+            "id, name, first_name, last_name, email, phone, status, username, password_status, is_new_teacher",
         )
         .eq("id", teacherId)
         .eq("school_id",school.id)
@@ -59,6 +59,9 @@ export default async function EditTeacherPage({
         school.id,
         teacher.id,
     );
+    const teacherDisplayName =
+        `${teacher.first_name ?? ""} ${teacher.last_name ?? ""}`.trim() ||
+        teacher.name;
 
     return (
         <main className='min-h-screen bg-[#f8f4f4] text-zinc-950'>
@@ -78,7 +81,9 @@ export default async function EditTeacherPage({
                             <p className='text-sm font-medium uppercase tracking-wide text-[#c8102e]'>
                                 Edit Teacher
                             </p>
-                            <h1 className='mt-2 text-3xl font-semibold'>{teacher.name}</h1>
+                            <h1 className='mt-2 text-3xl font-semibold'>
+                                {teacherDisplayName}
+                            </h1>
                             <p className='mt-1 text-sm text-zinc-600'>
                                 Update this teacher record.
                             </p>
@@ -87,22 +92,38 @@ export default async function EditTeacherPage({
                         {error ? (
                             <div className='mb-5 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700'>
                                 {error === "missing-fields"
-                                    ? "Name, email, and status are required."
+                                    ? "First name, last name, email, and status are required."
                                     : "Something went wrong. Please try again."
                                 }
                             </div>
                         ) : null}
 
                         <form action={updateTeacherForSchool} className='space-y-5'>
-                            <label className='block'>
-                                <span className='text-sm font-medium text-zinc-800'>Name</span>
-                                <input
-                                    name="name"
-                                    required
-                                    defaultValue={teacher.name}
-                                    className="mt-2 h-11 w-full rounded-md border border-zinc-300 px-3 text-sm outline-none focus:border-[#c8102e] focus:ring-4 focus:ring-red-100"
-                                />
-                            </label>
+                            <div className='grid gap-5 sm:grid-cols-2'>
+                                <label className='block'>
+                                    <span className='text-sm font-medium text-zinc-800'>
+                                        First Name
+                                    </span>
+                                    <input
+                                        name="first_name"
+                                        required
+                                        defaultValue={teacher.first_name ?? ""}
+                                        className="mt-2 h-11 w-full rounded-md border border-zinc-300 px-3 text-sm outline-none focus:border-[#c8102e] focus:ring-4 focus:ring-red-100"
+                                    />
+                                </label>
+
+                                <label className='block'>
+                                    <span className='text-sm font-medium text-zinc-800'>
+                                        Last Name
+                                    </span>
+                                    <input
+                                        name="last_name"
+                                        required
+                                        defaultValue={teacher.last_name ?? ""}
+                                        className="mt-2 h-11 w-full rounded-md border border-zinc-300 px-3 text-sm outline-none focus:border-[#c8102e] focus:ring-4 focus:ring-red-100"
+                                    />
+                                </label>
+                            </div>
 
                             <div className='grid gap-5 sm:grid-cols-2'>
                                 <label className='block'>

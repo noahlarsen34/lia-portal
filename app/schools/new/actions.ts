@@ -12,7 +12,7 @@ export async function createSchool(formData: FormData) {
     const state = String(formData.get("state") ?? "").trim();
     const region = String(formData.get("region") ?? "").trim();
     const districtId = String(formData.get("district_id") ?? "").trim();
-    const assignedRpmId = String(formData.get("assigned_rpm") ?? "").trim();
+    const assignedRpmId = String(formData.get("assigned_rpm_id") ?? "").trim();
     const status = String(formData.get("status") ?? "active").trim();
     const mouStatus = String(formData.get("mou_status") ?? "pending").trim();
 

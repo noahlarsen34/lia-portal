@@ -10,7 +10,9 @@ export async function updateTeacher(
 ) {
     const supabase = await createClient();
 
-    const name = String(formData.get("name") ?? "").trim();
+    const firstName = String(formData.get("first_name") ?? "").trim();
+    const lastName = String(formData.get("last_name") ?? "").trim();
+    const name = `${firstName} ${lastName}`.trim();
     const email = String(formData.get("email") ?? "").trim();
     const phone = String(formData.get("phone") ?? "").trim();
     const status = String(formData.get("status") ?? "").trim();
@@ -18,7 +20,7 @@ export async function updateTeacher(
     const passwordStatus = String(formData.get("password_status") ?? "").trim();
     const isNewTeacher = formData.get("is_new_teacher") === "on";
 
-    if (!name || !email || !status) {
+    if (!firstName || !lastName || !email || !status) {
         redirect(
             `/schools/${schoolId}/teachers/${teacherId}/edit?error=missing-fields`
         );
@@ -27,6 +29,8 @@ export async function updateTeacher(
     const { error } = await supabase
         .from("teachers")
         .update({
+            first_name: firstName,
+            last_name: lastName,
             name,
             email,
             phone: phone || null,
@@ -40,7 +44,7 @@ export async function updateTeacher(
     
     if (error) {
         redirect (
-            `/schools${schoolId}/teachers/${teacherId}/edit?error=missing-fields`
+            `/schools/${schoolId}/teachers/${teacherId}/edit?error=update-failed`
         );
     }
    redirect(`/schools/${schoolId}`);

@@ -18,6 +18,7 @@ const states = [
   "New Mexico",
   "New York",
   "Oregon",
+  "Tennessee",
   "Texas",
   "Utah",
   "Washington",

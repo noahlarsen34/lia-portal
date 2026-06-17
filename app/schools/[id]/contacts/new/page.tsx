@@ -75,16 +75,29 @@ export default async function AddContactPage({
                         ) : null}
 
                         <form action={createContactForSchool} className='space-y-5'>
-                            <label className='block'>
-                                <span className='text-sm font-medium text-zinc-800'>
-                                    Name
-                                </span>
-                                <input
-                                name="name"
-                                required
-                                className='mt-2 h-11 w-full rounded-md border border-zinc-300 px-3 text-sm outline-none focus:border-[#c8102e] focus:ring-red-100'
-                                />
-                            </label>
+                            <div className='grid gap-5 sm:grid-cols-2'>
+                                <label className='block'>
+                                    <span className='text-sm font-medium text-zinc-800'>
+                                        First Name
+                                    </span>
+                                    <input
+                                    name="first_name"
+                                    required
+                                    className='mt-2 h-11 w-full rounded-md border border-zinc-300 px-3 text-sm outline-none focus:border-[#c8102e] focus:ring-red-100'
+                                    />
+                                </label>
+
+                                <label className='block'>
+                                    <span className='text-sm font-medium text-zinc-800'>
+                                        Last Name
+                                    </span>
+                                    <input
+                                    name="last_name"
+                                    required
+                                    className='mt-2 h-11 w-full rounded-md border border-zinc-300 px-3 text-sm outline-none focus:border-[#c8102e] focus:ring-red-100'
+                                    />
+                                </label>
+                            </div>
 
                             <label className='block'>
                                 <span className='text-sm font-medium text-zinc-800'>
@@ -102,6 +115,9 @@ export default async function AddContactPage({
                                         Assistant Principal
                                     </option>
                                     <option value="Teacher">Teacher</option>
+                                    <option value="Elementary Partner">Elementary Partner</option>
+                                    <option value="Administrator">Administrator</option>
+                                    <option value="School Phone Number">School Phone Number</option>
                                     <option value="Other School Rep">Other School Rep</option>
                                 </select>
                             </label>

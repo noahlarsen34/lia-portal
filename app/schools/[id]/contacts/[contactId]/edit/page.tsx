@@ -43,7 +43,7 @@ export default async function EditContactPage({
 
   const { data: contact } = await supabase
     .from("contacts")
-    .select("id, name, role, email, phone, status, notes")
+    .select("id, name, first_name, last_name, role, email, phone, status, notes")
     .eq("id", contactId)
     .eq("school_id", school.id)
     .maybeSingle();
@@ -57,6 +57,9 @@ export default async function EditContactPage({
     school.id,
     contact.id,
   );
+  const contactDisplayName =
+    `${contact.first_name ?? ""} ${contact.last_name ?? ""}`.trim() ||
+    contact.name;
 
   return (
     <main className="min-h-screen bg-[#f8f4f4] text-zinc-950">
@@ -76,7 +79,9 @@ export default async function EditContactPage({
               <p className="text-sm font-medium uppercase tracking-wide text-[#c8102e]">
                 Edit Contact
               </p>
-              <h1 className="mt-2 text-3xl font-semibold">{contact.name}</h1>
+              <h1 className="mt-2 text-3xl font-semibold">
+                {contactDisplayName}
+              </h1>
               <p className="mt-1 text-sm text-zinc-600">
                 Update this contact record.
               </p>
@@ -85,21 +90,37 @@ export default async function EditContactPage({
             {error ? (
               <div className="mb-5 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                 {error === "missing-fields"
-                  ? "Name, role, and status are required."
+                  ? "First name, last name, role, and status are required."
                   : "Something went wrong. Please try again."}
               </div>
             ) : null}
 
             <form action={updateContactForSchool} className="space-y-5">
-              <label className="block">
-                <span className="text-sm font-medium text-zinc-800">Name</span>
-                <input
-                  name="name"
-                  required
-                  defaultValue={contact.name}
-                  className="mt-2 h-11 w-full rounded-md border border-zinc-300 px-3 text-sm outline-none focus:border-[#c8102e] focus:ring-4 focus:ring-red-100"
-                />
-              </label>
+              <div className="grid gap-5 sm:grid-cols-2">
+                <label className="block">
+                  <span className="text-sm font-medium text-zinc-800">
+                    First Name
+                  </span>
+                  <input
+                    name="first_name"
+                    required
+                    defaultValue={contact.first_name ?? ""}
+                    className="mt-2 h-11 w-full rounded-md border border-zinc-300 px-3 text-sm outline-none focus:border-[#c8102e] focus:ring-4 focus:ring-red-100"
+                  />
+                </label>
+
+                <label className="block">
+                  <span className="text-sm font-medium text-zinc-800">
+                    Last Name
+                  </span>
+                  <input
+                    name="last_name"
+                    required
+                    defaultValue={contact.last_name ?? ""}
+                    className="mt-2 h-11 w-full rounded-md border border-zinc-300 px-3 text-sm outline-none focus:border-[#c8102e] focus:ring-4 focus:ring-red-100"
+                  />
+                </label>
+              </div>
 
               <div className="grid gap-5 sm:grid-cols-2">
                 <label className="block">
@@ -118,6 +139,9 @@ export default async function EditContactPage({
                       Assistant Principal
                     </option>
                     <option value="Teacher">Teacher</option>
+                    <option value="Elementary Partner">Elementary Partner</option>
+                    <option value="Administrator">Administrator</option>
+                    <option value="School Phone Number">School Phone Number</option>
                     <option value="Other School Rep">Other School Rep</option>
                   </select>
                 </label>

@@ -2,12 +2,14 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { DashboardSidebar } from '@/components/dashboard-sidebar';
 import { createClient } from '@/utils/supabase/server';
+import { Eye } from 'lucide-react';
 import { 
     deleteActivity,
     deleteContact,
     deleteDocument,
     deleteTeacher,
 } from './actions'
+
 
 type SchoolProfilePageProps = {
     params: Promise<{
@@ -55,13 +57,13 @@ export default async function SchoolProfilePage({
     
     const { data: contacts } = await supabase
         .from("contacts")
-        .select("id, name, role, email, phone, status, notes")
+        .select("id, name, first_name, last_name, role, email, phone, status, notes")
         .eq("school_id", id)
         .order("role", { ascending: true });
     
     const { data: teachers } = await supabase
         .from("teachers")
-        .select("id, name, email, phone, status, username, password_status, is_new_teacher")
+        .select("id, name, first_name, last_name, email, phone, status, username, password_status, is_new_teacher")
         .eq("school_id", id)
         .order("name", { ascending: true });
     
@@ -194,6 +196,9 @@ export default async function SchoolProfilePage({
                                     school.id,
                                     contact.id,
                                 );
+                                const contactDisplayName =
+                                    `${contact.first_name ?? ""} ${contact.last_name ?? ""}`.trim() ||
+                                    contact.name;
 
                                 return (
                                     <div
@@ -202,7 +207,7 @@ export default async function SchoolProfilePage({
                                     >
                                     <div className="flex items-start justify-between gap-3">
                                         <div>
-                                            <p className="font-semibold">{contact.name}</p>
+                                            <p className="font-semibold">{contactDisplayName}</p>
                                             <p className="text-sm text-zinc-500">{contact.role}</p>
                                             </div>
 
@@ -212,6 +217,15 @@ export default async function SchoolProfilePage({
                                                     className='inline-flex h-6 items-center text-xs font-semibold text-zinc-400 hover:text-[#c8102e]'
                                                 >
                                                     Edit
+                                                </Link>
+
+                                                <Link
+                                                    href={`/schools/${school.id}/contacts/${contact.id}`}
+                                                    className='inline-flex h-6 w-6 items-center justify-center rounded-md text-zinc-400 hover:bg-red-50 hover:text-[#c8102e]'
+                                                    title="View contact"
+                                                    aria-label={`View ${contactDisplayName}`}
+                                                >
+                                                    <Eye className='h-4 w-4'/>
                                                 </Link>
                                                 <form action={deleteContactForSchool} className='flex'>
                                                     <button
@@ -252,6 +266,9 @@ export default async function SchoolProfilePage({
                                 school.id,
                                 teacher.id,
                             );
+                            const teacherDisplayName =
+                                `${teacher.first_name ?? ""} ${teacher.last_name ?? ""}`.trim() ||
+                                teacher.name;
 
                             return (
                                 <div
@@ -260,7 +277,7 @@ export default async function SchoolProfilePage({
                                 >
                                 <div className="flex items-start justify-between gap-3">
                                     <div className="flex items-center gap-2">
-                                    <p className="font-semibold">{teacher.name}</p>
+                                    <p className="font-semibold">{teacherDisplayName}</p>
 
                                     {teacher.is_new_teacher ? (
                                         <span className="whitespace-nowrap rounded-full bg-red-50 px-2 py-1 text-xs font-semibold text-[#c8102e]">
@@ -277,6 +294,15 @@ export default async function SchoolProfilePage({
                                             Edit
                                         </Link>
 
+                                        <Link
+                                            href={`/schools/${school.id}/teachers/${teacher.id}`}
+                                            className='inline-flex h-6 w-6 items-center justify-center rounded-md text-zinc-400 hover:bg-red-50 hover:text-[#c8102e]'
+                                            title="View teacher"
+                                            aria-label={`View ${teacherDisplayName}`}
+                                        >
+                                            <Eye className='h-4 w-4'/>
+                                        </Link>
+
                                         <form action={deleteTeacherForSchool} className="flex">
                                             <button
                                                 type="submit"
@@ -290,9 +316,21 @@ export default async function SchoolProfilePage({
 
                                 <p className="mt-2 text-sm text-zinc-600">{teacher.email}</p>
                                 <p className="text-sm text-zinc-600">{teacher.phone}</p>
-                                <p className="mt-2 text-xs font-semibold uppercase text-zinc-500">
-                                    {teacher.password_status}
-                                </p>
+                                <div className='mt-3 flex flex-wrap items-center gap-2'>
+                                    <span
+                                        className={`rounded-full px-2 py-1 text-xs font-semibold capitalize ${
+                                            teacher.status ==="active"
+                                                ? "bg-green-50 text-green-700"
+                                                : "bg-red-50 text-[#c8102e]"
+                                        }`}
+                                    >
+                                        {teacher.status}
+                                    </span>
+
+                                    <span className='text-xs font-semibold uppercase text-zinc-500'>
+                                        {teacher.password_status}
+                                    </span>
+                                </div>
                                 </div>
                             );
                             })}

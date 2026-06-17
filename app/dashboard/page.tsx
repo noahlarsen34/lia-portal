@@ -100,6 +100,31 @@ export default async function DashboardPage() {
   const profilesById = new Map(
     profileRows?.map((profile) => [profile.id, profile.full_name]) ?? [],
   );
+
+  const { data: allSchoolRpmRows } = await supabase
+    .from("schools")
+    .select("assigned_rpm_id");
+
+  const rpmCounts = new Map<string, number>();
+
+  allSchoolRpmRows?.forEach((school) => {
+    const rpmName = school.assigned_rpm_id
+      ? profilesById.get(school.assigned_rpm_id) ?? "Unknown RPM"
+      : "Unassigned";
+
+      rpmCounts.set(rpmName, (rpmCounts.get(rpmName) ?? 0) + 1);
+  });
+
+  const schoolsByRpm = Array.from(rpmCounts.entries())
+    .map(([name, count]) => ({
+      name,
+      count,
+    }))
+    .sort((a,b) => b.count - a.count);
+  
+  const maxRpmCount = Math.max(...schoolsByRpm.map((rpm) => rpm.count), 1)
+
+
   
   const dashboardSchools =
     schoolRows?.map((school) => ({
@@ -203,25 +228,30 @@ export default async function DashboardPage() {
 
           <div className="rounded-lg border border-red-100 bg-white p-5 shadow-sm">
             <h2 className="font-semibold">Schools by RPM</h2>
+
             <div className="mt-5 space-y-3 text-sm">
-              {["Maria Lopez", "Jacob Smith", "Ariel Johnson", "Daniel Kim"].map(
-                (rpm, index) => (
-                  <div key={rpm}>
-                    <div className="mb-1 flex justify-between">
-                      <span>{rpm}</span>
-                      <span>{32 - index * 4}</span>
-                    </div>
-                    <div className="h-2 rounded-full bg-zinc-100">
-                      <div 
-                        className="h-2 rounded-full bg-[#c8102e]"
-                        style={{width: `${80 - index * 10}%` }}
-                      />
-                    </div>
+              {schoolsByRpm.map((rpm) => (
+                <div key={rpm.name}>
+                  <div className="mb-1 flex justify-between gap-4">
+                    <span className="truncate">{rpm.name}</span>
+                    <span>{rpm.count}</span>
                   </div>
 
-                )
-              )}
-            </div>
+                  <div className="h-2 rounded-full bg-zinc-100">
+                    <div
+                      className="h-2 rounded-full bg-[#c8102e]"
+                      style={{
+                        width: `${(rpm.count / maxRpmCount) * 100}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              ))}
+
+              {schoolsByRpm.length === 0 ? (
+                <p className="text-sm text-zinc-500">No RPM assignments yet.</p>
+              ): null}
+            </div> 
           </div>
 
           <div className="rounded-lg border border-red-100 bg-white p-5 shadow-sm">
