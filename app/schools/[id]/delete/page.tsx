@@ -1,8 +1,8 @@
 import { DashboardSidebar } from '@/components/dashboard-sidebar';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { createClient } from "@/utils/supabase/server";
 import { deleteSchool } from '../actions'
+import { requireAdmin } from '@/utils/role-guards';
 
 type DeleteSchoolPageProps = {
     params: Promise<{
@@ -15,15 +15,7 @@ export default async function DeleteSchoolPage({
     params,
 }: DeleteSchoolPageProps) {
     const { id } = await params;
-    const supabase = await createClient();
-
-    const {
-        data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-        redirect("/login");
-    }
+    const { supabase } = await requireAdmin();
 
     const { data: school } = await supabase
         .from("schools")

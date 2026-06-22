@@ -1,8 +1,7 @@
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
 import { DashboardSidebar } from '@/components/dashboard-sidebar';
-import { createClient } from '@/utils/supabase/server';
 import { SchoolForm } from './school-form';
+import { requireAdmin } from '@/utils/role-guards';
 
 type AddSchoolPageProps = {
     searchParams: Promise<{
@@ -16,15 +15,7 @@ export default async function AddSchoolPage({
 }: AddSchoolPageProps) {
     const{ error, state } = await searchParams;
 
-    const supabase = await createClient();
-
-    const {
-        data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-        redirect("/login");
-    }
+    const { supabase } = await requireAdmin();
 
     const { data: districts } = await supabase
         .from("districts")

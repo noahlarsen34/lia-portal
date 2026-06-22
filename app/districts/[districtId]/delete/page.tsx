@@ -30,6 +30,16 @@ export default async function DeleteDistrictPage({
     redirect("/login");
   }
 
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .maybeSingle();
+  
+  if (profile?.role !=="admin") {
+    redirect("/dashboard");
+  }
+
   const { data: district } = await supabase
     .from("districts")
     .select("id, name, state")

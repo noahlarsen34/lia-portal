@@ -21,6 +21,7 @@ export default async function DashboardPage() {
     .maybeSingle();
 
   const displayName = profile?.full_name ?? user.email ?? "Admin";
+  const isAdmin = profile?.role === "admin";
 
   const { count: totalSchools } = await supabase
     .from("schools")
@@ -61,11 +62,6 @@ export default async function DashboardPage() {
       label: "MOU Signed",
       value: mouSignedSchools ?? 0,
       detail: "Signed schools",
-    },
-    {
-      label: "Assigned RPMs",
-      value: 1,
-      detail: "Active"
     },
   ];
 
@@ -121,6 +117,14 @@ export default async function DashboardPage() {
       count,
     }))
     .sort((a,b) => b.count - a.count);
+
+  if (isAdmin) {
+    dashboardStats.push({
+      label: "Assigned RPMs",
+      value: schoolsByRpm.filter((rpm) => rpm.name !== "Unassigned").length,
+      detail: "Active",
+    });
+  }
   
   const maxRpmCount = Math.max(...schoolsByRpm.map((rpm) => rpm.count), 1)
 
@@ -313,12 +317,14 @@ export default async function DashboardPage() {
             <button className="rounded-md border border-zinc-200 px-4 text-sm">
               Filter
             </button>
-            <Link
+            {isAdmin ? (
+              <Link
               href="/schools/new"
               className='w-fit rounded-md bg-[#c8102e] px-4 py-2 text-sm font-semibold text-white hover:bg-[#a70d25]'
               >
               Add School
             </Link>
+          ) : null}
           </div>
           
         <div className="overflow-x-auto">

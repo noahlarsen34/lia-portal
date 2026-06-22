@@ -51,6 +51,16 @@ export default async function AddDistrictPage({
         redirect('/login');
     }
 
+    const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .maybeSingle();
+    
+    if (profile?.role !== "admin") {
+        redirect("/dashboard");
+    }
+
     return (
         <main className='min-h-screen bg-[#f8f4f4] text-zinc-950'>
             <DashboardSidebar />

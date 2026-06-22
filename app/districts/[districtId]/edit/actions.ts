@@ -1,10 +1,10 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { createClient } from "@/utils/supabase/server";
+import { requireAdmin } from "@/utils/role-guards";
 
 export async function updateDistrict(districtId: string, formData: FormData) {
-  const supabase = await createClient();
+  const { supabase } = await requireAdmin();
 
   const name = String(formData.get("name") ?? "").trim();
   const state = String(formData.get("state") ?? "").trim();

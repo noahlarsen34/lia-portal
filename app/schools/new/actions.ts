@@ -1,10 +1,10 @@
 "use server";
 
-import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
+import { requireAdmin } from "@/utils/role-guards";
 
 export async function createSchool(formData: FormData) {
-    const supabase = await createClient();
+    const { supabase, user } = await requireAdmin();
 
     const name = String(formData.get("name") ?? "").trim();
     const yearLiaStarted = String(formData.get("year_lia_started") ?? "").trim();
@@ -19,10 +19,6 @@ export async function createSchool(formData: FormData) {
     if (!name || !state || !status || !mouStatus) {
         redirect("/schools/new?error=missing-fields");
     }
-
-    const {
-        data: { user },
-    } = await supabase.auth.getUser();
 
     const { data: school, error } = await supabase
         .from("schools")

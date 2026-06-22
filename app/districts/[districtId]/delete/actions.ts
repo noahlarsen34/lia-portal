@@ -1,10 +1,10 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { createClient } from "@/utils/supabase/server";
+import { requireAdmin } from "@/utils/role-guards";
 
 export async function deleteDistrict(districtId: string) {
-  const supabase = await createClient();
+  const { supabase } = await requireAdmin();
 
   const { count } = await supabase
     .from("schools")

@@ -1,10 +1,10 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { createClient } from '@/utils/supabase/server';
+import { requireAdmin } from "@/utils/role-guards";
 
 export async function deleteContact(schoolId: string, contactId: string) {
-    const supabase = await createClient();
+    const { supabase } = await requireAdmin(`/schools/${schoolId}`);
 
     await supabase
         .from("contacts")
@@ -18,7 +18,7 @@ export async function deleteContact(schoolId: string, contactId: string) {
 }
 
 export async function deleteTeacher(schoolId: string, teacherId: string) {
-    const supabase = await createClient();
+    const { supabase } = await requireAdmin(`/schools/${schoolId}`);
 
     await supabase
         .from("teachers")
@@ -30,7 +30,7 @@ export async function deleteTeacher(schoolId: string, teacherId: string) {
 }
 
 export async function deleteActivity(schoolId: string, activityId: string) {
-    const supabase = await createClient();
+    const { supabase } = await requireAdmin(`/schools/${schoolId}`);
 
     await supabase
         .from("activities")
@@ -42,7 +42,7 @@ export async function deleteActivity(schoolId: string, activityId: string) {
 }
 
 export async function deleteDocument(schoolId: string, documentId: string) {
-    const supabase = await createClient();
+    const { supabase } = await requireAdmin(`/schools/${schoolId}`);
 
     await supabase
         .from("documents")
@@ -54,7 +54,7 @@ export async function deleteDocument(schoolId: string, documentId: string) {
 }
 
 export async function deleteSchool(schoolId: string) {
-    const supabase = await createClient();
+    const { supabase } = await requireAdmin(`/schools/${schoolId}`);
 
     await supabase
         .from("schools")

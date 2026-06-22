@@ -31,6 +31,14 @@ export default async function SchoolProfilePage({
         redirect("/login");
     }
 
+    const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .maybeSingle();
+    
+    const isAdmin = profile?.role === "admin";
+
     const { data: school } = await supabase
         .from("schools")
         .select(`
@@ -40,6 +48,7 @@ export default async function SchoolProfilePage({
             address:city,
             state,
             region,
+            assigned_rpm_id,
             status,
             mou_status,
             mou_signed_date,
@@ -54,6 +63,16 @@ export default async function SchoolProfilePage({
         if(!school) {
         redirect('/schools');
     }
+
+    const { data: assignedRpm } = school.assigned_rpm_id
+        ? await supabase
+            .from("profiles")
+            .select("full_name")
+            .eq("id", school.assigned_rpm_id)
+            .maybeSingle()
+        : { data: null };
+
+    const assignedRpmName = assignedRpm?.full_name ?? "Unassigned";
     
     const { data: contacts } = await supabase
         .from("contacts")
@@ -119,16 +138,18 @@ export default async function SchoolProfilePage({
                                 Edit School
                             </Link>
 
-                            <Link
+                            {isAdmin ? (
+                                <Link
                                 href={`/schools/${school.id}/delete`}
                                 className='inline-flex h-10 items-center justify-center rounded-md border border-red-200 bg-white px-4 text-sm font-semibold text-[#c8102e] hover:bg-red-50'
                             >
                                 Delete School
                             </Link>
+                            ) : null}
                         </div>
                     </div>
 
-                    <div className='mt-6 grid gap-4 border-t border-zinc-100 pt-6 sm:grid-cols-2 lg:grid-cols-4'>
+                    <div className='mt-6 grid gap-4 border-t border-zinc-100 pt-6 sm:grid-cols-2 lg:grid-cols-5'>
                         <div>
                             <p className='text-xs uppercase text-zinc-500'>Year Started</p>
                             <p className='mt-1 font-semibold'>
@@ -136,12 +157,18 @@ export default async function SchoolProfilePage({
                             </p>
                         </div>
                         <div>
+                            <p className='text-xs uppercase text-zinc-500'>State</p>
+                            <p className='mt-1 font-semibold'>{school.state ?? "N/A"}</p>
+                        </div>
+                        <div>
                             <p className='text-xs uppercase text-zinc-500'>Region</p>
                             <p className='mt-1 font-semibold'>{school.region ?? "N/A"}</p>
                         </div>
                         <div>
-                            <p className='text-xs uppercase text-zinc-500'>MOU Status</p>
-                            <p className='mt-1 font-semibold'>{school.mou_status ?? "N/A"}</p>
+                            <p className='text-xs uppercase text-zinc-500'>Assigned RPM</p>
+                            <p className='mt-1 break-words font-semibold [overflow-wrap:anywhere]'>
+                                {assignedRpmName}
+                            </p>
                         </div>
                         <div>
                             <p className='text-xs uppercase text-zinc-500'>Last Contact</p>
@@ -228,12 +255,14 @@ export default async function SchoolProfilePage({
                                                     <Eye className='h-4 w-4'/>
                                                 </Link>
                                                 <form action={deleteContactForSchool} className='flex'>
-                                                    <button
+                                                    {isAdmin ? (
+                                                        <button
                                                         type="submit"
                                                         className="inline-flex h-6 items-center text-xs font-semibold text-zinc-400 hover:text-[#c8102e]"
                                                     >
                                                         Delete
                                                     </button>
+                                                    ) : null}
                                             </form>
                                         </div>
                                     </div>
@@ -304,12 +333,14 @@ export default async function SchoolProfilePage({
                                         </Link>
 
                                         <form action={deleteTeacherForSchool} className="flex">
-                                            <button
+                                            {isAdmin ? (
+                                                <button
                                                 type="submit"
                                                 className="inline-flex h-6 items-center text-xs font-semibold text-zinc-400 hover:text-[#c8102e]"
                                             >
                                                 Delete
                                             </button>
+                                            ) : null}
                                         </form>
                                     </div>
                                 </div>
@@ -380,12 +411,14 @@ export default async function SchoolProfilePage({
                                         </Link>
 
                                         <form action={deleteActivityForSchool} className="flex">
-                                            <button
+                                            {isAdmin ? (
+                                                <button
                                                 type="submit"
                                                 className="inline-flex h-6 items-center text-xs font-semibold text-zinc-400 hover:text-[#c8102e]"
                                                 >
                                                     Delete
                                             </button>
+                                            ) : null}
                                         </form>
                                      </div>
                                 </div>
@@ -432,12 +465,14 @@ export default async function SchoolProfilePage({
                                     </div>
 
                                     <form action={deleteDocumentForSchool}>
-                                    <button
+                                    {isAdmin ? (
+                                        <button
                                         type="submit"
                                         className="text-xs font-semibold text-zinc-400 hover:text-[#c8102e]"
                                     >
                                         Delete
                                     </button>
+                                    ) : null}
                                     </form>
                                 </div>
                                 </div>
