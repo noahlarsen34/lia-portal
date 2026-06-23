@@ -82,6 +82,12 @@ export default async function SchoolsPage() {
                             View and manage school profiles for Latinos In Action
                         </p>
                     </div>
+                    <Link
+                        href='/schools/new'
+                        className='flex h-10 w-fit items-center justify-center rounded-md bg-[#c8102e] px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#a70d25]'
+                    >
+                        Add School
+                    </Link>
                 </header>
                 
                 <section className='rounded-lg border border-red-100 bg-white p-6 shadow-sm'>

@@ -102,18 +102,18 @@ export function SchoolsTable({ schools }: SchoolsTableProps) {
 
     return (
         <>
-            <div className='mb-6 flex flex-wrap gap-3'>
+            <div className='mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-[minmax(220px,1fr)_130px_140px_140px_150px_130px_80px]'>
                 <input
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
-                    className='h-10 w-full rounded-md border border-zinc-200 px-3 text-sm outline-none focus:border-[#c8102e] focus:ring-4 focus:ring-red-100 sm:w-72'
+                    className='h-10 w-full min-w-0 rounded-md border border-zinc-200 px-3 text-sm outline-none focus:border-[#c8102e] focus:ring-4 focus:ring-red-100'
                     placeholder='Search schools...'
                 />
 
                 <select
                     value={selectedState}
                     onChange={(event) => setSelectedState(event.target.value)}
-                    className='h-10 rounded-md border border-zinc-200 bg-white px-4 text-sm outline-none hover:bg-red-50 focus:border-[#c8102e] focus:ring-4 focus:ring-red-100'
+                    className='h-10 w-full rounded-md border border-zinc-200 bg-white px-4 text-sm outline-none hover:bg-red-50 focus:border-[#c8102e] focus:ring-4 focus:ring-red-100'
                 >
                     <option value="all">All States</option>
                     {stateOptions.map((state) => (
@@ -125,7 +125,7 @@ export function SchoolsTable({ schools }: SchoolsTableProps) {
                 <select
                     value={selectedRegion}
                     onChange={(event) => setSelectedRegion(event.target.value)}
-                    className='h-10 rounded-md border border-zinc-200 bg-white px-4 text-sm outline-none hover:bg-red-50 focus:border-[#c8102e] focus:ring-4 focus:ring-red-100'
+                    className='h-10 w-full rounded-md border border-zinc-200 bg-white px-4 text-sm outline-none hover:bg-red-50 focus:border-[#c8102e] focus:ring-4 focus:ring-red-100'
                 >
                     <option value="all">All Regions</option>
                     {regionOptions.map((region) => (
@@ -137,7 +137,7 @@ export function SchoolsTable({ schools }: SchoolsTableProps) {
                 <select 
                     value={selectedStatus}
                     onChange={(event) => setSelectedStatus(event.target.value)}
-                    className='h-10 rounded-md border border-zinc-200 bg-white px-4 text-sm capitalize outline-none hover:bg-red-50 focus:border-[#c8102e] focus:ring-4 focus:ring-red-100'
+                    className='h-10 w-full rounded-md border border-zinc-200 bg-white px-4 text-sm capitalize outline-none hover:bg-red-50 focus:border-[#c8102e] focus:ring-4 focus:ring-red-100'
                 >
                     <option value="all">All Statuses</option>
                     {statusOptions.map((status) => (
@@ -149,7 +149,7 @@ export function SchoolsTable({ schools }: SchoolsTableProps) {
                 <select 
                     value={selectedRpm}
                     onChange={(event) => setSelectedRpm(event.target.value)}
-                    className='h-10 rounded-md border border-zinc-200 bg-white px-4 text-sm outline-none hover:bg-red-50 focus:border-[#c8102e] focus:ring-4 focus:ring-red-100'
+                    className='h-10 w-full rounded-md border border-zinc-200 bg-white px-4 text-sm outline-none hover:bg-red-50 focus:border-[#c8102e] focus:ring-4 focus:ring-red-100'
                 >
                     <option value="all">All RPMs</option>
                     {rpmOptions.map((rpm) => (
@@ -161,7 +161,7 @@ export function SchoolsTable({ schools }: SchoolsTableProps) {
                 <select
                     value={selectedMouStatus}
                     onChange={(event) => setSelectedMouStatus(event.target.value)}
-                    className='h-10 rounded-md border border-zinc-200 bg-white px-4 text-sm capitalize outline-none hover:bg-red-50 focus:border-[#c8102e] focus:ring-4 focus:ring-red-100'
+                    className='h-10 w-full rounded-md border border-zinc-200 bg-white px-4 text-sm capitalize outline-none hover:bg-red-50 focus:border-[#c8102e] focus:ring-4 focus:ring-red-100'
                 >
                     <option value="all">All MOU</option>
                     {mouStatusOptions.map((mouStatus) => (
@@ -174,17 +174,10 @@ export function SchoolsTable({ schools }: SchoolsTableProps) {
                     type='button'
                     onClick={clearFilters}
                     disabled={!hasActiveFilters}
-                    className='h-10 rounded-md border border-zinc-200 px-4 text-sm font-medium text-zinc-700 hover:bg-red-50 hover:text-[#c8102e] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-white disabled:hover:text-zinc-700'
+                    className='h-10 w-full rounded-md border border-zinc-200 px-4 text-sm font-medium text-zinc-700 hover:bg-red-50 hover:text-[#c8102e] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-white disabled:hover:text-zinc-700'
                 >
                     Clear
                 </button>
-
-                <Link
-                    href='/schools/new'
-                    className='w-fit rounded-md bg-[#c8102e] px-4 py-2 text-sm font-semibold text-white hover:bg-[#a70d25]'
-                >
-                    Add School
-                </Link>
             </div>
 
             <div className='overflow-x-auto'>
