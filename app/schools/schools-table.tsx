@@ -23,16 +23,53 @@ type SchoolsTableProps = {
 
 export function SchoolsTable({ schools }: SchoolsTableProps) {
     const [search, setSearch] = useState("");
+    const [selectedState, setSelectedState] = useState("all");
+    const [selectedRegion, setSelectedRegion] = useState("all");
+    const [selectedStatus, setSelectedStatus] = useState("all");
+    const [selectedRpm, setSelectedRpm] = useState("all");
+    const [selectedMouStatus, setSelectedMouStatus] = useState("all");
+
+    const stateOptions = useMemo(() => {
+        return Array.from(new Set(schools.map((school) => school.state)))
+            .filter(Boolean)
+            .sort();
+    }, [schools]);
+
+    const regionOptions = ["North", "South", "East", "West", "Central", "N/A"];
+
+    const statusOptions = ["active", 'inactive', 'interested', 'pending'];
+
+    const rpmOptions = useMemo(() => {
+    return Array.from(new Set(schools.map((school) => school.rpm)))
+        .filter(Boolean)
+        .sort();
+        }, [schools]);
+    
+    const mouStatusOptions = ["signed", "pending", "not signed"];
+
+    const clearFilters = () => {
+        setSearch("");
+        setSelectedState("all");
+        setSelectedRegion("all");
+        setSelectedStatus("all");
+        setSelectedRpm("all");
+        setSelectedMouStatus("all");
+    };
+
+    const hasActiveFilters =
+        search.trim() !== "" ||
+        selectedState !== "all" ||
+        selectedRegion !== "all" ||
+        selectedStatus !== "all" ||
+        selectedRpm !== "all" ||
+        selectedMouStatus !== "all";
 
     const filteredSchools = useMemo(() => {
         const searchText = search.trim().toLowerCase();
 
-        if (!searchText) {
-            return schools;
-        }
-
         return schools.filter((school) => {
-            return (
+            const matchesSearch =
+                !searchText ||
                 school.name.toLowerCase().includes(searchText) ||
                 school.address?.toLowerCase().includes(searchText) ||
                 school.state.toLowerCase().includes(searchText) ||
@@ -40,10 +77,28 @@ export function SchoolsTable({ schools }: SchoolsTableProps) {
                 school.district.toLowerCase().includes(searchText) ||
                 school.rpm.toLowerCase().includes(searchText) ||
                 school.status.toLowerCase().includes(searchText) ||
-                school.mouStatus.toLowerCase().includes(searchText)
-            );
-        });
-    }, [schools, search]);
+                school.mouStatus.toLowerCase().includes(searchText);
+            
+            const matchesState =
+                selectedState === "all" || school.state === selectedState;
+            
+            const schoolRegion = school.region ?? "N/A";
+
+            const matchesRegion =
+                selectedRegion === "all" || schoolRegion === selectedRegion;
+            
+            const matchesStatus =
+                selectedStatus === "all" || school.status === selectedStatus;
+                
+            const matchesRpm =
+                selectedRpm === "all" || school.rpm === selectedRpm;
+            
+            const matchesMouStatus = 
+                selectedMouStatus === "all" || school.mouStatus === selectedMouStatus;
+
+            return matchesSearch && matchesState && matchesRegion && matchesStatus && matchesRpm && matchesMouStatus;
+        })
+    }, [schools, search, selectedState, selectedRegion, selectedStatus, selectedRpm, selectedMouStatus]);
 
     return (
         <>
@@ -55,23 +110,73 @@ export function SchoolsTable({ schools }: SchoolsTableProps) {
                     placeholder='Search schools...'
                 />
 
-                <button className='rounded-md border border-zinc-200 px-4 text-sm hover:bg-red-50 hover:text-[#c8102e]'>
-                    State
-                </button>
-                <button className='rounded-md border border-zinc-200 px-4 text-sm hover:bg-red-50 hover:text-[#c8102e]'>
-                    Region
-                </button>
-                <button className='rounded-md border border-zinc-200 px-4 text-sm hover:bg-red-50 hover:text-[#c8102e]'>
-                    Status
-                </button>
-                <button className='rounded-md border border-zinc-200 px-4 text-sm hover:bg-red-50 hover:text-[#c8102e]'>
-                    RPM
-                </button>
-                <button className='rounded-md border border-zinc-200 px-4 text-sm hover:bg-red-50 hover:text-[#c8102e]'>
-                    MOU Status
-                </button>
-                <button className='rounded-md border border-zinc-200 px-4 text-sm hover:bg-red-50 hover:text-[#c8102e]'>
-                    Filter
+                <select
+                    value={selectedState}
+                    onChange={(event) => setSelectedState(event.target.value)}
+                    className='h-10 rounded-md border border-zinc-200 bg-white px-4 text-sm outline-none hover:bg-red-50 focus:border-[#c8102e] focus:ring-4 focus:ring-red-100'
+                >
+                    <option value="all">All States</option>
+                    {stateOptions.map((state) => (
+                        <option key={state} value={state}>
+                            {state}
+                        </option>
+                    ))}
+                </select>
+                <select
+                    value={selectedRegion}
+                    onChange={(event) => setSelectedRegion(event.target.value)}
+                    className='h-10 rounded-md border border-zinc-200 bg-white px-4 text-sm outline-none hover:bg-red-50 focus:border-[#c8102e] focus:ring-4 focus:ring-red-100'
+                >
+                    <option value="all">All Regions</option>
+                    {regionOptions.map((region) => (
+                        <option key={region} value={region}>
+                            {region}
+                        </option>
+                    ))}
+                </select>
+                <select 
+                    value={selectedStatus}
+                    onChange={(event) => setSelectedStatus(event.target.value)}
+                    className='h-10 rounded-md border border-zinc-200 bg-white px-4 text-sm capitalize outline-none hover:bg-red-50 focus:border-[#c8102e] focus:ring-4 focus:ring-red-100'
+                >
+                    <option value="all">All Statuses</option>
+                    {statusOptions.map((status) => (
+                        <option key={status} value={status}>
+                            {status}
+                        </option>
+                    ))}
+                </select>
+                <select 
+                    value={selectedRpm}
+                    onChange={(event) => setSelectedRpm(event.target.value)}
+                    className='h-10 rounded-md border border-zinc-200 bg-white px-4 text-sm outline-none hover:bg-red-50 focus:border-[#c8102e] focus:ring-4 focus:ring-red-100'
+                >
+                    <option value="all">All RPMs</option>
+                    {rpmOptions.map((rpm) => (
+                        <option key={rpm} value={rpm}>
+                            {rpm}
+                        </option>
+                    ))}
+                </select>
+                <select
+                    value={selectedMouStatus}
+                    onChange={(event) => setSelectedMouStatus(event.target.value)}
+                    className='h-10 rounded-md border border-zinc-200 bg-white px-4 text-sm capitalize outline-none hover:bg-red-50 focus:border-[#c8102e] focus:ring-4 focus:ring-red-100'
+                >
+                    <option value="all">All MOU</option>
+                    {mouStatusOptions.map((mouStatus) => (
+                        <option key={mouStatus} value={mouStatus}>
+                            {mouStatus}
+                        </option>
+                    ))}
+                </select>
+                <button 
+                    type='button'
+                    onClick={clearFilters}
+                    disabled={!hasActiveFilters}
+                    className='h-10 rounded-md border border-zinc-200 px-4 text-sm font-medium text-zinc-700 hover:bg-red-50 hover:text-[#c8102e] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-white disabled:hover:text-zinc-700'
+                >
+                    Clear
                 </button>
 
                 <Link
