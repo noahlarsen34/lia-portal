@@ -181,9 +181,10 @@ export function SchoolsTable({ schools }: SchoolsTableProps) {
             </div>
 
             <div className='overflow-x-auto'>
-                <table className='w-full min-w-[1180px] border-collapse text-left text-sm'>
+                <table className='w-full min-w-[1320px] border-collapse text-left text-sm'>
                     <thead>
                         <tr className='border-b border-zinc-200 text-xs uppercase tracking-wide text-zinc-500'>
+                            <th className='w-12 px-4 py-3'>#</th>
                             <th className='w-56 px-4 py-3'>School Name</th>
                             <th className='px-4 py-3'>Year Started LIA</th>
                             <th className='px-4 py-3'>Address</th>
@@ -198,11 +199,14 @@ export function SchoolsTable({ schools }: SchoolsTableProps) {
                     </thead>
 
                     <tbody>
-                        {filteredSchools.map((school) => (
+                        {filteredSchools.map((school, index) => (
                             <tr
                                 key={school.id}
                                 className="border-b border-zinc-100 hover:bg-red-50/60"
                             >
+                                <td className='px-4 py-5 text-sm font-semibold text-zinc-400'>
+                                    {index + 1}
+                                </td>
                                 <td className='px-4 py-5 font-semibold'>
                                     <Link
                                         href={`/schools/${school.id}`}
@@ -218,13 +222,25 @@ export function SchoolsTable({ schools }: SchoolsTableProps) {
                                 <td className='px-4 py-5'>{school.district}</td>
                                 <td className='px-4 py-5'>{school.rpm}</td>
                                 <td className='px-4 py-5'>
-                                    <span className='whitespace-nowrap rounded-full bg-green-50 px-2 py-1 text-xs font-semibold capitalize text-green-700'>
+                                    <span
+                                        className={
+                                            school.status === "active"
+                                                ? "whitespace-nowrap rounded-full bg-green-50 px-2 py-1 text-xs font-semibold capitalize text-green-700"
+                                                : "whitespace-nowrap rounded-full bg-red-50 px-2 py-1 text-xs font-semibold capitalize text-[#c8102e]"
+                                        }
+                                    >
                                         {school.status}
                                     </span>
                                 </td>
 
                                 <td className='px-4 py-5'>
-                                    <span className='whitespace-nowrap rounded-full bg-red-50 px-2 py-1 text-xs font-semibold capitalize text-[#c8102e]'>
+                                    <span
+                                        className={
+                                            school.mouStatus === "signed"
+                                                ? "whitespace-nowrap rounded-full bg-green-50 px-2 py-1 text-xs font-semibold capitalize text-green-700"
+                                                : "whitespace-nowrap rounded-full bg-red-50 px-2 py-1 text-xs font-semibold capitalize text-[#c8102e]"
+                                        }
+                                    >
                                         {school.mouStatus}
                                     </span>
                                 </td>

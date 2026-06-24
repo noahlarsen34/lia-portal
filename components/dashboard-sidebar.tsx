@@ -10,8 +10,8 @@ const sharedLinks = [
 const adminLinks = [
     { href: '/districts', label: "Districts" },
     { href: "#", label: "Activity Log" },
-    { href: "#", label: "Contacts" },
-    { href: "#", label: "Teachers" },
+    { href: "/contacts", label: "Contacts" },
+    { href: "/teachers", label: "Teachers" },
     { href: "#", label: "Documents" },
     { href: "#", label: "Reports" },
     { href: "/users", label: "Users" },
@@ -20,8 +20,8 @@ const adminLinks = [
 
 const rpmLinks = [
     { href: "#", label: "Activity Log" },
-    { href: "#", label: "Contacts" },
-    { href: "#", label: "Teachers" },
+    { href: "/contacts", label: "Contacts" },
+    { href: "/teachers", label: "Teachers" },
 ];
 
 
