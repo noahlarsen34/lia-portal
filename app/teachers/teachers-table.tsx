@@ -223,18 +223,34 @@ export function TeachersTable({ teachers, userRole }: TeacherTableProps) {
                     disabled={isExporting || filteredTeachers.length === 0}
                     className="h-10 rounded-md bg-[#c8102e] px-4 text-sm font-semibold text-white hover:bg-[#a70d25] disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                    {isExporting ? "Exporting..." : "Export Google Sheet"}
+                    {isExporting ? "Exporting..." : "Google Sheet"}
                 </button>
                 </div>
 
                 {exportUrl ? (
-                <p className="mb-4 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
-                    Teacher export created.{" "}
-                    <a className="font-semibold underline" href={exportUrl} target="_blank">
-                    Open Google Sheet
-                    </a>
-                </p>
-                ) : null}
+                    <div className='mb-4 flex items-center justify-between gap-4 rounded-md border border-gree-200 bg-green-50 px-4 py-3 text-sm text-green-700'>
+                        <p>
+                            Google Sheet created.{" "}
+                            <a
+                                href={exportUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="font-semibold underline"
+                            >
+                                Open export
+                            </a>
+                        </p>
+
+                        <button
+                            type="button"
+                            onClick={() => {setExportUrl(""); setExportError("");}}
+                            className="rounded-md px-2 py-1 text-sm font-bold text-green-700 hover:bg-green-100"
+                            aria-label="Dismiss export confirmation"
+                        >
+                            ×
+                        </button>
+                    </div>
+                ) : null }
 
                 {exportError ? (
                 <p className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">

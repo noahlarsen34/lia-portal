@@ -124,7 +124,7 @@ export async function exportTeachersToGoogleSheet(teachers: TeacherExporRow[]) {
 
     await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: "Teacher!A1",
+        range: "Teachers!A1",
         valueInputOption: "RAW",
         requestBody: {
             values: [headers, ...rows],

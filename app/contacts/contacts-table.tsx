@@ -263,7 +263,8 @@ export function ContactsTable({ contacts, userRole }: ContactsTableProps) {
             </div>
 
             {exportUrl ? (
-                <div className="mb-4 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+                <div className="mb-4 flex items-center justify-between gap-4 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+                    <p>
                     Google Sheet created.{" "}
                     <a
                         href={exportUrl}
@@ -273,8 +274,18 @@ export function ContactsTable({ contacts, userRole }: ContactsTableProps) {
                     >
                         Open export
                     </a>
+                    </p>
+
+                    <button
+                    type="button"
+                    onClick={() => {setExportUrl(""); setExportError("")}}
+                    className="rounded-md px-2 py-1 text-sm font-bold text-green-700 hover:bg-green-100"
+                    aria-label="Dismiss export confirmation"
+                    >
+                    ×
+                    </button>
                 </div>
-            ) : null}
+                ) : null}
 
             {exportError ? (
                 <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
