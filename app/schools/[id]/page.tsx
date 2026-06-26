@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import { createClient as createSupabaseAdminClient } from '@supabase/supabase-js';
 import { DashboardSidebar } from '@/components/dashboard-sidebar';
 import { createClient } from '@/utils/supabase/server';
 import { Eye } from 'lucide-react';
@@ -102,7 +103,38 @@ export default async function SchoolProfilePage({
     const contactRows = contacts ?? [];
     const teacherRows = teachers ?? [];
     const activityRows = activites ?? [];
-    const documentRows = documents ?? [];
+    const supabaseAdmin = createSupabaseAdminClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        {
+            auth: {
+                autoRefreshToken: false,
+                persistSession: false,
+            },
+        },
+    );
+
+    const documentRows = await Promise.all(
+        (documents ?? []).map(async (document) => {
+            if (!document.file_url) {
+                return {
+                    ...document,
+                    signedUrl: null,
+                    signedUrlError: "Missing file path",
+                };
+            }
+
+            const { data, error } = await supabaseAdmin.storage
+                .from("school-documents")
+                .createSignedUrl(document.file_url, 60 * 10);
+            
+            return {
+                ...document,
+                signedUrl: data?.signedUrl ?? null,
+                signedUrlError: error?.message ?? null,
+            };
+        })
+    );
 
     return (
         <main className='min-h-screen bg-[#f8f4f4] text-zinc-950'>
@@ -440,9 +472,11 @@ export default async function SchoolProfilePage({
                 <div className='rounded-lg border border-red-100 bg-white p-5 shadow-sm'>
                     <div className='mb-4 flex items-center justify-between'>
                         <h2 className='text-lg font-semibold'>Documents</h2>
-                        <button className='text-sm font-semibold text-[#c8102e]'>
+                        <Link 
+                            href={`/schools/${school.id}/documents/new`}
+                            className='text-sm font-semibold text-[#c8102e]'>
                             Upload
-                        </button>
+                        </Link>
                     </div>
 
                     <div className='space-y-3'>
@@ -459,21 +493,54 @@ export default async function SchoolProfilePage({
                                 className="rounded-md border border-zinc-100 bg-zinc-50 p-3"
                                 >
                                 <div className="flex items-start justify-between gap-3">
-                                    <div>
-                                    <p className="font-semibold">{document.name}</p>
+                                    <div className="min-w-0">
+                                    {document.signedUrl ? (
+                                        <a
+                                            href={document.signedUrl}
+                                            target='_blank'
+                                            rel="noreferrer"
+                                            className='break-words font-semibold text-zinc-950 hover:text-[#c8102e] hover:underline [overflow-wrap:anywhere]'
+                                        >
+                                            {document.name}
+                                        </a>
+                                    ) : (
+                                        <p className='break-words font-semibold text-zinc-950 [overflow-wrap:anywhere]'>
+                                            {document.name}
+                                        </p>
+                                    )}
                                     <p className="text-sm text-zinc-500">{document.document_type}</p>
                                     </div>
 
-                                    <form action={deleteDocumentForSchool}>
-                                    {isAdmin ? (
-                                        <button
-                                        type="submit"
-                                        className="text-xs font-semibold text-zinc-400 hover:text-[#c8102e]"
-                                    >
-                                        Delete
-                                    </button>
-                                    ) : null}
-                                    </form>
+                                    <div className="flex shrink-0 items-center gap-3">
+                                        {document.signedUrl ? (
+                                            <a
+                                                href={document.signedUrl}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="inline-flex h-6 items-center text-xs font-semibold text-zinc-400 hover:text-[#c8102e]"
+                                            >
+                                                Open
+                                            </a>
+                                        ) : (
+                                            <span
+                                                className="text-xs font-semibold text-zinc-300"
+                                                title={document.signedUrlError ?? "Document preview link unavailable"}
+                                            >
+                                                Unavailable
+                                            </span>
+                                        )}
+
+                                        <form action={deleteDocumentForSchool} className="flex">
+                                        {isAdmin ? (
+                                            <button
+                                            type="submit"
+                                            className="inline-flex h-6 items-center text-xs font-semibold text-zinc-400 hover:text-[#c8102e]"
+                                        >
+                                            Delete
+                                        </button>
+                                        ) : null}
+                                        </form>
+                                    </div>
                                 </div>
                                 </div>
                             );
