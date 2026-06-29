@@ -70,8 +70,8 @@ export default async function SchoolsPage() {
         <main className='min-h-screen bg-[#f8f4f4] text-zinc-950'>
             <DashboardSidebar />
 
-            <section className='ml-64 min-h-screen px-8 py-6'>
-              <div className='mx-auto max-w-7xl'>
+            <section className='min-h-screen px-4 py-6 sm:px-6 lg:ml-64 lg:px-8'>
+              <div className='mx-auto w-full max-w-7xl'>
                 <header className='mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
                     <div>
                         <p className='text-sm font-medium uppercase tracking-wide text-[#c8102e]'>
@@ -84,13 +84,12 @@ export default async function SchoolsPage() {
                     </div>
                     <Link
                         href='/schools/new'
-                        className='flex h-10 w-fit items-center justify-center rounded-md bg-[#c8102e] px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#a70d25]'
-                    >
+                        className='flex h-10 w-full items-center justify-center rounded-md bg-[#c8102e] px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#a70d25] sm:w-fit'                    >
                         Add School
                     </Link>
                 </header>
                 
-                <section className='rounded-lg border border-red-100 bg-white p-6 shadow-sm'>
+                <section className='overflow-hidden rounded-lg border border-red-100 bg-white p-4 shadow-sm sm:p-6'>
                     <SchoolsTable schools={schoolRows} />
 
                     {schoolsError ? (

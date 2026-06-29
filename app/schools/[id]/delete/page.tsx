@@ -33,7 +33,7 @@ export default async function DeleteSchoolPage({
         <main className='min-h-screen bg-[#f8f4f4] text-zinc-950'>
             <DashboardSidebar />
 
-            <section className='ml-64 min-h-screen px-8 py-6'>
+            <section className='min-h-screen px-4 py-6 sm:px-6 lg:ml-64 lg:px-8'>
                 <div className='mx-auto max-w-2xl'>
                     <Link
                         href={`/schools/${school.id}`}
@@ -42,12 +42,12 @@ export default async function DeleteSchoolPage({
                         Back to {school.name}
                     </Link>
 
-                    <section className='mt-5 rounded-lg border border-red-200 bg-white p-6 shadow-sm'>
+                    <section className='mt-5 rounded-lg border border-red-200 bg-white p-4 shadow-sm sm:p-6'>
                         <p className='text-sm font-medium uppercase tracking-wide text-[#c8102e]'>
                             Delete School
                         </p>
 
-                        <h1 className='mt-2 text-3xl font-semibold'>
+                        <h1 className='mt-2 break-words text-2xl font-semibold [overflow-wrap:anywhere] sm:text-3xl'>
                             Delete {school.name}?
                         </h1>
 
@@ -59,17 +59,17 @@ export default async function DeleteSchoolPage({
                             This action cannot be undone
                         </div>
 
-                        <div className='mt-6 flex flex-wrap items-center justify-end gap-2 border-t border-zinc-100 pt-5'>
+                        <div className='mt-6 flex flex-col-reverse gap-3 border-t border-zinc-100 pt-5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end'>
                             <Link
                                 href={`/schools/${school.id}`}
-                                className='inline-flex h-10 items-center justify-center rounded-md border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-700 hover:bg-red-50 hover:text-[#c8102e]'
+                                className='inline-flex h-10 w-full items-center justify-center rounded-md border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-700 hover:bg-red-50 hover:text-[#c8102e] sm:w-auto'
                             >
                                 Cancel
                             </Link>
-                            <form action={deleteSchoolById}>
+                            <form action={deleteSchoolById} className='w-full sm:w-auto'>
                                 <button
                                     type="submit"
-                                    className='inline-flex h-10 items-center justify-center rounded-md bg-[#c8102e] px-4 text-sm font-semibold text-white hover:bg-[#a70d25]'
+                                    className='inline-flex h-10 w-full items-center justify-center rounded-md bg-[#c8102e] px-4 text-sm font-semibold text-white hover:bg-[#a70d25] sm:w-auto'
                                 >
                                     Delete School
                                 </button>

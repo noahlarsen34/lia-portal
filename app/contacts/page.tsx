@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { createClient } from "@/utils/supabase/server";
 import { ContactsTable } from "./contacts-table";
+import Link from "next/link";
 
 export default async function ContactsPage() {
     const supabase = await createClient();
@@ -62,7 +63,9 @@ export default async function ContactsPage() {
 
     const contactRows =
         contacts?.map((contact) => {
-            const school = schoolsById.get(contact.school_id);
+            const school = contact.school_id
+                ? schoolsById.get(contact.school_id)
+                : null;
 
             const displayName =
                 `${contact.first_name ?? ""} ${contact.last_name ?? ""}`.trim() ||
@@ -71,7 +74,7 @@ export default async function ContactsPage() {
 
             return {
                 id: contact.id,
-                schoolId: contact.school_id,
+                schoolId: contact.school_id ?? null,
                 name: displayName,
                 firstName: contact.first_name ?? "",
                 lastName: contact.last_name ?? "",
@@ -80,14 +83,14 @@ export default async function ContactsPage() {
                 phone: contact.phone ?? "N/A",
                 status: contact.status,
                 notes: contact.notes ?? "",
-                schoolName: school?.name ?? "N/A",
+                schoolName: school?.name ?? "General Contact",
                 state: school?.state ?? "N/A",
                 district: school?.district_id
                     ? districtsById.get(school.district_id) ?? "N/A"
                     : "N/A",
                 rpm: school?.assigned_rpm_id
                     ? profilesById.get(school.assigned_rpm_id) ?? "Unassigned"
-                    : "Unassigned",
+                    : "N/A",
             };
         }) ?? [];
 
@@ -95,19 +98,30 @@ export default async function ContactsPage() {
         <main className="min-h-screen bg-[#f8f4f4] text-zinc-950">
             <DashboardSidebar />
 
-            <section className="ml-64 min-h-screen px-8 py-6">
-                <div className="mx-auto max-w-7xl">
-                    <header className="mb-8">
-                        <p className="text-sm font-medium uppercase tracking-wide text-[#c8102e]">
-                            Contacts Database
-                        </p>
-                        <h1 className="mt-2 text-3xl font-semibold">Contacts</h1>
-                        <p className="mt-1 text-sm text-zinc-600">
-                            View and search contact records across all accessible schools.
-                        </p>
+            <section className="min-h-screen px-4 py-6 sm:px-6 lg:ml-64 lg:px-8">
+                <div className="mx-auto w-full max-w-7xl">
+                    <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                            <p className="text-sm font-medium uppercase tracking-wide text-[#c8102e]">
+                                Contacts Database
+                            </p>
+                            <h1 className="mt-2 text-3xl font-semibold">Contacts</h1>
+                            <p className="mt-1 text-sm text-zinc-600">
+                                View and search contact records across all accessible schools.
+                            </p>
+                        </div>
+
+                        {profile?.role === "admin" ? (
+                            <Link
+                                href="/contacts/new"
+                                className="inline-flex h-10 w-full items-center justify-center rounded-md bg-[#c8102e] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#a70d25] sm:w-fit"
+                            >
+                                Add Contact
+                            </Link>
+                        ) : null}
                     </header>
 
-                    <section className="rounded-lg border border-red-100 bg-white p-6 shadow-sm">
+                    <section className="overflow-hidden rounded-lg border border-red-100 bg-white p-4 shadow-sm sm:p-6">
                         <ContactsTable
                             contacts={contactRows}
                             userRole={profile?.role ?? "rpm"}

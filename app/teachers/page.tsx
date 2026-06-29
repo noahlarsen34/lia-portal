@@ -97,8 +97,8 @@ export default async function TeachersPage() {
         <main className='min-h-screen bg-[#f8f4f4] text-zinc-950'>
             <DashboardSidebar />
 
-            <section className='ml-64 min-h-screen px-8 py-6'>
-                <div className='mx-auto max-w-7xl'>
+            <section className='min-h-screen px-4 py-6 sm:px-6 lg:ml-64 lg:px-8'>
+                <div className='mx-auto w-full max-w-7xl'>
                     <header className='mb-8'>
                         <p className='text-sm font-medium uppercase tracking-wide text-[#c8102e]'>
                             Teachers Database
@@ -109,7 +109,7 @@ export default async function TeachersPage() {
                         </p>
                     </header>
 
-                    <section className='rounded-lg border border-red-100 bg-white p-6 shadow-sm'>
+                    <section className='overflow-hidden rounded-lg border border-red-100 bg-white p-4 shadow-sm sm:p-6'>
                         <TeachersTable
                             teachers={teacherRows}
                             userRole={profile?.role ?? "rpm"}

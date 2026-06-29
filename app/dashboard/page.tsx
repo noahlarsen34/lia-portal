@@ -188,8 +188,8 @@ export default async function DashboardPage() {
     <main className="min-h-screen bg-[#f8f4f4] text-zinc-950">
       <DashboardSidebar />
 
-      <section className="ml-64 min-h-screen px-8 py-6">
-        <header className="mb-6 flex items-center justify-between">
+      <section className="min-h-screen px-4 py-6 sm:px-6 lg:ml-64 lg:px-8">
+        <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-3xl font-semibold">
               Welcome back, {displayName}
@@ -199,9 +199,9 @@ export default async function DashboardPage() {
             </p>
           </div>
 
-          <form action={signOut}>
+          <form action={signOut} className="w-full sm:w-auto">
             <button
-              className="rounded-md border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-red-50 hover:text-[#c8102e]"
+              className="w-full rounded-md border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-red-50 hover:text-[#c8102e] sm:w-auto"
               type="submit"
             >
               Sign Out
@@ -209,7 +209,7 @@ export default async function DashboardPage() {
           </form>
         </header>
 
-        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
           {dashboardStats.map((stat) =>(
             <div
               key={stat.label}

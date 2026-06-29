@@ -65,7 +65,7 @@ export default async function EditSchoolPage({
     <main className="min-h-screen bg-[#f8f4f4] text-zinc-950">
       <DashboardSidebar />
 
-      <section className="ml-64 min-h-screen px-8 py-6">
+      <section className="min-h-screen px-4 py-6 sm:px-6 lg:ml-64 lg:px-8">
         <div className="mx-auto max-w-5xl">
           <Link
             href={`/schools/${school.id}`}

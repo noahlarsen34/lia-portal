@@ -52,7 +52,7 @@ export function AssignSchoolForm({
           Assign School
         </label>
 
-        <div className="mt-2 flex gap-2">
+        <div className="mt-2 flex flex-col gap-2 sm:flex-row">
           <input
             value={search}
             onChange={(event) => {
@@ -66,7 +66,7 @@ export function AssignSchoolForm({
           <button
             type="submit"
             disabled={!selectedSchoolId}
-            className="h-10 shrink-0 rounded-md bg-[#c8102e] px-4 text-sm font-semibold text-white hover:bg-[#a70d25] disabled:cursor-not-allowed disabled:bg-zinc-300"
+            className="h-10 w-full shrink-0 rounded-md bg-[#c8102e] px-4 text-sm font-semibold text-white hover:bg-[#a70d25] disabled:cursor-not-allowed disabled:bg-zinc-300 sm:w-auto"
           >
             Assign
           </button>
@@ -84,7 +84,7 @@ export function AssignSchoolForm({
                 }}
                 className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm text-zinc-700 hover:bg-red-50 hover:text-[#c8102e]"
               >
-                <span className="font-medium">{school.name}</span>
+                <span className="min-w-0 break-words font-medium [overflow-wrap:anywhere]">{school.name}</span>
                 <span className="shrink-0 text-xs text-zinc-500">
                   {school.state ?? "N/A"}
                 </span>

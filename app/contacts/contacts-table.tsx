@@ -6,7 +6,7 @@ import { exportContactsToGoogleSheet } from "./export-actions";
 
 type ContactRow = {
     id: string;
-    schoolId: string;
+    schoolId: string | null;
     name: string;
     firstName: string;
     lastName: string;
@@ -31,12 +31,13 @@ export function ContactsTable({ contacts, userRole }: ContactsTableProps) {
     const [selectedStatus, setSelectedStatus] = useState("all");
     const [selectedState, setSelectedState] = useState("all");
     const [selectedRpm, setSelectedRpm] = useState("all");
+    const [selectedRole, setSelectedRole] = useState("all");
     const [isExporting, setIsExporting] = useState(false);
     const [exportUrl, setExportUrl] = useState("");
     const [exportError, setExportError] = useState("");
 
     const isAdmin = userRole === "admin";
-    const statusOptions = ['active', 'inactive'];
+    const statusOptions = ["active", "inactive"];
 
     const stateOptions = useMemo(() => {
         return Array.from(new Set(contacts.map((contact) => contact.state)))
@@ -44,37 +45,33 @@ export function ContactsTable({ contacts, userRole }: ContactsTableProps) {
             .sort();
     }, [contacts]);
 
+    const roleOptions = useMemo(() => {
+        return Array.from(new Set(contacts.map((contact) => contact.role)))
+            .filter(Boolean)
+            .sort();
+    }, [contacts]);
+
     const rpmOptions = useMemo(() => {
         return Array.from(new Set(contacts.map((contact) => contact.rpm)))
-            .filter(Boolean)
+            .filter((rpm) => rpm && rpm !== "N/A")
             .sort();
     }, [contacts]);
 
     const clearFilters = () => {
         setSearch("");
         setSelectedStatus("all");
+        setSelectedRole("all");
         setSelectedState("all");
         setSelectedRpm("all");
+        setExportError("");
     };
 
-    const hasActiveFilters = 
+    const hasActiveFilters =
         search.trim() !== "" ||
         selectedStatus !== "all" ||
+        selectedRole !== "all" ||
         selectedState !== "all" ||
         (isAdmin && selectedRpm !== "all");
-
-    const escapeCsvValue = (value: string) => {
-        const safeValue = value ?? "";
-
-        if (
-            safeValue.includes(",") ||
-            safeValue.includes('"') ||
-            safeValue.includes("\n")
-        ) {
-            return `"${safeValue.replaceAll('"', '""')}"`;
-        }
-        return safeValue;
-    };
 
     const filteredContacts = useMemo(() => {
         const searchText = search.trim().toLowerCase();
@@ -92,73 +89,22 @@ export function ContactsTable({ contacts, userRole }: ContactsTableProps) {
                 contact.state.toLowerCase().includes(searchText) ||
                 contact.district.toLowerCase().includes(searchText) ||
                 contact.rpm.toLowerCase().includes(searchText);
-            
+
             const matchesStatus =
                 selectedStatus === "all" || contact.status === selectedStatus;
-            
+
             const matchesState =
                 selectedState === "all" || contact.state === selectedState;
+            
+            const matchesRole = 
+                selectedRole === "all" || contact.role === selectedRole;
 
             const matchesRpm =
                 !isAdmin || selectedRpm === "all" || contact.rpm === selectedRpm;
-            
-            return matchesSearch && matchesStatus && matchesState && matchesRpm;
+
+            return matchesSearch && matchesStatus && matchesRole && matchesState && matchesRpm;
         });
-    }, [contacts, search, selectedStatus, selectedState, selectedRpm, isAdmin]);
-
-    const exportContactsCsv = () => {
-        const headers = [
-            "First Name",
-            "Last Name",
-            "Full Name",
-            "Role",
-            "Email",
-            "Phone",
-            "Status",
-            "School",
-            "State",
-            "District",
-            "Assigned RPM",
-            "Notes",
-        ];
-
-        const rows = filteredContacts.map((contact) => [
-            contact.firstName,
-            contact.lastName,
-            contact.name,
-            contact.role,
-            contact.email,
-            contact.phone,
-            contact.status,
-            contact.schoolName,
-            contact.state,
-            contact.district,
-            contact.rpm,
-            contact.notes,
-        ]);
-
-        const csvContent = [headers, ...rows]
-            .map((row) => row.map(escapeCsvValue).join(","))
-            .join("\n");
-        
-        const blob = new Blob([csvContent], {
-            type: "text/csv;charset=utf-8;",
-        });
-
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-
-        link.href = url;
-        link.download = `lia-contacts-export-${new Date()
-            .toISOString()
-            .slice(0, 10)}.csv`;
-        
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-
-        URL.revokeObjectURL(url);
-    };
+    }, [contacts, search, selectedStatus, selectedRole, selectedState, selectedRpm, isAdmin]);
 
     const exportContactsGoogleSheet = async () => {
         setIsExporting(true);
@@ -185,8 +131,8 @@ export function ContactsTable({ contacts, userRole }: ContactsTableProps) {
             <div
                 className={
                     isAdmin
-                        ? "mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(220px,1fr)_150px_150px_180px_90px]"
-                        : "mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(220px,1fr)_150px_150px_90px]"
+                        ? "mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(220px,1fr)_150px_170px_150px_180px_90px]"
+                        : "mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(220px,1fr)_150px_170px_150px_90px]"
                 }
             >
                 <input
@@ -209,6 +155,18 @@ export function ContactsTable({ contacts, userRole }: ContactsTableProps) {
                     ))}
                 </select>
 
+                <select
+                    value={selectedRole}
+                    onChange={(event) => setSelectedRole(event.target.value)}
+                    className="h-10 w-full rounded-md border border-zinc-200 bg-white px-4 text-sm outline-none hover:bg-red-50 focus:border-[#c8102e] focus:ring-4 focus:ring-red-100"
+                >
+                    <option value="all">All Roles</option>
+                    {roleOptions.map((role) => (
+                        <option key={role} value={role}>
+                            {role}
+                        </option>
+                    ))}
+                </select>
                 <select
                     value={selectedState}
                     onChange={(event) => setSelectedState(event.target.value)}
@@ -256,7 +214,7 @@ export function ContactsTable({ contacts, userRole }: ContactsTableProps) {
                     type="button"
                     onClick={exportContactsGoogleSheet}
                     disabled={filteredContacts.length === 0 || isExporting}
-                    className="h-10 rounded-md bg-[#c8102e] px-4 text-sm font-semibold text-white hover:bg-[#a70d25] disabled:cursor-not-allowed disabled:opacity-50"
+                    className="h-10 w-full rounded-md bg-[#c8102e] px-4 text-sm font-semibold text-white hover:bg-[#a70d25] disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                 >
                     {isExporting ? "Exporting..." : "Google Sheet"}
                 </button>
@@ -265,27 +223,30 @@ export function ContactsTable({ contacts, userRole }: ContactsTableProps) {
             {exportUrl ? (
                 <div className="mb-4 flex items-center justify-between gap-4 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
                     <p>
-                    Google Sheet created.{" "}
-                    <a
-                        href={exportUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="font-semibold underline"
-                    >
-                        Open export
-                    </a>
+                        Google Sheet created.{" "}
+                        <a
+                            href={exportUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="font-semibold underline"
+                        >
+                            Open export
+                        </a>
                     </p>
 
                     <button
-                    type="button"
-                    onClick={() => {setExportUrl(""); setExportError("")}}
-                    className="rounded-md px-2 py-1 text-sm font-bold text-green-700 hover:bg-green-100"
-                    aria-label="Dismiss export confirmation"
+                        type="button"
+                        onClick={() => {
+                            setExportUrl("");
+                            setExportError("");
+                        }}
+                        className="rounded-md px-2 py-1 text-sm font-bold text-green-700 hover:bg-green-100"
+                        aria-label="Dismiss export confirmation"
                     >
-                    ×
+                        x
                     </button>
                 </div>
-                ) : null}
+            ) : null}
 
             {exportError ? (
                 <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -294,7 +255,7 @@ export function ContactsTable({ contacts, userRole }: ContactsTableProps) {
             ) : null}
 
             <div className="overflow-x-auto">
-                <table className="w-full min-w-[1320px] border-collapse text-left text-sm">
+                <table className="w-full min-w-[1460px] border-collapse text-left text-sm">
                     <thead>
                         <tr className="border-b border-zinc-200 text-xs uppercase tracking-wide text-zinc-500">
                             <th className="w-12 px-4 py-3">#</th>
@@ -307,6 +268,11 @@ export function ContactsTable({ contacts, userRole }: ContactsTableProps) {
                             <th className="w-28 px-4 py-3">State</th>
                             <th className="w-44 px-4 py-3">District</th>
                             <th className="w-40 px-4 py-3">Assigned RPM</th>
+                            {isAdmin ? (
+                                <th className="w-36 px-4 py-3 text-right">
+                                    Actions
+                                </th>
+                            ) : null}
                         </tr>
                     </thead>
 
@@ -319,20 +285,24 @@ export function ContactsTable({ contacts, userRole }: ContactsTableProps) {
                                 <td className="px-4 py-5 text-sm font-semibold text-zinc-400">
                                     {index + 1}
                                 </td>
-                                <td className="px-4 py-5 font-semibold">
-                                    <Link
-                                        href={`/schools/${contact.schoolId}/contacts/${contact.id}`}
-                                        className="text-zinc-950 hover:text-[#c8102e]"
-                                    >
-                                        {contact.name}
-                                    </Link>
+                                <td className="break-words px-4 py-5 font-semibold [overflow-wrap:anywhere]">
+                                    {contact.schoolId ? (
+                                        <Link
+                                            href={`/schools/${contact.schoolId}/contacts/${contact.id}`}
+                                            className="text-zinc-950 hover:text-[#c8102e]"
+                                        >
+                                            {contact.name}
+                                        </Link>
+                                    ) : (
+                                        <span>{contact.name}</span>
+                                    )}
                                 </td>
-                                <td className="px-4 py-5">{contact.role}</td>
+                                <td className="break-words px-4 py-5 [overflow-wrap:anywhere]">{contact.role}</td>
                                 <td className="break-words px-4 py-5 [overflow-wrap:anywhere]">
                                     {contact.email}
                                 </td>
                                 <td className="px-4 py-5">{contact.phone}</td>
-                                <td className="px-4 py-5">
+                                <td className="break-words px-4 py-5 [overflow-wrap:anywhere]">
                                     <span
                                         className={
                                             contact.status === "active"
@@ -344,16 +314,40 @@ export function ContactsTable({ contacts, userRole }: ContactsTableProps) {
                                     </span>
                                 </td>
                                 <td className="px-4 py-5">
-                                    <Link
-                                        href={`/schools/${contact.schoolId}`}
-                                        className="font-semibold text-zinc-950 hover:text-[#c8102e]"
-                                    >
-                                        {contact.schoolName}
-                                    </Link>
+                                    {contact.schoolId ? (
+                                        <Link
+                                            href={`/schools/${contact.schoolId}`}
+                                            className="font-semibold text-zinc-950 hover:text-[#c8102e]"
+                                        >
+                                            {contact.schoolName}
+                                        </Link>
+                                    ) : (
+                                        <span className="font-semibold text-zinc-700">
+                                            {contact.schoolName}
+                                        </span>
+                                    )}
                                 </td>
                                 <td className="px-4 py-5">{contact.state}</td>
-                                <td className="px-4 py-5">{contact.district}</td>
-                                <td className="px-4 py-5">{contact.rpm}</td>
+                                <td className="break-words px-4 py-5 [overflow-wrap:anywhere]">{contact.district}</td>
+                                <td className="break-words px-4 py-5 [overflow-wrap:anywhere]">{contact.rpm}</td>
+                                {isAdmin ? (
+                                    <td className="px-4 py-5">
+                                        <div className="flex justify-end gap-2">
+                                            <Link
+                                                href={`/contacts/${contact.id}/edit`}
+                                                className="inline-flex h-9 items-center rounded-md border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-700 hover:bg-red-50 hover:text-[#c8102e]"
+                                            >
+                                                Edit
+                                            </Link>
+                                            <Link
+                                                href={`/contacts/${contact.id}/delete`}
+                                                className="inline-flex h-9 items-center rounded-md border border-red-200 bg-white px-3 text-xs font-semibold text-[#c8102e] hover:bg-red-50"
+                                            >
+                                                Delete
+                                            </Link>
+                                        </div>
+                                    </td>
+                                ) : null}
                             </tr>
                         ))}
                     </tbody>

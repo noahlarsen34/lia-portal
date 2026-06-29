@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
+import { exportSchoolsToGoogleSheet } from './export-actions';
 
 type SchoolRow = {
     id: string;
@@ -28,6 +29,9 @@ export function SchoolsTable({ schools }: SchoolsTableProps) {
     const [selectedStatus, setSelectedStatus] = useState("all");
     const [selectedRpm, setSelectedRpm] = useState("all");
     const [selectedMouStatus, setSelectedMouStatus] = useState("all");
+    const [isExporting, setIsExporting] = useState(false);
+    const [exportUrl, setExportUrl] = useState("");
+    const [exportError, setExportError] = useState("");
 
     const stateOptions = useMemo(() => {
         return Array.from(new Set(schools.map((school) => school.state)))
@@ -54,6 +58,24 @@ export function SchoolsTable({ schools }: SchoolsTableProps) {
         setSelectedStatus("all");
         setSelectedRpm("all");
         setSelectedMouStatus("all");
+    };
+
+    const exportSchoolsGoogleSheet = async () => {
+        setIsExporting(true);
+        setExportUrl("");
+        setExportError("");
+
+        try {
+            const result = await exportSchoolsToGoogleSheet(filteredSchools);
+            setExportUrl(result.url);
+            window.open(result.url, "_blank", "noopener,noreferrer");
+        } catch (error) {
+            setExportError(
+                error instanceof Error ? error.message : "Could not export schools.",
+            );
+        } finally {
+            setIsExporting(false);
+        }
     };
 
     const hasActiveFilters =
@@ -179,6 +201,55 @@ export function SchoolsTable({ schools }: SchoolsTableProps) {
                     Clear
                 </button>
             </div>
+
+            <div className='mb-6 flex flex-col gap-3 border-t border-zinc-100 pt-4 sm:flex-row sm:items-center sm:justify-between'>
+                <p className='text-sm text-zinc-500'>
+                    Showing {filteredSchools.length} of {schools.length} school records
+                </p>
+
+                <button 
+                    type='button'
+                    onClick={exportSchoolsGoogleSheet}
+                    disabled={filteredSchools.length === 0 || isExporting}
+                    className='h-10 rounded-md bg-[#c8102e] px-5 text-sm font-semibold text-white transition hover:bg-[#a70d25] disabled:cursor-not-allowed disabled:opacity-50'
+                >
+                    {isExporting ? "Exporting..." : "Google Sheet"}
+                </button>
+            </div>
+
+            {exportUrl ? (
+                <div className='mb-4 flex items-center justify-between gap-4 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700'>
+                    <p>
+                        Google Sheet created.{" "}
+                        <a
+                            href={exportUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className='font-semibold underline'
+                        >
+                            Open export
+                        </a>
+                    </p>
+                    
+                    <button
+                        type='button'
+                        onClick={() => {
+                            setExportUrl("");
+                            setExportError("");
+                        }}
+                        className='rounded-md px-2 py-1 text-sm font-bold text-green-700 hover:bg-green-100'
+                        aria-label='Dismiss export confirmation'
+                    >
+                        x
+                    </button>
+                </div>
+            ) : null}
+
+            {exportError ? (
+                <div className='mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700'>
+                    {exportError}
+                </div>
+            ) : null}
 
             <div className='overflow-x-auto'>
                 <table className='w-full min-w-[1320px] border-collapse text-left text-sm'>

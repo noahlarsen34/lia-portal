@@ -46,10 +46,10 @@ export default async function TeacherPage({ params }: TeacherPageProps) {
         teacher.name
     
     return (
-        <main className='flex min-h-screen bg-[#f8f4f4] text-zinc-950'>
+        <main className='min-h-screen bg-[#f8f4f4] text-zinc-950'>
             <DashboardSidebar />
 
-            <section className='flex-1 px-8 py-8'>
+            <section className='min-h-screen px-4 py-6 sm:px-6 lg:ml-64 lg:px-8'>
                 <div className='mx-auto w-full max-w-3xl'>
                     <Link
                         href={`/schools/${school.id}`}
@@ -58,13 +58,13 @@ export default async function TeacherPage({ params }: TeacherPageProps) {
                         Back to {school.name}
                     </Link>
 
-                    <section className='mt-6 rounded-lg border border-red-100 bg-white p-8 shadow-sm'>
+                    <section className='mt-6 rounded-lg border border-red-100 bg-white p-4 shadow-sm sm:p-6'>
                         <p className='text-sm font-medium uppercase tracking-wide text-[#c8102e]'>
                             Teacher Profile
                         </p>
 
                         <div className='mt-3 flex flex-wrap items-center gap-3'>
-                            <h1 className='text-3xl font-semibold'>{displayName}</h1>
+                            <h1 className='break-words text-2xl font-semibold [overflow-wrap:anywhere] sm:text-3xl'>{displayName}</h1>
                             <span className='rounded-full bg-green-50 px-3 py-1 text-xs font-semibold capitalize text-green-700'>
                                 {teacher.status}
                             </span>
@@ -79,35 +79,35 @@ export default async function TeacherPage({ params }: TeacherPageProps) {
                         <div className='mt-8 grid gap-6 border-t border-zinc-100 pt-6 md:grid-cols-2'>
                             <div>
                                 <p className='text-sm uppercase text-zinc-500'>First Name</p>
-                                <p className='mt-1 font-semibold'>
+                                <p className='mt-1 break-words font-semibold [overflow-wrap:anywhere]'>
                                     {teacher.first_name || "N/A"}
                                 </p>
                             </div>
 
                             <div>
                                 <p className='text-sm uppercase text-zinc-500'>Last Name</p>
-                                <p className='mt-1 font-semibold'>
+                                <p className='mt-1 break-words font-semibold [overflow-wrap:anywhere]'>
                                     {teacher.last_name || "N/A"}
                                 </p>
                             </div>
 
                             <div>
                                 <p className='text-sm uppercase text-zinc-500'>Email</p>
-                                <p className='mt-1 font-semibold'>
+                                <p className='mt-1 break-words font-semibold [overflow-wrap:anywhere]'>
                                     {teacher.email || "N/A"}
                                 </p>
                             </div>
 
                             <div>
                                 <p className='text-sm uppercase text-zinc-500'>Phone</p>
-                                <p className='mt-1 font-semibold'>
+                                <p className='mt-1 break-words font-semibold [overflow-wrap:anywhere]'>
                                     {teacher.phone || "N/A"}
                                 </p>
                             </div>
 
                             <div>
                                 <p className='text-sm uppercase text-zinc-500'>Username</p>
-                                <p className='mt-1 font-semibold'>
+                                <p className='mt-1 break-words font-semibold [overflow-wrap:anywhere]'>
                                     {teacher.username || "N/A"}
                                 </p>
                             </div>
@@ -138,17 +138,17 @@ export default async function TeacherPage({ params }: TeacherPageProps) {
                             </div>
                         </div>
 
-                        <div className='mt-8 flex justify-end gap-3 border-t border-zinc-100 pt-6'>
+                        <div className='mt-8 flex flex-col-reverse gap-3 border-t border-zinc-100 pt-6 sm:flex-row sm:justify-end'>
                             <Link
                                 href={`/schools/${school.id}`}
-                                className='rounded-md border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-red-50'
+                                className='inline-flex h-10 w-full items-center justify-center rounded-md border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-700 hover:bg-red-50 sm:w-auto'
                             >
                                 Back
                             </Link>
 
                             <Link
                                 href={`/schools/${school.id}/teachers/${teacher.id}/edit`}
-                                className='rounded-md bg-[#c8102e] px-4 py-2 text-sm font-semibold text-white hover:bg-[#a70d25]'
+                                className='inline-flex h-10 w-full items-center justify-center rounded-md bg-[#c8102e] px-4 text-sm font-semibold text-white hover:bg-[#a70d25] sm:w-auto'
                             >
                                 Edit Teacher
                             </Link>

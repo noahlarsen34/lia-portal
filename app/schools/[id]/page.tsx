@@ -140,18 +140,18 @@ export default async function SchoolProfilePage({
         <main className='min-h-screen bg-[#f8f4f4] text-zinc-950'>
             <DashboardSidebar />
 
-            <section className='ml-64 min-h-screen px-8 py-6'>
+            <section className='min-h-screen px-4 py-6 sm:px-6 lg:ml-64 lg:px-8'>
                 <Link
                 href='/schools'
                 className='text-sm font-semibold text-[#c8102e] hover:text-[#a70d25]'
                 >
                     Back to Schools
                 </Link>
-                <header className='mt-5 rounded-lg border border-red-100 bg-white p-6 shadow-sm'>
+                <header className='mt-5 rounded-lg border border-red-100 bg-white p-4 shadow-sm sm:p-6'>
                     <div className='flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between'>
-                        <div>
-                            <div className='mb-3 flex items-center gap-3'>
-                                <h1 className='text-3xl font-semibold'>{school.name}</h1>
+                        <div className='min-w-0'>
+                            <div className='mb-3 flex flex-wrap items-center gap-3'>
+                                <h1 className='break-words text-2xl font-semibold [overflow-wrap:anywhere] sm:text-3xl'>{school.name}</h1>
                                 <span className='rounded-full bg-green-50 px-3 py-1 text-xs font-semibold text-green-700'>
                                     {school.status}
                                 </span>
@@ -162,10 +162,10 @@ export default async function SchoolProfilePage({
                             </p>
                         </div>
 
-                        <div className='flex flex-wrap items-center gap-2 sm:justify-end'>
+                        <div className='flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end'>
                             <Link
                             href={`/schools/${school.id}/edit`}
-                            className='inline-flex h-10 items-center justify-center rounded-md bg-[#c8102e] px-4 text-sm font-semibold text-white hover:bg-[#a70d25]'
+                            className='inline-flex h-10 w-full items-center justify-center rounded-md bg-[#c8102e] px-4 text-sm font-semibold text-white hover:bg-[#a70d25] sm:w-auto'
                             >
                                 Edit School
                             </Link>
@@ -173,7 +173,7 @@ export default async function SchoolProfilePage({
                             {isAdmin ? (
                                 <Link
                                 href={`/schools/${school.id}/delete`}
-                                className='inline-flex h-10 items-center justify-center rounded-md border border-red-200 bg-white px-4 text-sm font-semibold text-[#c8102e] hover:bg-red-50'
+                                className='inline-flex h-10 w-full items-center justify-center rounded-md border border-red-200 bg-white px-4 text-sm font-semibold text-[#c8102e] hover:bg-red-50 sm:w-auto'
                             >
                                 Delete School
                             </Link>
@@ -210,14 +210,14 @@ export default async function SchoolProfilePage({
                 </header>
 
                 <section className='mt-5 grid gap-5 lg:grid-cols-3'>
-                    <div className='min-h-48 rounded-lg border border-red-100 bg-white p-6 shadow-sm lg:col-span-2'>
+                    <div className='min-h-48 rounded-lg border border-red-100 bg-white p-4 shadow-sm sm:p-6 lg:col-span-2'>
                         <h2 className='text-lg font-semibold'>Profile Notes</h2>
-                        <p className='mt-3 text-sm text-zinc-600'>
+                        <p className='mt-3 break-words text-sm text-zinc-600 [overflow-wrap:anywhere]'>
                             {school.notes ?? "No notes yet."}
                         </p>
                     </div>
 
-                    <div className='min-h-48 rounded-lg border border-red-100 bg-white p-6 shadow-sm'>
+                    <div className='min-h-48 rounded-lg border border-red-100 bg-white p-4 shadow-sm sm:p-6'>
                         <h2 className='text-lg font-semibold'>School Snapshot</h2>
                         <div className='mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-1'>
                             <div>
@@ -237,8 +237,8 @@ export default async function SchoolProfilePage({
                 </section>
 
                 <section className='mt-5 grid gap-5 lg:grid-cols-4'>
-                    <div className='rounded-lg border border-red-100 bg-white p-5 shadow-sm'>
-                        <div className="mb-4 flex items-center justify-between">
+                    <div className='min-w-0 rounded-lg border border-red-100 bg-white p-4 shadow-sm sm:p-5'>
+                        <div className="mb-4 flex items-center justify-between gap-3">
                             <h2 className="text-lg font-semibold">Contacts</h2>
                             <Link
                                 href={`/schools/${school.id}/contacts/new`}
@@ -264,13 +264,13 @@ export default async function SchoolProfilePage({
                                     key={contact.id}
                                     className="rounded-md border border-zinc-100 bg-zinc-50 p-3"
                                     >
-                                    <div className="flex items-start justify-between gap-3">
+                                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
                                         <div className="min-w-0">
                                             <p className="break-words font-semibold [overflow-wrap:anywhere]">{contactDisplayName}</p>
                                             <p className="text-sm text-zinc-500">{contact.role}</p>
                                             </div>
 
-                                            <div className='flex shrink-0 items-center gap-2'>
+                                            <div className='flex shrink-0 flex-wrap items-center gap-2'>
                                                 <Link
                                                     href={`/schools/${school.id}/contacts/${contact.id}/edit`}
                                                     className='inline-flex h-6 items-center text-xs font-semibold text-zinc-400 hover:text-[#c8102e]'
@@ -311,8 +311,8 @@ export default async function SchoolProfilePage({
                             </div>
                     </div>
                 
-                <div className='rounded-lg border border-red-100 bg-white p-5 shadow-sm'>
-                    <div className="mb-4 flex items-center justify-between">
+                <div className='min-w-0 rounded-lg border border-red-100 bg-white p-4 shadow-sm sm:p-5'>
+                    <div className="mb-4 flex items-center justify-between gap-3">
                         <h2 className="text-lg font-semibold">Teachers</h2>
                         <Link 
                             href={`/schools/${school.id}/teachers/new`}
@@ -336,7 +336,7 @@ export default async function SchoolProfilePage({
                                 key={teacher.id}
                                 className="rounded-md border border-zinc-100 bg-zinc-50 p-3"
                                 >
-                                <div className="flex items-start justify-between gap-3">
+                                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
                                     <div className="flex min-w-0 flex-wrap items-center gap-2">
                                     <p className="break-words font-semibold [overflow-wrap:anywhere]">{teacherDisplayName}</p>
 
@@ -347,7 +347,7 @@ export default async function SchoolProfilePage({
                                     ) : null}
                                     </div>
 
-                                    <div className="flex shrink-0 items-center gap-2">
+                                    <div className="flex shrink-0 flex-wrap items-center gap-2">
                                         <Link
                                             href={`/schools/${school.id}/teachers/${teacher.id}/edit`}
                                             className="inline-flex h-6 items-center text-xs font-semibold text-zinc-400 hover:text-[#c8102e]"
@@ -404,8 +404,8 @@ export default async function SchoolProfilePage({
                     </div>
                 </div>
 
-                <div className='rounded-lg border border-red-100 bg-white p-5 shadow-sm'>
-                    <div className='mb-4 flex items-center justify-between'>
+                <div className='min-w-0 rounded-lg border border-red-100 bg-white p-4 shadow-sm sm:p-5'>
+                    <div className='mb-4 flex items-center justify-between gap-3'>
                         <h2 className='text-lg font-semibold'>Activity Log</h2>
                         <Link 
                             href={`/schools/${school.id}/activities/new`}
@@ -428,13 +428,13 @@ export default async function SchoolProfilePage({
                                 key={activity.id}
                                 className="rounded-md border border-zinc-100 bg-zinc-50 p-3"
                                 >
-                                <div className="flex items-start justify-between gap-3">
-                                    <div>
-                                    <p className="font-semibold">{activity.interaction_type}</p>
-                                    <p className="text-sm text-zinc-600">{activity.notes}</p>
+                                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+                                    <div className='min-w-0'>
+                                    <p className="break-words font-semibold [overflow-wrap:anywhere]">{activity.interaction_type}</p>
+                                    <p className="break-words text-sm text-zinc-600 [overflow-wrap:anywhere]">{activity.notes}</p>
                                     </div>
 
-                                   <div className="flex items-center gap-2">
+                                   <div className="flex shrink-0 flex-wrap items-center gap-2">
                                         <Link
                                             href={`/schools/${school.id}/activities/${activity.id}/edit`}
                                             className="inline-flex h-6 items-center text-xs font-semibold text-zinc-400 hover:text-[#c8102e]"
@@ -469,8 +469,8 @@ export default async function SchoolProfilePage({
                     </div>
                 </div>
 
-                <div className='rounded-lg border border-red-100 bg-white p-5 shadow-sm'>
-                    <div className='mb-4 flex items-center justify-between'>
+                <div className='min-w-0 rounded-lg border border-red-100 bg-white p-4 shadow-sm sm:p-5'>
+                    <div className='mb-4 flex items-center justify-between gap-3'>
                         <h2 className='text-lg font-semibold'>Documents</h2>
                         <Link 
                             href={`/schools/${school.id}/documents/new`}
@@ -492,7 +492,7 @@ export default async function SchoolProfilePage({
                                 key={document.id}
                                 className="rounded-md border border-zinc-100 bg-zinc-50 p-3"
                                 >
-                                <div className="flex items-start justify-between gap-3">
+                                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
                                     <div className="min-w-0">
                                     {document.signedUrl ? (
                                         <a
@@ -511,7 +511,7 @@ export default async function SchoolProfilePage({
                                     <p className="text-sm text-zinc-500">{document.document_type}</p>
                                     </div>
 
-                                    <div className="flex shrink-0 items-center gap-3">
+                                    <div className="flex shrink-0 flex-wrap items-center gap-3">
                                         {document.signedUrl ? (
                                             <a
                                                 href={document.signedUrl}

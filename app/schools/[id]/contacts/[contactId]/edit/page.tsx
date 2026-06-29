@@ -65,7 +65,7 @@ export default async function EditContactPage({
     <main className="min-h-screen bg-[#f8f4f4] text-zinc-950">
       <DashboardSidebar />
 
-      <section className="ml-64 min-h-screen px-8 py-6">
+      <section className="min-h-screen px-4 py-6 sm:px-6 lg:ml-64 lg:px-8">
         <div className="mx-auto max-w-3xl">
           <Link
             href={`/schools/${school.id}`}
@@ -74,12 +74,12 @@ export default async function EditContactPage({
             Back to {school.name}
           </Link>
 
-          <section className="mt-5 rounded-lg border border-red-100 bg-white p-6 shadow-sm">
+          <section className="mt-5 rounded-lg border border-red-100 bg-white p-4 shadow-sm sm:p-6">
             <div className="mb-6">
               <p className="text-sm font-medium uppercase tracking-wide text-[#c8102e]">
                 Edit Contact
               </p>
-              <h1 className="mt-2 text-3xl font-semibold">
+              <h1 className="mt-2 break-words text-2xl font-semibold [overflow-wrap:anywhere] sm:text-3xl">
                 {contactDisplayName}
               </h1>
               <p className="mt-1 text-sm text-zinc-600">
@@ -97,7 +97,7 @@ export default async function EditContactPage({
 
             <form action={updateContactForSchool} className="space-y-5">
               <div className="grid gap-5 sm:grid-cols-2">
-                <label className="block">
+                <label className="block min-w-0">
                   <span className="text-sm font-medium text-zinc-800">
                     First Name
                   </span>
@@ -109,7 +109,7 @@ export default async function EditContactPage({
                   />
                 </label>
 
-                <label className="block">
+                <label className="block min-w-0">
                   <span className="text-sm font-medium text-zinc-800">
                     Last Name
                   </span>
@@ -123,7 +123,7 @@ export default async function EditContactPage({
               </div>
 
               <div className="grid gap-5 sm:grid-cols-2">
-                <label className="block">
+                <label className="block min-w-0">
                   <span className="text-sm font-medium text-zinc-800">
                     Role
                   </span>
@@ -146,7 +146,7 @@ export default async function EditContactPage({
                   </select>
                 </label>
 
-                <label className="block">
+                <label className="block min-w-0">
                   <span className="text-sm font-medium text-zinc-800">
                     Status
                   </span>
@@ -163,7 +163,7 @@ export default async function EditContactPage({
               </div>
 
               <div className="grid gap-5 sm:grid-cols-2">
-                <label className="block">
+                <label className="block min-w-0">
                   <span className="text-sm font-medium text-zinc-800">
                     Email
                   </span>
@@ -175,7 +175,7 @@ export default async function EditContactPage({
                   />
                 </label>
 
-                <label className="block">
+                <label className="block min-w-0">
                   <span className="text-sm font-medium text-zinc-800">
                     Phone
                   </span>
@@ -187,7 +187,7 @@ export default async function EditContactPage({
                 </label>
               </div>
 
-              <label className="block">
+              <label className="block min-w-0">
                 <span className="text-sm font-medium text-zinc-800">Notes</span>
                 <textarea
                   name="notes"
@@ -197,17 +197,17 @@ export default async function EditContactPage({
                 />
               </label>
 
-              <div className="flex justify-end gap-3 border-t border-zinc-100 pt-5">
+              <div className="flex flex-col-reverse gap-3 border-t border-zinc-100 pt-5 sm:flex-row sm:justify-end">
                 <Link
                   href={`/schools/${school.id}`}
-                  className="rounded-md border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-red-50 hover:text-[#c8102e]"
+                  className="inline-flex h-10 w-full items-center justify-center rounded-md border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-700 hover:bg-red-50 hover:text-[#c8102e] sm:w-auto"
                 >
                   Cancel
                 </Link>
 
                 <button
                   type="submit"
-                  className="rounded-md bg-[#c8102e] px-4 py-2 text-sm font-semibold text-white hover:bg-[#a70d25]"
+                  className="inline-flex h-10 w-full items-center justify-center rounded-md bg-[#c8102e] px-4 text-sm font-semibold text-white hover:bg-[#a70d25] sm:w-auto"
                 >
                   Save Changes
                 </button>
