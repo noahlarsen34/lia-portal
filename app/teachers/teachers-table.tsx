@@ -39,6 +39,15 @@ export function TeachersTable({ teachers, userRole }: TeacherTableProps) {
 
     const isAdmin = userRole === "admin";
     const statusOptions = ["active", "inactive"];
+    const isMailableEmail = (email: string) => {
+        return email.trim() !== "" && email !== "N/A";
+    };
+    const isTextablePhone = (phone: string) => {
+        return phone.trim() !== "" && phone !== "N/A";
+    };
+    const getSmsHref = (phone: string) => {
+        return `sms:${phone.replace(/[^\d+]/g, "")}`;
+    };
 
     const stateOptions = useMemo(() => {
         return Array.from(new Set(teachers.map((teacher) => teacher.state)))
@@ -212,7 +221,7 @@ export function TeachersTable({ teachers, userRole }: TeacherTableProps) {
                 </button>
             </div>
 
-            <div className="mb-6 flex items-center justify-between border-t border-zinc-100 pt-4">
+            <div className="mb-6 flex flex-col gap-3 border-t border-zinc-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-sm text-zinc-500">
                     Showing {filteredTeachers.length} teacher records
                 </p>
@@ -221,14 +230,14 @@ export function TeachersTable({ teachers, userRole }: TeacherTableProps) {
                     type="button"
                     onClick={exportTeachersGoogleSheet}
                     disabled={isExporting || filteredTeachers.length === 0}
-                    className="h-10 rounded-md bg-[#c8102e] px-4 text-sm font-semibold text-white hover:bg-[#a70d25] disabled:cursor-not-allowed disabled:opacity-50"
+                    className="h-10 w-full rounded-md bg-[#c8102e] px-4 text-sm font-semibold text-white hover:bg-[#a70d25] disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                 >
                     {isExporting ? "Exporting..." : "Google Sheet"}
                 </button>
                 </div>
 
                 {exportUrl ? (
-                    <div className='mb-4 flex items-center justify-between gap-4 rounded-md border border-gree-200 bg-green-50 px-4 py-3 text-sm text-green-700'>
+                    <div className='mb-4 flex items-center justify-between gap-4 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700'>
                         <p>
                             Google Sheet created.{" "}
                             <a
@@ -258,7 +267,7 @@ export function TeachersTable({ teachers, userRole }: TeacherTableProps) {
                 </p>
                 ) : null}
 
-            <div className="overflow-x-auto">
+            <div className="hidden overflow-x-auto md:block">
                 <table className="w-full min-w-[1320px] border-collapse text-left text-sm">
                     <thead>
                         <tr className="border-b border-zinc-200 text-xs uppercase tracking-wide text-zinc-500">
@@ -295,10 +304,30 @@ export function TeachersTable({ teachers, userRole }: TeacherTableProps) {
                                 </td>
 
                                 <td className="break-words px-4 py-5 [overflow-wrap:anywhere]">
-                                    {teacher.email}
+                                    {isMailableEmail(teacher.email) ? (
+                                        <a
+                                            href={`mailto:${teacher.email}`}
+                                            className="text-zinc-700 hover:text-[#c8102e] hover:underline"
+                                        >
+                                            {teacher.email}
+                                        </a>
+                                    ) : (
+                                        teacher.email
+                                    )}
                                 </td>
 
-                                <td className="px-4 py-5">{teacher.phone}</td>
+                                <td className="break-words px-4 py-5 [overflow-wrap:anywhere]">
+                                    {isTextablePhone(teacher.phone) ? (
+                                        <a
+                                            href={getSmsHref(teacher.phone)}
+                                            className="text-zinc-700 hover:text-[#c8102e] hover:underline"
+                                        >
+                                            {teacher.phone}
+                                        </a>
+                                    ) : (
+                                        teacher.phone
+                                    )}
+                                </td>
 
                                 <td className="px-4 py-5">
                                     <span
@@ -346,6 +375,120 @@ export function TeachersTable({ teachers, userRole }: TeacherTableProps) {
                         ))}
                     </tbody>
                 </table>
+            </div>
+
+            <div className="grid min-w-0 gap-3 md:hidden">
+                {filteredTeachers.map((teacher) => (
+                    <article    
+                        key={teacher.id}
+                        className="min-w-0 rounded-md border border-zinc-200 bg-white p-4 shadow-sm"
+                    >
+                        <div className="flex min-w-0 flex-col gap-3">
+                            <div className="min-w-0">
+                                <Link
+                                    href={`/schools/${teacher.schoolId}/teachers/${teacher.id}`}
+                                    className="break-words text-base font-semibold text-zinc-950 hover:text-[#c8102e] [overflow-wrap:anywhere]"
+                                >
+                                    {teacher.name}
+                                </Link>
+                                <p className="mt-1 break-words text-sm text-zinc-500 [overflow-wrap:anywhere]">
+                                    {isMailableEmail(teacher.email) ? (
+                                        <a
+                                            href={`mailto:${teacher.email}`}
+                                            className="hover:text-[#c8102e] hover:underline"
+                                        >
+                                            {teacher.email}
+                                        </a>
+                                    ) : (
+                                        teacher.email
+                                    )}
+                                </p>
+                            </div>
+
+                            <span
+                                className= {
+                                    teacher.status === "active"
+                                        ? "w-fit rounded-full bg-green-50 px-2 py-1 text-xs font-semibold capitalize text-green-700"
+                                        : "w-fit rounded-full bg-red-50 px-2 py-1 text-xs font-semibold capitalize text-[#c8102e]"
+                                }
+                            >
+                                {teacher.status}
+                            </span>
+                        </div>
+
+                        <div className="mt-4 flex flex-wrap gap-2">
+                            <span
+                                className={
+                                    teacher.isNewTeacher
+                                        ? "rounded-full bg-red-50 px-2 py-1 text-xs font-semibold text-[#c8102e]"
+                                        : "rounded-full bg-zinc-100 px-2 py-1 text-xs font-semibold text-zinc-600"
+                                }
+                            >
+                                {teacher.isNewTeacher ? "New Teacher" : "Returning"}
+                            </span>
+
+                            <span className="rounded-full bg-zinc-100 px-2 py-1 text-xs font-semibold uppercase text-zinc-600">
+                                {teacher.passwordStatus}
+                            </span>
+                        </div>
+
+                        <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                            <div>
+                                <p className="text-xs uppercase text-zinc-500">Phone</p>
+                                <p className="mt-1 break-words font-semibold [overflow-wrap:anywhere]">
+                                    {isTextablePhone(teacher.phone) ? (
+                                        <a
+                                            href={getSmsHref(teacher.phone)}
+                                            className="hover:text-[#c8102e] hover:underline"
+                                        >
+                                            {teacher.phone}
+                                        </a>
+                                    ) : (
+                                        teacher.phone
+                                    )}
+                                </p>
+                            </div>
+
+                            <div>
+                                <p className="text-xs uppercase text-zinc-500">State</p>
+                                <p className="mt-1 font-semibold">{teacher.state}</p>
+                            </div>
+                        </div>
+
+                        <div className="mt-4 space-y-2 border-t border-zinc-100 pt-4 text-sm">
+                            <div>
+                                <p className="text-xs uppercase text-zinc-500">School</p>
+                                <Link
+                                    href={`/schools/${teacher.schoolId}`}
+                                    className="mt-1 block break-words font-semibold text-zinc-950 hover:text-[#c8102e] [overflow-wrap:anywhere]"
+                                >
+                                    {teacher.schoolName}
+                                </Link>
+                            </div>
+
+                            <div>
+                                <p className="text-xs uppercase text-zinc-500">District</p>
+                                <p className="mt-1 break-words font-semibold [overflow-wrap:anywhere]">
+                                    {teacher.district}
+                                </p>
+                            </div>
+
+                            <div>
+                                <p className="text-xs uppercase text-zinc-500">Assigned RPM</p>
+                                <p className="mt-1 break-words font-semibold [overflow-wrap:anywhere]">
+                                    {teacher.rpm}
+                                </p>
+                            </div>
+                        </div>
+
+                        <Link
+                            href={`/schools/${teacher.schoolId}/teachers/${teacher.id}`}
+                            className="mt-4 inline-flex h-10 w-full items-center justify-center rounded-md bg-[#c8102e] px-4 text-sm font-semibold text-white hover:bg-[#a70d25]"
+                        >
+                            View Teacher
+                        </Link>
+                    </article>
+                ))}
             </div>
 
             {filteredTeachers.length === 0 ? (

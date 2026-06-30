@@ -162,7 +162,7 @@ export function DocumentsTable({ documents, userRole }: DocumentsTableProps) {
                 </p>
             </div>
 
-            <div className="overflow-x-auto">
+            <div className="hidden overflow-x-auto md:block">
                 <table className="w-full min-w-[1120px] border-collapse text-left text-sm">
                     <thead>
                         <tr className="border-b border-zinc-200 text-xs uppercase tracking-wide text-zinc-500">
@@ -234,6 +234,94 @@ export function DocumentsTable({ documents, userRole }: DocumentsTableProps) {
                         ))}
                     </tbody>
                 </table>
+            </div>
+
+            <div className="grid min-w-0 gap-3 md:hidden">
+                {filteredDocuments.map((document) => (
+                    <article
+                        key={document.id}
+                        className="min-w-0 rounded-md border border-zinc-200 bg-white p-4 shadow-sm"
+                    >
+                        <div className="min-w-0">
+                            {document.signedUrl ? (
+                                <a
+                                    href={document.signedUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="break-words text-base font-semibold text-zinc-950 hover:text-[#c8102e] hover:underline [overflow-wrap:anywhere]"
+                                >
+                                    {document.name}
+                                </a>
+                            ) : (
+                                <p className="break-words text-base font-semibold text-zinc-950 [overflow-wrap:anywhere]">
+                                    {document.name}
+                                </p>
+                            )}
+
+                            <div className="mt-2 flex flex-wrap gap-2">
+                                <span className="w-fit rounded-full bg-red-50 px-2 py-1 text-xs font-semibold text-[#c8102e]">
+                                    {document.documentType}
+                                </span>
+
+                                {document.signedUrl ? (
+                                    <span className="w-fit rounded-full bg-green-50 px-2 py-1 text-xs font-semibold text-green-700">
+                                        Available
+                                    </span>
+                                ) : (
+                                    <span className="w-fit rounded-full bg-zinc-100 px-2 py-1 text-xs font-semibold text-zinc-500">
+                                        Unavailable
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                            <div>
+                                <p className="text-xs uppercase text-zinc-500">State</p>
+                                <p className="mt-1 font-semibold">{document.state}</p>
+                            </div>
+
+                            <div>
+                                <p className="text-xs uppercase text-zinc-500">Uploadd</p>
+                                <p className="mt-1 font-semibold">{document.uploadedAt}</p>
+                            </div>
+                        </div>
+
+                        <div className="mt-4 space-y-2 border-t border-zinc-100 pt-4 text-sm">
+                            <div>
+                                <p className="text-xs uppercase text-zinc-500">School</p>
+                                <Link
+                                    href={`/schools/${document.schoolId}`}
+                                    className="mt-1 block break-words font-semibold text-zinc-950 hover:text-[#c8102e] [overflow-wrap:anywhere]"
+                                >
+                                    {document.schoolName}
+                                </Link>
+                            </div>
+
+                            <div>
+                                <p className="text-xs uppercase text-zinc-500">Assigned RPM</p>
+                                <p className="mt-1 break-words font-semibold [overflow-wrap:anywhere]">
+                                    {document.rpm}
+                                </p>
+                            </div>
+                        </div>
+
+                        {document.signedUrl ? (
+                            <a
+                                href={document.signedUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="mt-4 inline-flex h-10 w-full items-center justify-center rounded-md bg-[#c8102e] px-4 text-sm font-semibold text-white hover:bg-[#a70d25]"
+                            >
+                                Open Document
+                            </a>
+                        ) : (
+                            <div className="mt-4 inline-flex h-10 w-full items-center justify-center rounded-md border border-zinc-200 bg-zinc-50 px-4 text-sm font-semibold text-zinc-400">
+                                Unavailable
+                            </div>
+                        )}
+                    </article>
+                ))}
             </div>
 
             {filteredDocuments.length === 0 ? (

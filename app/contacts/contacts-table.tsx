@@ -37,6 +37,19 @@ export function ContactsTable({ contacts, userRole }: ContactsTableProps) {
     const [exportError, setExportError] = useState("");
 
     const isAdmin = userRole === "admin";
+
+    const isMailableEmail = (email: string) => {
+        return email.trim() !== "" && email !== "N/A";
+    };
+
+    const isTextablePhone = (phone: string) => {
+        return phone.trim() !== "" && phone !== "N/A";
+    };
+
+    const getSmsHref = (phone: string) => {
+        return `sms:${phone.replace(/[^\d+]/g, "")}`;
+    };
+
     const statusOptions = ["active", "inactive"];
 
     const stateOptions = useMemo(() => {
@@ -254,7 +267,7 @@ export function ContactsTable({ contacts, userRole }: ContactsTableProps) {
                 </div>
             ) : null}
 
-            <div className="overflow-x-auto">
+            <div className="hidden overflow-x-auto md:block">
                 <table className="w-full min-w-[1460px] border-collapse text-left text-sm">
                     <thead>
                         <tr className="border-b border-zinc-200 text-xs uppercase tracking-wide text-zinc-500">
@@ -299,9 +312,29 @@ export function ContactsTable({ contacts, userRole }: ContactsTableProps) {
                                 </td>
                                 <td className="break-words px-4 py-5 [overflow-wrap:anywhere]">{contact.role}</td>
                                 <td className="break-words px-4 py-5 [overflow-wrap:anywhere]">
-                                    {contact.email}
+                                    {isMailableEmail(contact.email) ? (
+                                        <a
+                                            href={`mailto:${contact.email}`}
+                                            className="text-zinc-700 hover:text-[#c8102e] hover:underline"
+                                        >
+                                            {contact.email}
+                                        </a>
+                                    ) : (
+                                        contact.email
+                                    )}
                                 </td>
-                                <td className="px-4 py-5">{contact.phone}</td>
+                                <td className="break-words px-4 py-5 [overflow-wrap:anywhere]">
+                                    {isTextablePhone(contact.phone) ? (
+                                        <a
+                                            href={getSmsHref(contact.phone)}
+                                            className="text-zinc-700 hover:text-[#c8102e] hover:underline"
+                                        >
+                                            {contact.phone}
+                                        </a>
+                                    ) : (
+                                        contact.phone
+                                    )}
+                                </td>
                                 <td className="break-words px-4 py-5 [overflow-wrap:anywhere]">
                                     <span
                                         className={
@@ -354,11 +387,152 @@ export function ContactsTable({ contacts, userRole }: ContactsTableProps) {
                 </table>
             </div>
 
-            {filteredContacts.length === 0 ? (
+            <div className="grid min-w-0 gap-3 md:hidden">
+                {filteredContacts.map((contact) => (
+                    <article
+                        key={contact.id}
+                        className="min-w-0 rounded-md border border-zinc-200 bg-white p-4 shadow-sm"
+                    >
+                        <div className="flex min-w-0 flex-col gap-3">
+                            <div className="min-w-0">
+                                {contact.schoolId ? (
+                                    <Link
+                                        href={`/schools/${contact.schoolId}/contacts/${contact.id}`}
+                                        className="break-words text-base font-semibold text-zinc-950 hover:text-[#c8102e] [overflow-wrap:anywhere]"
+                                    >
+                                        {contact.name}
+                                    </Link>
+                                ) : (
+                                    <p className="break-words text-base font-semibold text-zinc-950 [overflow-wrap:anywhere]">
+                                        {contact.name}
+                                    </p>
+                                )}
+
+                                <p className="mt-1 break-words text-sm text-zinc-500 [overflow-wrap:anywhere]">
+                                    {isMailableEmail(contact.email) ? (
+                                        <a
+                                            href={`mailto:${contact.email}`}
+                                            className="hover:text-[#c8102e] hover:underline"
+                                        >
+                                            {contact.email}
+                                        </a>
+                                    ) : (
+                                        contact.email
+                                    )}
+                                </p>
+                            </div>
+
+                            <div className="flex flex-wrap gap-2">
+                                <span 
+                                    className={
+                                        contact.status === "active"
+                                            ? "w-fit rounded-full bg-green-50 px-2 py-1 text-xs font-semibold capitalize text-green-700"
+                                            : "w-fit rounded-full bg-red-50 px-2 py-1 text-xs font-semibold capitalize text-[#c8102e]"
+                                    }
+                                >
+                                    {contact.status}
+                                </span>
+
+                                <span className="w-fit rounded-full bg-zinc-100 px-2 py-1 text-xs font-semibold text-zinc-600">
+                                    {contact.role}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                            <div>
+                                <p className="text-xs uppercase text-zinc-500">Phone</p>
+                                <p className="mt-1 break-words font-semibold [overflow-wrap:anywhere]">
+                                    {isTextablePhone(contact.phone) ? (
+                                        <a
+                                            href={getSmsHref(contact.phone)}
+                                            className="hover:text-[#c8102e] hover:underline"
+                                        >
+                                            {contact.phone}
+                                        </a>
+                                    ) : (
+                                        contact.phone
+                                    )}
+                                </p>
+                            </div>
+
+                            <div>
+                                <p className="text-xs uppercase text-zinc-500">State</p>
+                                <p className="mt-1 font-semibold">{contact.state}</p>
+                            </div>
+                        </div>
+
+                        <div className="mt-4 space-y-2 border-t border-zinc-100 pt-4 text-sm">
+                            <div>
+                                <p className="text-xs uppercase text-zinc-500">School</p>
+                                {contact.schoolId ? (
+                                    <Link
+                                        href={`/schools/${contact.schoolId}`}
+                                        className="mt-1 block break-words font-semibold text-zinc-950 hover:text-[#c8102e] [overflow-wrap:anywhere]"
+                                    >
+                                        {contact.schoolName}
+                                    </Link>
+                                ) : (
+                                    <p className="mt-1 break-words font-semibold text-zinc-700 [overflow-wrap:anywhere]">
+                                        {contact.schoolName}
+                                    </p>
+                                )}
+                            </div>
+
+                            <div>
+                                <p className="text-xs uppercase text-zinc-500">District</p>
+                                <p className="mt-1 break-words font-semibold [overflow-wrap:anywhere]">
+                                    {contact.district}
+                                </p>
+                            </div>
+
+                            <div>
+                                <p className="text-xs uppercase text-zinc-500">Assigned RPM</p>
+                                <p className="mt-1 break-words font-semibold [overflow-wrap:anywhere]">
+                                    {contact.rpm}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="mt-4 grid gap-2">
+                            {contact.schoolId ? (
+                                <Link
+                                    href={`/schools/${contact.schoolId}/contacts/${contact.id}`}
+                                    className="inline-flex h-10 w-full items-center justify-center rounded-md bg-[#c8102e] px-4 text-sm font-semibold text-white hover:bg-[#a70d25]"
+                                >
+                                    View Contact
+                                </Link>
+                            ) : null}
+
+                            {isAdmin ? (
+                                <div className="grid grid-cols-2 gap-2">
+                                    <Link
+                                        href={`/contacts/${contact.id}/edit`}
+                                        className="inline-flex h-10 items-center justify-center rounded-md border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-700 hover:bg-red-50 hover:text-[#c8102e]"
+                                    >
+                                        Edit
+                                    </Link>
+
+                                    <Link
+                                        href={`/contacts/${contact.id}/delete`}
+                                        className="inline-flex h-10 items-center justify-center rounded-md border border-red-200 bg-white px-4 text-sm font-semibold text-[#c8102e] hover:bg-red-50"
+                                    >
+                                        Delete
+                                    </Link>
+                                </div>
+                            ) : null}
+                        </div>
+                    </article>
+                ))}
+            </div>
+
+          
+              {filteredContacts.length === 0 ? (
                 <div className="mt-4 rounded-md border border-zinc-200 bg-zinc-50 px-4 py-8 text-center text-sm text-zinc-500">
                     No contacts match your filters.
                 </div>
             ) : null}
+                        
         </>
     );
 }

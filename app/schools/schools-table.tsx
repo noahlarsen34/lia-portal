@@ -33,6 +33,18 @@ export function SchoolsTable({ schools }: SchoolsTableProps) {
     const [exportUrl, setExportUrl] = useState("");
     const [exportError, setExportError] = useState("");
 
+    const hasAddress = (address: string | null) => {
+        return Boolean(address?.trim());
+    };
+
+    const getDirectionsHref = (school: SchoolRow) => {
+        const destination = [school.name, school.address, school.state]
+            .filter(Boolean)
+            .join(", ");
+        
+        return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destination)}`;
+    }
+
     const stateOptions = useMemo(() => {
         return Array.from(new Set(schools.map((school) => school.state)))
             .filter(Boolean)
@@ -211,7 +223,7 @@ export function SchoolsTable({ schools }: SchoolsTableProps) {
                     type='button'
                     onClick={exportSchoolsGoogleSheet}
                     disabled={filteredSchools.length === 0 || isExporting}
-                    className='h-10 rounded-md bg-[#c8102e] px-5 text-sm font-semibold text-white transition hover:bg-[#a70d25] disabled:cursor-not-allowed disabled:opacity-50'
+                    className='h-10 w-full rounded-md bg-[#c8102e] px-5 text-sm font-semibold text-white transition hover:bg-[#a70d25] disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto'
                 >
                     {isExporting ? "Exporting..." : "Google Sheet"}
                 </button>
@@ -251,7 +263,7 @@ export function SchoolsTable({ schools }: SchoolsTableProps) {
                 </div>
             ) : null}
 
-            <div className='overflow-x-auto'>
+            <div className='hidden overflow-x-auto md:block'>
                 <table className='w-full min-w-[1320px] border-collapse text-left text-sm'>
                     <thead>
                         <tr className='border-b border-zinc-200 text-xs uppercase tracking-wide text-zinc-500'>
@@ -287,7 +299,20 @@ export function SchoolsTable({ schools }: SchoolsTableProps) {
                                     </Link>
                                 </td>
                                 <td className='px-4 py-5'>{school.year_lia_started ?? "N/A"}</td>
-                                <td className='w-28 px-4 py-5'>{school.address ?? "N/A"}</td>
+                                <td className='w-28 break-words px-4 py-5 [overflow-wrap:anywhere]'>
+                                    {hasAddress(school.address) ? (
+                                        <a
+                                            href={getDirectionsHref(school)}
+                                            target='_blank'
+                                            rel='noreferrer'
+                                            className='text-zinc-700 hover:text-[#c8102e] hover:underline'
+                                        >
+                                            {school.address}
+                                        </a>
+                                    ) : (
+                                        "N/A"
+                                    )}
+                                </td>
                                 <td className='w-24 px-4 py-5'>{school.state}</td>
                                 <td className='w-28 px-4 py-5'>{school.region ?? "N/A"}</td>
                                 <td className='px-4 py-5'>{school.district}</td>
@@ -328,6 +353,118 @@ export function SchoolsTable({ schools }: SchoolsTableProps) {
                 </table>
             </div>
 
+            <div className='grid gap-3 md:hidden'>
+                {filteredSchools.map((school) => (
+                    <article
+                        key={school.id}
+                        className='rounded-md border border-zinc-200 bg-white p-4 shadow-sm'
+                    >
+                        <div className='flex items-start justify-between gap-3'>
+                            <div className='min-w-0'>
+                                <Link
+                                    href={`/schools/${school.id}`}
+                                    className='break-words text-base font-semibold text-zinc-950 hover:text-[#c8102e] [overflow-wrap:anywhere]'
+                                >
+                                    {school.name}
+                                </Link>
+                                <p className='mt-1 break-words text-sm text-zinc-500 [overflow-wrap:anywhere]'>
+                                    {hasAddress(school.address) ? (
+                                        <a
+                                            href={getDirectionsHref(school)}
+                                            target='_blank'
+                                            rel='noreferrer'
+                                            className='hover:text-[#c8102e] hover:underline'
+                                        >
+                                            {school.address}
+                                        </a>
+                                    ) : (
+                                        "No address listed"
+                                    )}
+                                </p>
+                            </div>
+
+                            <span
+                                className= {
+                                    school.status === "active"
+                                        ? "shrink-0 rounded-full bg-green-50 px-2 py-1 text-xs font-semibold capitalize text-green-700"
+                                        : "shrink-0 rounded-full bg-red-50 px-2 py-1 text-xs font-semibold capitalize text-[#c8102e]"
+                                }
+                            >
+                                {school.status}
+                            </span>
+                        </div>
+
+                        <div className='mt-4 grid grid-cols-2 gap-3 text-sm'>
+                            <div>
+                                <p className='text-xs uppercase text-zinc-500'>State</p>
+                                <p className='mt-1 font-semibold'>{school.state}</p>
+                            </div>
+
+                            <div>
+                                <p className='text-xs uppercase text-zinc-500'>Region</p>
+                                <p className='mt-1 font-semibold'>{school.region ?? "N/A"}</p>
+                            </div>
+
+                            <div>
+                                <p className='text-xs uppercase text-zinc-500'>Year</p>
+                                <p className='mt-1 font-semibold'>
+                                    {school.year_lia_started ?? "N/A"}
+                                </p>
+                            </div>
+
+                            <div>
+                                <p className='text-xs uppercase text-zinc-500'>MOU</p>
+                                <p className='mt-1'>
+                                    <span
+                                        className={
+                                            school.mouStatus === "signed"
+                                                ? "rounded-full bg-green-50 px-2 py-1 text-xs font-semibold capitalize text-green-700"
+                                                : "rounded-full bg-red-50 px-2 py-1 text-xs font-semibold capitalize text-[#c8102e]"                                           
+                                        }
+                                    >
+                                        {school.mouStatus}
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className='mt-4 space-y-2 border-t border-zinc-100 pt-4 text-sm'>
+                            <div>
+                                <p className='text-xs uppercase text-zinc-500'>District</p>
+                                <p className='mt-1 break-words font-semibold [overflow-wrap:anywhere]'>
+                                    {school.district}
+                                </p>
+                            </div>
+
+                            <div>
+                                <p className='text-xs uppercase text-zinc-500'>Assigned RPM</p>
+                                <p className='mt-1 break-words font-semibold [overflow-wrap:anywhere]'>
+                                    {school.rpm}
+                                </p>
+                            </div>
+
+                            <div>
+                                <p className='text-xs uppercase text-zinc-500'>Last Updated</p>
+                                <p className='mt-1 font-semibold'>
+                                    {new Date(school.updatedAt).toLocaleDateString("en-US", {
+                                        month: "short",
+                                        day: "numeric",
+                                        year: "numeric",
+                                    })}
+                                </p>
+                            </div>
+                        </div>
+
+                        <Link
+                            href={`/schools/${school.id}`}
+                            className='mt-4 inline-flex h-10 w-full items-center justify-center rounded-md bg-[#c8102e] px-4 text-sm font-semibold text-white hover:bg-[#a70d25]'
+                        >
+                            View School
+                        </Link>
+                    </article>
+                ))}
+            </div>
+            
             {filteredSchools.length === 0 ? (
                 <div className='mt-4 rounded-md border border-zinc-200 bg-zinc-50 px-4 py-8 text-center text-sm text-zinc-500'>
                     No schools match your search.

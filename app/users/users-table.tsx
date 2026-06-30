@@ -18,6 +18,9 @@ type UsersTableProps = {
 export function UsersTable({ users }: UsersTableProps) {
     const [search, setSearch] = useState("");
     const [roleFilter, setRoleFilter] = useState("all");
+    const isMailableEmail = (email: string) => {
+        return email.trim() !== "" && email !== "No email listed";
+    };
 
     const filteredUsers = useMemo(() => {
         const searchText = search.trim().toLowerCase();
@@ -81,7 +84,18 @@ export function UsersTable({ users }: UsersTableProps) {
                                 className="border-b border-zinc-100 last:border-0"
                             >
                                 <td className="break-words px-4 py-4 font-semibold [overflow-wrap:anywhere]">{user.name}</td>
-                                <td className="break-words px-4 py-4 text-zinc-600 [overflow-wrap:anywhere]">{user.email}</td>
+                                <td className="break-words px-4 py-4 text-zinc-600 [overflow-wrap:anywhere]">
+                                    {isMailableEmail(user.email) ? (
+                                        <a
+                                            href={`mailto:${user.email}`}
+                                            className="hover:text-[#c8102e] hover:underline"
+                                        >
+                                            {user.email}
+                                        </a>
+                                    ) : (
+                                        user.email
+                                    )}
+                                </td>
                                 <td className="px-4 py-4">
                                     <span className="rounded-full bg-red-50 px-2 py-1 text-xs font-semibold capitalize text-[#c8102e]">
                                         {user.role}
