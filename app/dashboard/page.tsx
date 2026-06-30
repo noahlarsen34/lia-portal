@@ -159,7 +159,8 @@ export default async function DashboardPage() {
       notes,
       activity_date,
       schools(
-        name
+        name,
+        assigned_rpm_id
       )
     `)
     .order("activity_date", {ascending: false})
@@ -171,10 +172,15 @@ export default async function DashboardPage() {
         ? activity.schools[0]
         : activity.schools;
 
+      const rpmName = school?.assigned_rpm_id
+        ? profilesById.get(school.assigned_rpm_id) ?? "Unkown RPM"
+        : "Unassigned";
+
       return {
         id: activity.id,
         title: activity.notes,
         school: school?.name ?? "Unknown school",
+        rpm: rpmName,
         type: activity.interaction_type,
         date: new Date(activity.activity_date).toLocaleDateString("en-US", {
           month: "short",
@@ -271,7 +277,7 @@ export default async function DashboardPage() {
                 <div key={activity.id}>
                   <p className="font-semibold">{activity.title}</p>
                   <p className="text-zinc-500">
-                    {activity.school} · {activity.date}
+                    {activity.school} ·  {activity.rpm} · {activity.date}
                   </p>
                   </div>
               ))}
