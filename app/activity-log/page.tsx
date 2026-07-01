@@ -1,6 +1,7 @@
 import {redirect} from "next/navigation";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { createClient } from "@/utils/supabase/server";
+import { ActivityLogTable } from "./activity-log-table";
 
 export default async function ActivityLogPage() {
     const supabase = await createClient();
@@ -94,9 +95,7 @@ export default async function ActivityLogPage() {
                     </header>
 
                     <section className="rounded-lg border border-red-100 bg-white p-4 shadow-sm sm:p-6">
-                        <div className="rounded-md border border-zinc-200 bg-zinc-50 px-4 py-8 text-center text-sm text-zinc-500">
-                            Showing {activities.length} activity records.
-                        </div>
+                        <ActivityLogTable activities={activities} />
                     </section>
                 </div>
             </section>

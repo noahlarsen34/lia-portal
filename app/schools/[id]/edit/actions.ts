@@ -13,10 +13,11 @@ export async function updateSchool(schoolId: string, formData: FormData) {
     const region = String(formData.get("region") ?? "").trim();
     const districtId = String(formData.get("district_id") ?? "").trim();
     const assignedRpmId = String(formData.get("assigned_rpm_id") ?? "").trim();
+    const schoolLevel = String(formData.get('school_level') ?? "").trim();
     const status = String(formData.get("status") ?? "active").trim();
     const mouStatus = String(formData.get("mou_status") ?? "pending").trim();
 
-    if (!name || !state || !status || !mouStatus) {
+    if (!name || !state || !status || !mouStatus || !schoolLevel) {
         redirect(`/schools/${schoolId}/edit?error=missing-fields`);
     }
 
@@ -34,6 +35,7 @@ export async function updateSchool(schoolId: string, formData: FormData) {
             region: region || null,
             district_id: districtId || null,
             assigned_rpm_id: assignedRpmId || null,
+            school_level: schoolLevel,
             status,
             mou_status: mouStatus,
             last_updated_by: user?.id ?? null,

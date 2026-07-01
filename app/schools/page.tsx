@@ -26,6 +26,7 @@ export default async function SchoolsPage() {
             region,
             district_id,
             assigned_rpm_id,
+            school_level,
             status,
             mou_status,
             updated_at
@@ -61,6 +62,7 @@ export default async function SchoolsPage() {
             rpm: school.assigned_rpm_id
                 ? profilesById.get(school.assigned_rpm_id) ?? "Unassigned"
                 : "Unassigned",
+            schoolLevel: school.school_level ?? "unknown",
             status: school.status,
             mouStatus: school.mou_status,
             updatedAt: school.updated_at,

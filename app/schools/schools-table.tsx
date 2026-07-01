@@ -13,6 +13,7 @@ type SchoolRow = {
     region: string | null;
     district: string;
     rpm: string;
+    schoolLevel: string;
     status: string;
     mouStatus: string;
     updatedAt: string;
@@ -29,6 +30,7 @@ export function SchoolsTable({ schools }: SchoolsTableProps) {
     const [selectedStatus, setSelectedStatus] = useState("all");
     const [selectedRpm, setSelectedRpm] = useState("all");
     const [selectedMouStatus, setSelectedMouStatus] = useState("all");
+    const [selectedSchoolLevel, setSelectedSchoolLevel] = useState("all");
     const [isExporting, setIsExporting] = useState(false);
     const [exportUrl, setExportUrl] = useState("");
     const [exportError, setExportError] = useState("");
@@ -61,6 +63,20 @@ export function SchoolsTable({ schools }: SchoolsTableProps) {
         .sort();
         }, [schools]);
     
+    const schoolLevelOptions = [
+        { value: "elementary", label: "Elementary" },
+        { value: "middle", label: "Middle School" },
+        { value: "high", label: "High School" },
+        { value: "unknown", label: "Unknown"},
+    ];
+
+    const formatSchoolLevel = (schoolLevel: string) => {
+        return (
+            schoolLevelOptions.find((level) => level.value === schoolLevel)?.label ??
+            "Unknown"
+        );
+    };
+
     const mouStatusOptions = ["signed", "pending", "not signed"];
 
     const clearFilters = () => {
@@ -69,6 +85,7 @@ export function SchoolsTable({ schools }: SchoolsTableProps) {
         setSelectedRegion("all");
         setSelectedStatus("all");
         setSelectedRpm("all");
+        setSelectedSchoolLevel("all");
         setSelectedMouStatus("all");
     };
 
@@ -96,6 +113,7 @@ export function SchoolsTable({ schools }: SchoolsTableProps) {
         selectedRegion !== "all" ||
         selectedStatus !== "all" ||
         selectedRpm !== "all" ||
+        selectedSchoolLevel !== "all" ||
         selectedMouStatus !== "all";
 
     const filteredSchools = useMemo(() => {
@@ -110,6 +128,7 @@ export function SchoolsTable({ schools }: SchoolsTableProps) {
                 school.region?.toLowerCase().includes(searchText) ||
                 school.district.toLowerCase().includes(searchText) ||
                 school.rpm.toLowerCase().includes(searchText) ||
+                school.schoolLevel.toLowerCase().includes(searchText) ||
                 school.status.toLowerCase().includes(searchText) ||
                 school.mouStatus.toLowerCase().includes(searchText);
             
@@ -127,16 +146,19 @@ export function SchoolsTable({ schools }: SchoolsTableProps) {
             const matchesRpm =
                 selectedRpm === "all" || school.rpm === selectedRpm;
             
+            const matchesSchoolLevel =
+                selectedSchoolLevel === "all" || school.schoolLevel === selectedSchoolLevel;
+            
             const matchesMouStatus = 
                 selectedMouStatus === "all" || school.mouStatus === selectedMouStatus;
 
-            return matchesSearch && matchesState && matchesRegion && matchesStatus && matchesRpm && matchesMouStatus;
+            return matchesSearch && matchesState && matchesRegion && matchesStatus && matchesRpm &&  matchesSchoolLevel && matchesMouStatus;
         })
-    }, [schools, search, selectedState, selectedRegion, selectedStatus, selectedRpm, selectedMouStatus]);
+    }, [schools, search, selectedState, selectedRegion, selectedStatus, selectedRpm, selectedSchoolLevel, selectedMouStatus]);
 
     return (
         <>
-            <div className='mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-[minmax(220px,1fr)_130px_140px_140px_150px_130px_80px]'>
+            <div className='mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-8'>
                 <input
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
@@ -189,6 +211,18 @@ export function SchoolsTable({ schools }: SchoolsTableProps) {
                     {rpmOptions.map((rpm) => (
                         <option key={rpm} value={rpm}>
                             {rpm}
+                        </option>
+                    ))}
+                </select>
+                <select
+                    value={selectedSchoolLevel}
+                    onChange={(event) => setSelectedSchoolLevel(event.target.value)}
+                    className='h-10 w-full rounded-md border border-zinc-200 bg-white px-4 text-sm outline-none hover:bg-red-50 focus:border-[#c8102e] focus:ring-4 focus:ring-red-100'
+                >
+                    <option value="all">All Levels</option>
+                    {schoolLevelOptions.map((level) => (
+                        <option key={level.value} value={level.value}>
+                            {level.label}
                         </option>
                     ))}
                 </select>
@@ -264,7 +298,7 @@ export function SchoolsTable({ schools }: SchoolsTableProps) {
             ) : null}
 
             <div className='hidden overflow-x-auto md:block'>
-                <table className='w-full min-w-[1320px] border-collapse text-left text-sm'>
+                <table className='w-full min-w-[1460px] border-collapse text-left text-sm'>
                     <thead>
                         <tr className='border-b border-zinc-200 text-xs uppercase tracking-wide text-zinc-500'>
                             <th className='w-12 px-4 py-3'>#</th>
@@ -273,6 +307,7 @@ export function SchoolsTable({ schools }: SchoolsTableProps) {
                             <th className='px-4 py-3'>Address</th>
                             <th className='w-24 px-4 py-3'>State</th>
                             <th className='w-28 px-4 py-3'>Region</th>
+                            <th className='w-32 px-4 py-3 text-center'>Level</th>
                             <th className='w-28 px-4 py-3'>District</th>
                             <th className='w-28 px-4 py-3'>Assigned RPM</th>
                             <th className='w-28 px-4 py-3'>Status</th>
@@ -315,6 +350,11 @@ export function SchoolsTable({ schools }: SchoolsTableProps) {
                                 </td>
                                 <td className='w-24 px-4 py-5'>{school.state}</td>
                                 <td className='w-28 px-4 py-5'>{school.region ?? "N/A"}</td>
+                                <td className='w-32 px-4 py-5 text-center'>
+                                    <span className='inline-flex justify-center whitespace-nowrap rounded-full bg-zinc-100 px-2 py-1 text-xs font-semibold text-zinc-600'>
+                                        {formatSchoolLevel(school.schoolLevel)}
+                                    </span>
+                                </td>
                                 <td className='px-4 py-5'>{school.district}</td>
                                 <td className='px-4 py-5'>{school.rpm}</td>
                                 <td className='px-4 py-5'>
@@ -403,6 +443,13 @@ export function SchoolsTable({ schools }: SchoolsTableProps) {
                             <div>
                                 <p className='text-xs uppercase text-zinc-500'>Region</p>
                                 <p className='mt-1 font-semibold'>{school.region ?? "N/A"}</p>
+                            </div>
+
+                            <div>
+                                <p className='text-xs uppercase text-zinc-500'>Level</p>
+                                <p className='mt-1 font-semibold'>
+                                    {formatSchoolLevel(school.schoolLevel)}
+                                </p>
                             </div>
 
                             <div>

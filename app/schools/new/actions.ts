@@ -15,8 +15,9 @@ export async function createSchool(formData: FormData) {
     const assignedRpmId = String(formData.get("assigned_rpm_id") ?? "").trim();
     const status = String(formData.get("status") ?? "active").trim();
     const mouStatus = String(formData.get("mou_status") ?? "pending").trim();
+    const schoolLevel = String(formData.get("school_level") ?? "").trim();
 
-    if (!name || !state || !status || !mouStatus) {
+    if (!name || !state || !status || !mouStatus || !schoolLevel) {
         redirect("/schools/new?error=missing-fields");
     }
 
@@ -32,6 +33,7 @@ export async function createSchool(formData: FormData) {
             assigned_rpm_id: assignedRpmId || null,
             status,
             mou_status: mouStatus,
+            school_level: schoolLevel,
             last_updated_by: user?.id ?? null,
         })
         .select('id')

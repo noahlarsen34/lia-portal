@@ -34,6 +34,7 @@ type School = {
     region: string | null;
     district_id: string | null;
     assigned_rpm_id: string | null;
+    school_level: string | null;
     status: string;
     mou_status: string;
 };
@@ -91,7 +92,7 @@ export function EditSchoolForm({
             {error ? (
                 <div className="mb-5 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                     {error === "missing-fields"
-                        ? "School name, state, status, and MOU status are required."
+                        ? "School name, state, school level, status, and MOU status are required."
                         : "Something went wrong. Please try again."
                     }
                 </div>
@@ -215,7 +216,23 @@ export function EditSchoolForm({
                     </label>
                 </div>
 
-                <div className="grid gap-5 sm:grid-cols-2">
+                <div className="grid gap-5 sm:grid-cols-3">
+                    <label className="block min-w-0">
+                        <span className="text-sm font-medium text-zinc-800">School Level</span>
+                        <select
+                            name="school_level"
+                            required
+                            defaultValue={school.school_level ?? ""}
+                            className="mt-2 h-11 w-full rounded-md border border-zinc-300 px-3 text-sm outline-none focus:border-[#c8102e] focus:ring-4 focus:ring-red-100"
+                        >
+                            <option value="">Select level</option>
+                            <option value="elementary">Elementary</option>
+                            <option value="middle">Middle School</option>
+                            <option value="high">High School</option>
+                            <option value="unknown">Unknown</option>
+                        </select>
+                    </label>
+
                     <label className="block min-w-0">
                         <span className="text-sm font-medium text-zinc-800">Status</span>
                         <select

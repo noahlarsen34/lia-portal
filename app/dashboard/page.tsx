@@ -267,9 +267,12 @@ export default async function DashboardPage() {
           <div className="rounded-lg border border-red-100 bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between">
               <h2 className="font-semibold">Recent Activities</h2>
-              <button className="text-sm font-semibold text-[#c8102e]">
+              <Link
+                href="/activity-log"
+                className="text-sm font-semibold text-[#c8102e] hover:text-[#a70d25]"
+              >
                 View all
-              </button>
+              </Link>
             </div>
 
             <div className="mt-5 space-y-4 text-sm">

@@ -41,6 +41,7 @@ export default async function EditSchoolPage({
       region,
       district_id,
       assigned_rpm_id,
+      school_level,
       status,
       mou_status
     `)
