@@ -44,7 +44,8 @@ export default async function DashboardPage() {
 
   const { data: allSchoolStateRows } = await supabase
     .from("schools")
-    .select("state");
+    .select("state")
+    .eq("status", "active");
 
   const dashboardStats = [
     {
@@ -249,7 +250,7 @@ export default async function DashboardPage() {
         <section className="mt-5 grid gap-5 xl:grid-cols-3">
           <div className="rounded-lg border border-red-100 bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between gap-4">
-              <h2 className="font-semibold">Schools by State</h2>
+              <h2 className="font-semibold">Active Schools by State</h2>
               <span className="rounded-full bg-red-50 px-2 py-1 text-xs font-semibold text-[#c8102e]">
                 Top 8
               </span>
