@@ -103,6 +103,7 @@ export default async function SchoolProfilePage({
     const contactRows = contacts ?? [];
     const teacherRows = teachers ?? [];
     const activityRows = activites ?? [];
+    const latestActivity = activityRows[0] ?? null;
     const supabaseAdmin = createSupabaseAdminClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -204,7 +205,18 @@ export default async function SchoolProfilePage({
                         </div>
                         <div>
                             <p className='text-xs uppercase text-zinc-500'>Last Contact</p>
-                            <p className='mt-1 font-semibold'>{school.last_contact_date ?? "N/A"}</p>
+                            <p className='mt-1 font-semibold'>
+                                {latestActivity?.activity_date
+                                    ? new Date(latestActivity.activity_date).toLocaleDateString(
+                                        "en-US",
+                                        {
+                                            month: "short",
+                                            day: "numeric",
+                                            year: "numeric",
+                                        },
+                                    )
+                                    : "N/A"}
+                            </p>
                         </div>
                     </div>
                 </header>

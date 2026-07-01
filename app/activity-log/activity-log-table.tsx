@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { act, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 type ActivityRow = {
     id: string;
@@ -18,13 +18,18 @@ type ActivityRow = {
 
 type ActivityLogTableProps = {
     activities: ActivityRow[];
+    initialSchoolId?: string;
 };
 
-export function ActivityLogTable({ activities }: ActivityLogTableProps) {
+export function ActivityLogTable({
+    activities,
+    initialSchoolId = "all",
+}: ActivityLogTableProps) {
     const [search, setSearch] = useState("");
     const [selectedType, setSelectedType] = useState("all");
     const [selectedState, setSelectedState] = useState("all");
     const [selectedRpm, setSelectedRpm] = useState("all");
+    const [selectedSchoolId, setSelectedSchoolId] = useState(initialSchoolId);
 
     const typeOptions = useMemo(() => {
         return Array.from(new Set(activities.map((activity) => activity.type)))
@@ -44,17 +49,33 @@ export function ActivityLogTable({ activities }: ActivityLogTableProps) {
             .sort();
     }, [activities]);
 
+    const schoolOptions = useMemo(() => {
+        return activities
+            .filter((activity) => activity.schoolId)
+            .map((activity) => ({
+                id: activity.schoolId as string,
+                name: activity.schoolName,
+            }))
+            .filter(
+                (school, index, schools) =>
+                    schools.findIndex((option) => option.id === school.id) === index,
+            )
+            .sort((a, b) => a.name.localeCompare(b.name));
+    }, [activities]);
+
     const hasActiveFilters =
         search.trim() !== "" ||
-        selectedType ! == "all" ||
+        selectedType !== "all" ||
         selectedState !== "all" ||
-        selectedRpm !== "all";
+        selectedRpm !== "all" ||
+        selectedSchoolId !== "all";
     
     const clearFilters = () => {
         setSearch("");
         setSelectedType("all");
         setSelectedState("all");
         setSelectedRpm("all");
+        setSelectedSchoolId("all");
     };
 
     const filteredActivities = useMemo(() => {
@@ -80,14 +101,17 @@ export function ActivityLogTable({ activities }: ActivityLogTableProps) {
 
             const matchesRpm =
                 selectedRpm === "all" || activity.rpm === selectedRpm;
+            
+            const matchesSchool =
+                selectedSchoolId === "all" || activity.schoolId === selectedSchoolId;
 
-            return macthesSearch && macthesType && macthesState && matchesRpm;
+            return macthesSearch && macthesType && macthesState && matchesRpm && matchesSchool;
         });
-    }, [activities, search, selectedType, selectedState, selectedRpm]);
+    }, [activities, search, selectedType, selectedState, selectedRpm, selectedSchoolId]);
 
     return (
         <>  
-            <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(240px,1fr)_160px_150px_180px_90px]">
+            <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(220px,1fr)_180px_150px_150px_180px_90px]">
                 <input
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
@@ -130,6 +154,19 @@ export function ActivityLogTable({ activities }: ActivityLogTableProps) {
                     {rpmOptions.map((rpm) => (
                         <option key={rpm} value={rpm}>
                             {rpm}
+                        </option>
+                    ))}
+                </select>
+
+                <select
+                    value={selectedSchoolId}
+                    onChange={(event) => setSelectedSchoolId(event.target.value)}
+                    className="h-10 w-full rounded-md border border-zinc-200 bg-white px-4 text-sm outline-none hover:bg-red-50 focus:border-[#c8102e] focus:ring-4 focus:ring-red-100"
+                >
+                    <option value="all">All Schools</option>
+                    {schoolOptions.map((school) => (
+                        <option key={school.id} value={school.id}>
+                            {school.name}
                         </option>
                     ))}
                 </select>

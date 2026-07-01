@@ -39,6 +39,11 @@ export default async function SchoolsPage() {
         const { data: profileRows } = await supabase
             .from("profiles")
             .select("id, full_name");
+        
+        const { data: activityRows } = await supabase
+            .from("activities")
+            .select("id, school_id, activity_date")
+            .order("activity_date", { ascending: false });
 
         const districtsById = new Map(
             districtRows?.map((district) => [district.id, district.name]) ?? [],
@@ -47,26 +52,47 @@ export default async function SchoolsPage() {
         const profilesById = new Map(
             profileRows?.map((profile) => [profile.id, profile.full_name]) ?? [],
         );
+        
+        const latestActivityBySchoolId = new Map<
+            string,
+            { id: string; activity_date: string | null }
+        >();
+        
+        activityRows?.forEach((activity) => {
+            if (!activity.school_id || latestActivityBySchoolId.has(activity.school_id)) {
+                return;
+            }
+            
+            latestActivityBySchoolId.set(activity.school_id, {
+                id: activity.id,
+                activity_date: activity.activity_date,
+            });
+        });
 
     const schoolRows =
-        schools?.map((school) => ({
-            id: school.id,
-            name: school.name,
-            year_lia_started: school.year_lia_started,
-            address: school.address,
-            state: school.state,
-            region: school.region,
-            district: school.district_id
-                ? districtsById.get(school.district_id) ?? "N/A"
-                : "N/A",
-            rpm: school.assigned_rpm_id
-                ? profilesById.get(school.assigned_rpm_id) ?? "Unassigned"
-                : "Unassigned",
-            schoolLevel: school.school_level ?? "unknown",
-            status: school.status,
-            mouStatus: school.mou_status,
-            updatedAt: school.updated_at,
-        })) ?? [];
+        schools?.map((school) => {
+            const latestActivity = latestActivityBySchoolId.get(school.id);
+
+            return {
+                id: school.id,
+                name: school.name,
+                year_lia_started: school.year_lia_started,
+                address: school.address,
+                state: school.state,
+                region: school.region,
+                district: school.district_id
+                    ? districtsById.get(school.district_id) ?? "N/A"
+                    : "N/A",
+                rpm: school.assigned_rpm_id
+                    ? profilesById.get(school.assigned_rpm_id) ?? "Unassigned"
+                    : "Unassigned",
+                schoolLevel: school.school_level ?? "unknown",
+                status: school.status,
+                mouStatus: school.mou_status,
+                updatedAt: school.updated_at,
+                lastContactAt: latestActivity?.activity_date ?? null,
+            };
+        }) ?? [];
         
     return (
         <main className='min-h-screen bg-[#f8f4f4] text-zinc-950'>

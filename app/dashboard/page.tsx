@@ -42,6 +42,10 @@ export default async function DashboardPage() {
     .select("*", {count: "exact", head: true})
     .eq("mou_status", "signed");
 
+  const { data: allSchoolStateRows } = await supabase
+    .from("schools")
+    .select("state");
+
   const dashboardStats = [
     {
       label: "Total Schools",
@@ -127,8 +131,6 @@ export default async function DashboardPage() {
   }
   
   const maxRpmCount = Math.max(...schoolsByRpm.map((rpm) => rpm.count), 1)
-
-
   
   const dashboardSchools =
     schoolRows?.map((school) => ({
@@ -189,6 +191,22 @@ export default async function DashboardPage() {
         }),
       };
     }) ?? [];
+  
+  const stateCounts = new Map<string, number>();
+
+  allSchoolStateRows?.forEach((school) => {
+    const stateName = school.state || "Unknown";
+    stateCounts.set(stateName, (stateCounts.get(stateName) ?? 0) + 1);
+  });
+
+  const schoolsByState = Array.from(stateCounts.entries())
+    .map(([name,count]) => ({
+      name,
+      count,
+    }))
+    .sort((a,b) => b.count - a.count);
+
+  const maxStateCount = Math.max(...schoolsByState.map((state) => state.count), 1);
 
   return (
     <main className="min-h-screen bg-[#f8f4f4] text-zinc-950">
@@ -230,9 +248,35 @@ export default async function DashboardPage() {
 
         <section className="mt-5 grid gap-5 xl:grid-cols-3">
           <div className="rounded-lg border border-red-100 bg-white p-5 shadow-sm">
-            <h2 className="font-semibold">Schools by State</h2>
-            <div className="mt-5 flex h-44 items-center justify-center rounded-md bg-red-50 text-sm text-zinc-500">
-              Chart placeholder
+            <div className="flex items-center justify-between gap-4">
+              <h2 className="font-semibold">Schools by State</h2>
+              <span className="rounded-full bg-red-50 px-2 py-1 text-xs font-semibold text-[#c8102e]">
+                Top 8
+              </span>
+            </div>
+
+            <div className="mt-5 space-y-3 text-sm">
+              {schoolsByState.slice(0, 8).map((state) => (
+                <div key={state.name}>
+                  <div className="mb-1 flex justify-between gap-4">
+                    <span className="truncate font-medium text-zinc-700">{state.name}</span>
+                    <span className="font-semibold text-zinc-950">{state.count}</span>
+                  </div>
+
+                  <div className="h-2 rounded-full bg-zinc-100">
+                    <div
+                      className="h-2 rounded-full bg-[#c8102e]"
+                      style={{
+                        width: `${(state.count / maxStateCount) * 100}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              ))}
+
+              {schoolsByState.length === 0 ? (
+                <p className="text-sm text-zinc-500">No school states yet.</p>
+              ) : null}
             </div>
           </div>
 

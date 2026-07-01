@@ -17,6 +17,7 @@ type SchoolRow = {
     status: string;
     mouStatus: string;
     updatedAt: string;
+    lastContactAt: string | null;
 };
 
 type SchoolsTableProps = {
@@ -47,6 +48,10 @@ export function SchoolsTable({ schools }: SchoolsTableProps) {
         return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destination)}`;
     }
 
+    const getActivityLogHref = (school: SchoolRow) => {
+        return `/activity-log?school=${encodeURIComponent(school.id)}`;
+    };
+
     const stateOptions = useMemo(() => {
         return Array.from(new Set(schools.map((school) => school.state)))
             .filter(Boolean)
@@ -75,6 +80,18 @@ export function SchoolsTable({ schools }: SchoolsTableProps) {
             schoolLevelOptions.find((level) => level.value === schoolLevel)?.label ??
             "Unknown"
         );
+    };
+
+    const formatDate = (date: string | null) => {
+        if (!date) {
+            return "N/A";
+        }
+
+        return new Date(date).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+        });
     };
 
     const mouStatusOptions = ["signed", "pending", "not signed"];
@@ -312,7 +329,7 @@ export function SchoolsTable({ schools }: SchoolsTableProps) {
                             <th className='w-28 px-4 py-3'>Assigned RPM</th>
                             <th className='w-28 px-4 py-3'>Status</th>
                             <th className='w-28 px-4 py-3'>MOU</th>
-                            <th className='w-28 px-4 py-3'>Last Updated</th>
+                            <th className='w-32 px-4 py-3'>Last Contact</th>
                         </tr>
                     </thead>
 
@@ -381,11 +398,16 @@ export function SchoolsTable({ schools }: SchoolsTableProps) {
                                     </span>
                                 </td>
                                 <td className='px-4 py-5'>
-                                    {new Date(school.updatedAt).toLocaleDateString("en-US", {
-                                        month: "short",
-                                        day: "numeric",
-                                        year: "numeric",
-                                    })}
+                                    {school.lastContactAt ? (
+                                        <Link
+                                            href={getActivityLogHref(school)}
+                                            className='font-semibold text-zinc-700 hover:text-[#c8102e] hover:underline'
+                                        >
+                                            {formatDate(school.lastContactAt)}
+                                        </Link>
+                                    ) : (
+                                        "N/A"
+                                    )}
                                 </td>
                             </tr>
                         ))}
@@ -491,13 +513,18 @@ export function SchoolsTable({ schools }: SchoolsTableProps) {
                             </div>
 
                             <div>
-                                <p className='text-xs uppercase text-zinc-500'>Last Updated</p>
+                                <p className='text-xs uppercase text-zinc-500'>Last Contact</p>
                                 <p className='mt-1 font-semibold'>
-                                    {new Date(school.updatedAt).toLocaleDateString("en-US", {
-                                        month: "short",
-                                        day: "numeric",
-                                        year: "numeric",
-                                    })}
+                                    {school.lastContactAt ? (
+                                        <Link
+                                            href={getActivityLogHref(school)}
+                                            className='text-zinc-950 hover:text-[#c8102e] hover:underline'
+                                        >
+                                            {formatDate(school.lastContactAt)}
+                                        </Link>
+                                    ) : (
+                                        "N/A"
+                                    )}
                                 </p>
                             </div>
                         </div>

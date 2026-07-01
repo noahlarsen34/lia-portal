@@ -3,8 +3,18 @@ import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { createClient } from "@/utils/supabase/server";
 import { ActivityLogTable } from "./activity-log-table";
 
-export default async function ActivityLogPage() {
+type ActivityLogPageProps = {
+    searchParams: Promise<{
+        school?: string | string[];
+    }>;
+};
+
+export default async function ActivityLogPage({ searchParams }: ActivityLogPageProps) {
     const supabase = await createClient();
+    const query = await searchParams;
+    const initialSchoolId = Array.isArray(query.school)
+        ? query.school[0] ?? "all"
+        : query.school ?? "all";
 
     const {
         data: { user },
@@ -95,7 +105,10 @@ export default async function ActivityLogPage() {
                     </header>
 
                     <section className="rounded-lg border border-red-100 bg-white p-4 shadow-sm sm:p-6">
-                        <ActivityLogTable activities={activities} />
+                        <ActivityLogTable
+                            activities={activities}
+                            initialSchoolId={initialSchoolId}
+                        />
                     </section>
                 </div>
             </section>
