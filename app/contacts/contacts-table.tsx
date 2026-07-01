@@ -46,8 +46,8 @@ export function ContactsTable({ contacts, userRole }: ContactsTableProps) {
         return phone.trim() !== "" && phone !== "N/A";
     };
 
-    const getSmsHref = (phone: string) => {
-        return `sms:${phone.replace(/[^\d+]/g, "")}`;
+    const getPhoneHref = (phone: string) => {
+        return `tel:${phone.replace(/[^\d+]/g, "")}`;
     };
 
     const statusOptions = ["active", "inactive"];
@@ -326,7 +326,7 @@ export function ContactsTable({ contacts, userRole }: ContactsTableProps) {
                                 <td className="break-words px-4 py-5 [overflow-wrap:anywhere]">
                                     {isTextablePhone(contact.phone) ? (
                                         <a
-                                            href={getSmsHref(contact.phone)}
+                                            href={getPhoneHref(contact.phone)}
                                             className="text-zinc-700 hover:text-[#c8102e] hover:underline"
                                         >
                                             {contact.phone}

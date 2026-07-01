@@ -11,7 +11,7 @@ const sharedLinks: DashboardLink[] = [
 
 const adminLinks: DashboardLink[] = [
     { href: '/districts', label: "Districts" },
-    { href: "#", label: "Activity Log" },
+    { href: "/activity-log", label: "Activity Log" },
     { href: "/contacts", label: "Contacts" },
     { href: "/teachers", label: "Teachers" },
     { href: "/documents", label: "Documents" },
@@ -21,7 +21,7 @@ const adminLinks: DashboardLink[] = [
 ];
 
 const rpmLinks: DashboardLink[] = [
-    { href: "#", label: "Activity Log" },
+    { href: "/activity-log", label: "Activity Log" },
     { href: "/contacts", label: "Contacts" },
     { href: "/teachers", label: "Teachers" },
     { href: "/documents", label: "Documents" },

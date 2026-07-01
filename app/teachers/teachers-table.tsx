@@ -45,8 +45,8 @@ export function TeachersTable({ teachers, userRole }: TeacherTableProps) {
     const isTextablePhone = (phone: string) => {
         return phone.trim() !== "" && phone !== "N/A";
     };
-    const getSmsHref = (phone: string) => {
-        return `sms:${phone.replace(/[^\d+]/g, "")}`;
+    const getPhoneHref = (phone: string) => {
+        return `tel:${phone.replace(/[^\d+]/g, "")}`;
     };
 
     const stateOptions = useMemo(() => {
@@ -319,7 +319,7 @@ export function TeachersTable({ teachers, userRole }: TeacherTableProps) {
                                 <td className="break-words px-4 py-5 [overflow-wrap:anywhere]">
                                     {isTextablePhone(teacher.phone) ? (
                                         <a
-                                            href={getSmsHref(teacher.phone)}
+                                            href={getPhoneHref(teacher.phone)}
                                             className="text-zinc-700 hover:text-[#c8102e] hover:underline"
                                         >
                                             {teacher.phone}
@@ -438,7 +438,7 @@ export function TeachersTable({ teachers, userRole }: TeacherTableProps) {
                                 <p className="mt-1 break-words font-semibold [overflow-wrap:anywhere]">
                                     {isTextablePhone(teacher.phone) ? (
                                         <a
-                                            href={getSmsHref(teacher.phone)}
+                                            href={getPhoneHref(teacher.phone)}
                                             className="hover:text-[#c8102e] hover:underline"
                                         >
                                             {teacher.phone}
