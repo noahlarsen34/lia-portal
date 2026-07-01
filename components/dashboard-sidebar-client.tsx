@@ -27,19 +27,19 @@ function DashboardNav({
   const pathname = usePathname();
 
   return (
-    <nav className="flex flex-1 flex-col gap-2">
+    <nav className="flex flex-1 flex-col gap-3">
       {links.map((link) => {
         const isCurrent =
           link.href !== "#" &&
           (pathname === link.href || pathname.startsWith(`${link.href}/`));
         const className = isCurrent
-          ? "rounded-md bg-white px-3 py-3 font-semibold text-[#b90f24] shadow-sm"
-          : "rounded-md px-3 py-3 font-semibold text-white/90 transition hover:bg-white/10";
+          ? "rounded-md bg-white px-3 py-3.5 font-semibold text-[#b90f24] shadow-sm"
+          : "rounded-md px-3 py-3.5 font-semibold text-white/90 transition hover:bg-white/10";
 
         return link.href === "#" ? (
           <span
             key={link.label}
-            className="rounded-md px-3 py-3 font-semibold text-white/60"
+            className="rounded-md px-3 py-3.5 font-semibold text-white/60"
           >
             {link.label}
           </span>

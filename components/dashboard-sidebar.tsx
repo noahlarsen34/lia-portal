@@ -15,9 +15,7 @@ const adminLinks: DashboardLink[] = [
     { href: "/contacts", label: "Contacts" },
     { href: "/teachers", label: "Teachers" },
     { href: "/documents", label: "Documents" },
-    { href: "#", label: "Reports" },
     { href: "/users", label: "Users" },
-    { href: "#", label: "Settings" },
 ];
 
 const rpmLinks: DashboardLink[] = [
