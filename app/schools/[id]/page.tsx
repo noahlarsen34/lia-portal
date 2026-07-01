@@ -141,7 +141,7 @@ export default async function SchoolProfilePage({
         <main className='min-h-screen bg-[#f8f4f4] text-zinc-950'>
             <DashboardSidebar />
 
-            <section className='min-h-screen px-4 py-6 sm:px-6 lg:ml-64 lg:px-8'>
+            <section className='min-h-screen px-4 py-6 sm:px-6 lg:ml-52 lg:px-8'>
                 <Link
                 href='/schools'
                 className='text-sm font-semibold text-[#c8102e] hover:text-[#a70d25]'

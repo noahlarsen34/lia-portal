@@ -33,13 +33,13 @@ function DashboardNav({
           link.href !== "#" &&
           (pathname === link.href || pathname.startsWith(`${link.href}/`));
         const className = isCurrent
-          ? "rounded-md bg-white px-4 py-3 font-semibold text-[#b90f24] shadow-sm"
-          : "rounded-md px-4 py-3 font-semibold text-white/90 transition hover:bg-white/10";
+          ? "rounded-md bg-white px-3 py-3 font-semibold text-[#b90f24] shadow-sm"
+          : "rounded-md px-3 py-3 font-semibold text-white/90 transition hover:bg-white/10";
 
         return link.href === "#" ? (
           <span
             key={link.label}
-            className="rounded-md px-4 py-3 font-semibold text-white/60"
+            className="rounded-md px-3 py-3 font-semibold text-white/60"
           >
             {link.label}
           </span>
@@ -67,7 +67,9 @@ function UserCard({
 }) {
   return (
     <div className="rounded-md border border-white/20 bg-white/10 p-3 text-sm">
-      <div className="font-semibold">{displayName}</div>
+      <div className="break-words font-semibold [overflow-wrap:anywhere]">
+        {displayName}
+      </div>
       <div className="text-white/70 capitalize">{roleLabel}</div>
     </div>
   );
@@ -120,9 +122,11 @@ export function DashboardSidebarClient({
         </div>
       </header>
 
-      <aside className="fixed left-0 top-0 z-30 hidden h-screen w-64 flex-col bg-[#b90f24] px-5 py-6 text-white lg:flex">
-        <div className="mb-10">
-          <div className="mb-8 rounded-md bg-white p-3">
+      <aside className="fixed left-0 top-0 z-30 hidden h-screen w-52 flex-col bg-[#b90f24] text-white lg:flex">
+        <Link
+          href="/dashboard"
+          className="block border-r border-red-100 bg-[#f8f4f4] px-4 py-5"
+        >
             <Image
               src="/lia-logo.png"
               alt="Latinos in Action logo"
@@ -131,11 +135,12 @@ export function DashboardSidebarClient({
               className="h-auto w-full"
               priority
             />
-          </div>
-        </div>
+        </Link>
 
-        <DashboardNav links={links} />
-        <UserCard displayName={displayName} roleLabel={roleLabel} />
+        <div className="flex min-h-0 flex-1 flex-col px-4 py-5">
+          <DashboardNav links={links} />
+          <UserCard displayName={displayName} roleLabel={roleLabel} />
+        </div>
       </aside>
 
       <div
@@ -151,13 +156,13 @@ export function DashboardSidebarClient({
       <aside
         className={
           isOpen
-            ? "fixed left-0 top-0 z-50 flex h-dvh w-[min(20rem,86vw)] translate-x-0 flex-col bg-[#b90f24] px-5 py-5 text-white shadow-2xl transition-transform duration-200 lg:hidden"
-            : "fixed left-0 top-0 z-50 flex h-dvh w-[min(20rem,86vw)] -translate-x-full flex-col bg-[#b90f24] px-5 py-5 text-white shadow-2xl transition-transform duration-200 lg:hidden"
+            ? "fixed left-0 top-0 z-50 flex h-dvh w-[min(20rem,86vw)] translate-x-0 flex-col bg-[#b90f24] text-white shadow-2xl transition-transform duration-200 lg:hidden"
+            : "fixed left-0 top-0 z-50 flex h-dvh w-[min(20rem,86vw)] -translate-x-full flex-col bg-[#b90f24] text-white shadow-2xl transition-transform duration-200 lg:hidden"
         }
         aria-label="Mobile navigation"
       >
-        <div className="mb-8 flex items-center justify-between gap-3">
-          <div className="rounded-md bg-white p-3">
+        <div className="flex items-center justify-between gap-3 bg-[#f8f4f4] px-5 py-5">
+          <Link href="/dashboard" onClick={() => setIsOpen(false)}>
             <Image
               src="/lia-logo.png"
               alt="Latinos in Action logo"
@@ -166,10 +171,10 @@ export function DashboardSidebarClient({
               className="h-auto w-40"
               priority
             />
-          </div>
+          </Link>
           <button
             type="button"
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-white/20 bg-white/10 text-white transition hover:bg-white/20"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-zinc-200 bg-white text-zinc-900 shadow-sm transition hover:bg-red-50 hover:text-[#b90f24]"
             aria-label="Close navigation menu"
             onClick={() => setIsOpen(false)}
           >
@@ -177,8 +182,10 @@ export function DashboardSidebarClient({
           </button>
         </div>
 
-        <DashboardNav links={links} onNavigate={() => setIsOpen(false)} />
-        <UserCard displayName={displayName} roleLabel={roleLabel} />
+        <div className="flex min-h-0 flex-1 flex-col px-5 py-5">
+          <DashboardNav links={links} onNavigate={() => setIsOpen(false)} />
+          <UserCard displayName={displayName} roleLabel={roleLabel} />
+        </div>
       </aside>
     </>
   );

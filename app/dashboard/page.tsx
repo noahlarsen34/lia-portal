@@ -212,7 +212,7 @@ export default async function DashboardPage() {
     <main className="min-h-screen bg-[#f8f4f4] text-zinc-950">
       <DashboardSidebar />
 
-      <section className="min-h-screen px-4 py-6 sm:px-6 lg:ml-64 lg:px-8">
+      <section className="min-h-screen px-4 py-6 sm:px-6 lg:ml-52 lg:px-8">
         <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-3xl font-semibold">

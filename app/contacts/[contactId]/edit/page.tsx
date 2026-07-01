@@ -44,7 +44,7 @@ export default async function EditMainContactPage({
         <main className="min-h-screen bg-[#f8f4f4] text-zinc-950">
             <DashboardSidebar />
 
-            <section className="min-h-screen px-4 py-6 sm:px-6 lg:ml-64 lg:px-8">
+            <section className="min-h-screen px-4 py-6 sm:px-6 lg:ml-52 lg:px-8">
                 <div className="mx-auto max-w-4xl">
                     <Link
                         href="/contacts"
@@ -106,12 +106,20 @@ export default async function EditMainContactPage({
                                     <span className="text-sm font-medium text-zinc-800">
                                         Role
                                     </span>
-                                    <input
+                                    <select
                                         name="role"
                                         required
                                         defaultValue={contact.role ?? ""}
                                         className="mt-2 h-11 w-full rounded-md border border-zinc-300 px-3 text-sm outline-none focus:border-[#c8102e] focus:ring-4 focus:ring-red-100"
-                                    />
+                                    >
+                                        <option value="" disabled>
+                                            Select role
+                                        </option>
+                                        <option value="Sponsor">Sponsor</option>
+                                        <option value="Donor">Donor</option>
+                                        <option value="Potential Partner">Potential Partner</option>
+                                        <option value="Friends">Friends</option>
+                                    </select>
                                 </label>
 
                                 <label className="block min-w-0">

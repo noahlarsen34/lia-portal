@@ -37,7 +37,7 @@ export default async function DistrictsPage() {
     <main className="min-h-screen bg-[#f8f4f4] text-zinc-950">
       <DashboardSidebar />
 
-      <section className="min-h-screen px-4 py-6 sm:px-6 lg:ml-64 lg:px-8">
+      <section className="min-h-screen px-4 py-6 sm:px-6 lg:ml-52 lg:px-8">
         <div className="mx-auto w-full max-w-6xl">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
