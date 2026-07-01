@@ -445,7 +445,7 @@ export function ContactsTable({ contacts, userRole }: ContactsTableProps) {
                                 <p className="mt-1 break-words font-semibold [overflow-wrap:anywhere]">
                                     {isTextablePhone(contact.phone) ? (
                                         <a
-                                            href={getSmsHref(contact.phone)}
+                                            href={getPhoneHref(contact.phone)}
                                             className="hover:text-[#c8102e] hover:underline"
                                         >
                                             {contact.phone}

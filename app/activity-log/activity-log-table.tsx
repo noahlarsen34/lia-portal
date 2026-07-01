@@ -232,12 +232,44 @@ export function ActivityLogTable({ activities }: ActivityLogTableProps) {
 
                         <div className="mt-4 space-y-2 border-t border-zinc-100 pt-4 text-sm">
                             <div>
-                                
+                                <p className="text-xs uppercase text-zinc-500">Contact</p>
+                                <p className="mt-1 break-words font-semibold [overflow-wrap:anywhere]">
+                                    {activity.contactPerson}
+                                </p>
+                            </div>
+
+                            <div>
+                                <p className="text-xs uppercase text-zinc-500">School</p>
+                                {activity.schoolId ? (
+                                    <Link
+                                        href={`/schools/${activity.schoolId}`}
+                                        className="mt-1 block break-words font-semibold text-zinc-950 hover:text-[#c8102e] [overflow-wrap:anywhere]"
+                                    >
+                                        {activity.schoolName}
+                                    </Link>
+                                ) : (
+                                    <p className="mt-1 break-words font-semibold [overflow-wrap:anywhere]">
+                                        {activity.schoolName}
+                                    </p>
+                                )}
+                            </div>
+
+                            <div>
+                                <p className="text-xs uppercase text-zinc-500">Assigned RPM</p>
+                                <p className="mt-1 break-words font-semibold [overflow-wrap:anywhere]">
+                                    {activity.rpm}
+                                </p>
                             </div>
                         </div>
                     </article>
                 ))}
             </div>
+
+            {filteredActivities.length === 0 ? (
+                <div className="mt-4 rounded-md border border-zinc-200 bg-zinc-50 px-4 py-8 text-center text-sm text-zinc-500">
+                    No activities match your filters.
+                </div>
+            ) : null}
         </>
-    )
+    );
 }
