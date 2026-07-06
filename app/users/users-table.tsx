@@ -1,7 +1,9 @@
 "use client";
 
+import { Download } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { exportUsersToGoogleSheet } from "./export-actions";
 
 type UserRow = {
     id: string;
@@ -18,6 +20,9 @@ type UsersTableProps = {
 export function UsersTable({ users }: UsersTableProps) {
     const [search, setSearch] = useState("");
     const [roleFilter, setRoleFilter] = useState("all");
+    const [isExporting, setIsExporting] = useState(false);
+    const [exportUrl, setExportUrl] = useState("");
+    const [exportError, setExportError] = useState("");
     const isMailableEmail = (email: string) => {
         return email.trim() !== "" && email !== "No email listed";
     };
@@ -38,9 +43,27 @@ export function UsersTable({ users }: UsersTableProps) {
         });
     }, [users, search, roleFilter])
 
+    const exportUsersGoogleSheet = async () => {
+        setIsExporting(true);
+        setExportUrl("");
+        setExportError("");
+
+        try {
+            const result = await exportUsersToGoogleSheet(filteredUsers);
+            setExportUrl(result.url);
+            window.open(result.url, "_blank", "noopener,noreferrer");
+        } catch (error) {
+            setExportError(
+                error instanceof Error ? error.message : "Could not export users.",
+            );
+        } finally {
+            setIsExporting(false);
+        }
+    };
+
     return (
         <section className="rounded-lg border border-red-100 bg-white p-4 shadow-sm sm:p-6">
-            <div className="mb-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="mb-6 flex flex-col gap-3 border-b border-zinc-100 pb-5 lg:flex-row lg:items-center lg:justify-between">
                 <input
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
@@ -48,11 +71,11 @@ export function UsersTable({ users }: UsersTableProps) {
                     placeholder="Search users..."
                 />
 
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
                     <select
                         value={roleFilter}
                         onChange={(event) => setRoleFilter(event.target.value)}
-                        className="h-10 w-full rounded-md border border-zinc-300 bg-white px-3 text-sm outline-none focus:border-[#c8102e] focus:ring-4 focus:ring-red-100 sm:w-40"
+                        className="h-10 w-full rounded-md border border-zinc-300 bg-white px-3 text-sm outline-none focus:border-[#c8102e] focus:ring-4 focus:ring-red-100 sm:w-48"
                     >
                         <option value="all">All Roles</option>
                         <option value="admin">Admin</option>
@@ -61,11 +84,55 @@ export function UsersTable({ users }: UsersTableProps) {
                         <option value="student">Student</option>
                     </select>
 
-                    <p className="whitespace-nowrap text-sm text-zinc-500">
+                    <p className="inline-flex h-10 items-center justify-center whitespace-nowrap rounded-md bg-zinc-50 px-3 text-sm font-medium text-zinc-600">
                         {filteredUsers.length} of {users.length}
                     </p>
+                    
+                    <button
+                        type="button"
+                        onClick={exportUsersGoogleSheet}
+                        disabled={isExporting || filteredUsers.length === 0}
+                        className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-[#c8102e] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#a70d25] disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+                    >
+                        <Download className="h-4 w-4" aria-hidden />
+                        {isExporting ? "Exporting..." : "Google Sheet"}
+                    </button>
                 </div>
             </div>
+
+            {exportUrl ? (
+                <div className="mb-4 flex items-center justify-between gap-4 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+                    <p>
+                        Google Sheet created.{" "}
+                        <a
+                            href={exportUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="font-semibold underline"
+                        >
+                            Open export
+                        </a>
+                    </p>
+
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setExportUrl("");
+                            setExportError("");
+                        }}
+                        className="rounded-md px-2 py-1 text-sm font-bold text-green-700 hover:bg-green-100"
+                        aria-label="Dismiss export confirmation"
+                    >
+                        ×
+                    </button>
+                </div>
+            ) : null}
+
+            {exportError ? (
+                <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    {exportError}
+                </div>
+            ) : null}
 
             <div className="overflow-x-auto">
                 <table className="w-full min-w-[760px] border-collapse text-left text-sm">

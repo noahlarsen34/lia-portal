@@ -29,7 +29,7 @@ export async function updateSchool(schoolId: string, formData: FormData) {
         .from("schools")
         .update({
             name,
-            year_lia_started: yearLiaStarted ? Number(yearLiaStarted): null,
+            year_lia_started: yearLiaStarted || null,
             city: address || null,
             state,
             region: region || null,

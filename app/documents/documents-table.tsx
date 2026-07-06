@@ -1,7 +1,9 @@
 "use client";
 
+import { Download } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { exportDocumentsToGoogleSheet } from "./export-actions";
 
 type DocumentRow = {
     id: string;
@@ -26,6 +28,9 @@ export function DocumentsTable({ documents, userRole }: DocumentsTableProps) {
     const [selectedType, setSelectedType] = useState("all");
     const [selectedState, setSelectedState] = useState("all");
     const [selectedRpm, setSelectedRpm] = useState("all");
+    const [isExporting, setIsExporting] = useState(false);
+    const [exportUrl, setExportUrl] = useState("");
+    const [exportError, setExportError] = useState("");
 
     const isAdmin = userRole === "admin";
 
@@ -54,6 +59,24 @@ export function DocumentsTable({ documents, userRole }: DocumentsTableProps) {
         setSelectedType("all");
         setSelectedState("all");
         setSelectedRpm("all");
+    };
+
+    const exportDocumentsGoogleSheet = async () => {
+        setIsExporting(true);
+        setExportUrl("");
+        setExportError("");
+
+        try {
+            const result = await exportDocumentsToGoogleSheet(filteredDocuments);
+            setExportUrl(result.url);
+            window.open(result.url, "_blank", "noopener,noreferrer");
+        } catch (error) {
+            setExportError(
+                error instanceof Error ? error.message : "Could not export documents.",
+            );
+        } finally {
+            setIsExporting(false);
+        }
     };
 
     const hasActiveFilters =
@@ -156,11 +179,55 @@ export function DocumentsTable({ documents, userRole }: DocumentsTableProps) {
                 </button>
             </div>
 
-            <div className="mb-6 border-t border-zinc-100 pt-4">
+            <div className="mb-6 flex flex-col gap-3 border-t border-zinc-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-sm text-zinc-500">
                     Showing {filteredDocuments.length} document records
                 </p>
+
+                <button
+                    type="button"
+                    onClick={exportDocumentsGoogleSheet}
+                    disabled={filteredDocuments.length === 0 || isExporting}
+                    className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-[#c8102e] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#a70d25] disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+                >
+                    <Download className="h-4 w-4" aria-hidden />
+                    {isExporting ? "Exporting..." : "Google Sheet"}
+                </button>
             </div>
+
+            {exportUrl ? (
+                <div className="mb-4 flex items-center justify-between gap-4 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+                    <p>
+                        Google Sheet created.{" "}
+                        <a
+                            href={exportUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="font-semibold underline"
+                        >
+                            Open export
+                        </a>
+                    </p>
+
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setExportUrl("");
+                            setExportError("");
+                        }}
+                        className="rounded-md px-2 py-1 text-sm font-bold text-green-700 hover:bg-green-100"
+                        aria-label="Dismiss export confirmation"
+                    >
+                        ×
+                    </button>
+                </div>
+            ) : null}
+
+            {exportError ? (
+                <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    {exportError}
+                </div>
+            ) : null}
 
             <div className="hidden overflow-x-auto md:block">
                 <table className="w-full min-w-[1120px] border-collapse text-left text-sm">

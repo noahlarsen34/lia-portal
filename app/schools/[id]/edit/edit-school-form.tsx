@@ -28,7 +28,7 @@ const states = [
 type School = {
     id: string;
     name: string;
-    year_lia_started: number | null;
+    year_lia_started: string | null;
     address: string | null;
     state: string;
     region: string | null;
@@ -118,9 +118,9 @@ export function EditSchoolForm({
                         </span>
                         <input
                             name="year_lia_started"
-                            type="number"
-                            min="2001"
-                            max="2100"
+                            type="text"
+                            inputMode="numeric"
+                            placeholder="2024-2025"
                             defaultValue={school.year_lia_started ?? ""}
                             className="mt-2 h-11 w-full rounded-md border border-zinc-300 px-3 text-sm outline-none focus:border-[#c8102e] focus:ring-4 focus:ring-red-100"
                         />

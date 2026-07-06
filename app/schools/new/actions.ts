@@ -25,7 +25,7 @@ export async function createSchool(formData: FormData) {
         .from("schools")
         .insert({
             name,
-            year_lia_started: yearLiaStarted ? Number(yearLiaStarted) : null,
+            year_lia_started: yearLiaStarted || null,
             city: address || null,
             state,
             region: region || null,

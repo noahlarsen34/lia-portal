@@ -1,5 +1,6 @@
 "use client";
 
+import { Download } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { exportSchoolsToGoogleSheet } from './export-actions';
@@ -274,8 +275,9 @@ export function SchoolsTable({ schools }: SchoolsTableProps) {
                     type='button'
                     onClick={exportSchoolsGoogleSheet}
                     disabled={filteredSchools.length === 0 || isExporting}
-                    className='h-10 w-full rounded-md bg-[#c8102e] px-5 text-sm font-semibold text-white transition hover:bg-[#a70d25] disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto'
+                    className='inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-[#c8102e] px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#a70d25] disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto'
                 >
+                    <Download className='h-4 w-4' aria-hidden />
                     {isExporting ? "Exporting..." : "Google Sheet"}
                 </button>
             </div>
