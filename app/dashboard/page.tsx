@@ -1,27 +1,14 @@
-import { redirect } from "next/navigation";
 import { signOut } from "@/app/login/actions";
 import { createClient } from "@/utils/supabase/server";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
+import { requireStaff } from '@/utils/role-guards';
 import Link from 'next/link';
 
 export default async function DashboardPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, user, profile} = await requireStaff();
 
-  if (!user) {
-    redirect("/login");
-  }
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("full_name, email, role")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  const displayName = profile?.full_name ?? user.email ?? "Admin";
-  const isAdmin = profile?.role === "admin";
+  const displayName = profile.full_name ?? user.email ?? "Admin";
+  const isAdmin = profile.role === "admin";
 
   const { count: totalSchools } = await supabase
     .from("schools")

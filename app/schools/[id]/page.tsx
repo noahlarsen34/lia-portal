@@ -9,6 +9,7 @@ import {
     deleteContact,
     deleteDocument,
     deleteTeacher,
+    updateSchoolProfileNotes,
 } from './actions'
 
 
@@ -16,12 +17,18 @@ type SchoolProfilePageProps = {
     params: Promise<{
         id: string;
     }>;
+    searchParams: Promise<{
+        error?: string;
+        success?: string;
+    }>;
 };
 
 export default async function SchoolProfilePage({
     params,
+    searchParams,
 }: SchoolProfilePageProps) {
     const {id} = await params;
+    const { error, success } = await searchParams;
     const supabase = await createClient();
 
     const {
@@ -63,7 +70,10 @@ export default async function SchoolProfilePage({
 
         if(!school) {
         redirect('/schools');
+
     }
+
+    const updateNotesForSchool = updateSchoolProfileNotes.bind(null, school.id);
 
     const { data: assignedRpm } = school.assigned_rpm_id
         ? await supabase
@@ -222,11 +232,46 @@ export default async function SchoolProfilePage({
                 </header>
 
                 <section className='mt-5 grid gap-5 lg:grid-cols-3'>
-                    <div className='min-h-48 rounded-lg border border-red-100 bg-white p-4 shadow-sm sm:p-6 lg:col-span-2'>
-                        <h2 className='text-lg font-semibold'>Profile Notes</h2>
-                        <p className='mt-3 break-words text-sm text-zinc-600 [overflow-wrap:anywhere]'>
-                            {school.notes ?? "No notes yet."}
-                        </p>
+                    <div className="min-h-48 rounded-lg border border-red-100 bg-white p-4 shadow-sm sm:p-6 lg:col-span-2">
+                        <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+                            <div>
+                                <h2 className="text-lg font-semibold">Profile Notes</h2>
+                                <p className="mt-1 text-sm text-zinc-500">
+                                    Internal notes for staff working with this school.
+                                </p>
+                            </div>
+
+                            {success === "notes-updated" ? (
+                                <span className="rounded-full bg-green-50 px-3 py-1 text-xs font-semibold text-green-700">
+                                    Saved
+                                </span>
+                            ) : null}
+                        </div>
+
+                        {error === "notes-update-failed" ? (
+                            <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                                Notes could not be saved. Please try again.
+                            </div>
+                        ) : null}
+
+                        <form action={updateNotesForSchool} className="space-y-4">
+                            <textarea
+                                name="notes"
+                                defaultValue={school.notes ?? ""}
+                                rows={7}
+                                placeholder="Add profile notes for this school..."
+                                className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm leading-6 outline-none focus:border-[#c8102e] focus:ring-4 focus:ring-red-100"
+                            />
+
+                            <div className="flex justify-end">
+                                <button
+                                    type="submit"
+                                    className="inline-flex h-10 items-center justify-center rounded-md bg-[#c8102e] px-4 text-sm font-semibold text-white hover:bg-[#a70d25]"
+                                >
+                                    Save Notes
+                                </button>
+                            </div>
+                        </form>
                     </div>
 
                     <div className='min-h-48 rounded-lg border border-red-100 bg-white p-4 shadow-sm sm:p-6'>

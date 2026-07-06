@@ -21,6 +21,29 @@ export async function signIn(formData: FormData) {
     redirect("/login?error=invalid-login");
   }
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login?error=invalid-login");
+  }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .maybeSingle();
+  
+  if (profile?.role === "teacher") {
+    redirect("/teacher");
+  }
+
+  if (profile?.role === "student") {
+    redirect("/student");
+  }
+
+
   redirect("/dashboard");
 }
 

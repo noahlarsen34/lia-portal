@@ -1,7 +1,29 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { requireAdmin } from "@/utils/role-guards";
+import { requireAdmin, requireStaff } from "@/utils/role-guards";
+
+export async function updateSchoolProfileNotes(
+    schoolId: string,
+    formData: FormData,
+) {
+    const { supabase } = await requireStaff(`/schools/${schoolId}`);
+
+    const notes = String(formData.get("notes") ?? "").trim();
+
+    const { error } = await supabase
+        .from("schools")
+        .update({
+            notes: notes || null,
+        })
+        .eq("id", schoolId);
+
+    if (error) {
+        redirect(`/schools/${schoolId}?error=notes-update-failed`);
+    }
+
+    redirect(`/schools/${schoolId}?success=notes-updated`);
+}
 
 export async function deleteContact(schoolId: string, contactId: string) {
     const { supabase } = await requireAdmin(`/schools/${schoolId}`);

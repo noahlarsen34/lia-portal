@@ -57,6 +57,8 @@ export function UsersTable({ users }: UsersTableProps) {
                         <option value="all">All Roles</option>
                         <option value="admin">Admin</option>
                         <option value="rpm">RPM</option>
+                        <option value="teacher">Teacher</option>
+                        <option value="student">Student</option>
                     </select>
 
                     <p className="whitespace-nowrap text-sm text-zinc-500">

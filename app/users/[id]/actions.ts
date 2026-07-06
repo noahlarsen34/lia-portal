@@ -52,7 +52,9 @@ export async function updateUserRole(userId: string, formData: FormData) {
 
     const role = String(formData.get("role") ?? "").trim();
 
-    if (role !== "admin" && role !== "rpm") {
+    const validRoles = ["admin", "rpm", "teacher", "student"];
+
+    if (!validRoles.includes(role)) {
         redirect(`/users/${userId}?error=invalid-role`);
     }
 
