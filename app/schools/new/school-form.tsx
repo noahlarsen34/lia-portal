@@ -104,9 +104,9 @@ export function SchoolForm({
                         </span>
                         <input
                             name="year_lia_started"
-                            type="number"
-                            min="2001"
-                            max="2100"
+                            type="text"
+                            inputMode="numeric"
+                            placeholder="2024-2025"
                             className="mt-2 h-11 w-full rounded-md border border-zinc-300 px-3 text-sm outline-none focus:border-[#c8102e] focus:ring-4 focus:ring-red-100"
                         />
                     </label>
@@ -214,6 +214,10 @@ export function SchoolForm({
                             <option value="elementary">Elementary</option>
                             <option value="middle">Middle School</option>
                             <option value="high">High School</option>
+                            <option value="middle_high">Middle + High School</option>
+                            <option value="k_8">K-8</option>
+                            <option value="k_12">K-12</option>
+                            <option value="other">Other</option>
                             <option value="unknown">Unknown</option>
                         </select>
                     </label>

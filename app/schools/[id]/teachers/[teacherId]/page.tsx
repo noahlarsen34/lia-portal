@@ -31,7 +31,7 @@ export default async function TeacherPage({ params }: TeacherPageProps) {
     const { data: teacher } = await supabase
         .from("teachers")
         .select(
-            "id, first_name, last_name, name, email, phone, status, username, password_status, is_new_teacher"
+            "id, first_name, last_name, name, email, phone, status, username, program_level, notes, password_status, is_new_teacher"
         )
         .eq("id", teacherId)
         .eq("school_id", id)
@@ -44,6 +44,28 @@ export default async function TeacherPage({ params }: TeacherPageProps) {
     const displayName = 
         `${teacher.first_name ?? ""} ${teacher.last_name ?? ""}`.trim() ||
         teacher.name
+
+    const formatProgramLevel = (programLevel: string | null) => {
+        switch (programLevel) {
+            case "elementary":
+                return "Elementary";
+            case "middle":
+                return "Middle School";
+            case "high":
+                return "High School";
+            case "middle_high":
+                return "Middle + High School";
+            case "k_8":
+                return "K-8";
+            case "k_12":
+                return "K-12";
+            case "other":
+                return "Other";
+            case "unknown":
+            default:
+                return "Unknown";
+        }
+    };
     
     return (
         <main className='min-h-screen bg-[#f8f4f4] text-zinc-950'>
@@ -114,6 +136,15 @@ export default async function TeacherPage({ params }: TeacherPageProps) {
 
                             <div>
                                 <p className='text-sm uppercase text-zinc-500'>
+                                    Program Level
+                                </p>
+                                <p className='mt-1 font-semibold'>
+                                    {formatProgramLevel(teacher.program_level)}
+                                </p>
+                            </div>
+
+                            <div>
+                                <p className='text-sm uppercase text-zinc-500'>
                                     Password Status
                                 </p>
                                 <p className='mt-1 font-semibold capitalize'>
@@ -134,6 +165,17 @@ export default async function TeacherPage({ params }: TeacherPageProps) {
                                 </p>
                                 <p className='mt-1 font-semibold'>
                                     {teacher.is_new_teacher ? "Yes": "No"}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className='mt-8 border-t border-zinc-100 pt-6'>
+                            <p className='text-sm uppercase text-zinc-500'>
+                                Teacher Notes
+                            </p>
+                            <div className='mt-2 rounded-md border border-zinc-100 bg-zinc-50 px-4 py-3'>
+                                <p className='break-words text-sm leading-6 text-zinc-700 [overflow-wrap:anywhere]'>
+                                    {teacher.notes || "No teacher notes yet."}
                                 </p>
                             </div>
                         </div>

@@ -124,8 +124,13 @@ export default async function TeacherClassesPage() {
                             <tbody className="divide-y divide-zinc-100">
                                 {classes.map((liaClass) => (
                                     <tr key={liaClass.id}>
-                                        <td className="px-4 py-4 font-semibold text-zinc-950">
-                                            {liaClass.name}
+                                        <td className="px-4 py-4 font-semibold">
+                                            <Link
+                                                href={`/teacher/classes/${liaClass.id}`}
+                                                className="text-zinc-950 transition hover:text-[#c4122f] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#c4122f]"
+                                            >
+                                                {liaClass.name}
+                                            </Link>
                                         </td>
                                         <td className="px-4 py-4 text-zinc-700">
                                             {liaClass.school_year}

@@ -16,9 +16,23 @@ export async function updateSchool(schoolId: string, formData: FormData) {
     const schoolLevel = String(formData.get('school_level') ?? "").trim();
     const status = String(formData.get("status") ?? "active").trim();
     const mouStatus = String(formData.get("mou_status") ?? "pending").trim();
+    const validSchoolLevels = [
+        "elementary",
+        "middle",
+        "high",
+        "middle_high",
+        "k_8",
+        "k_12",
+        "other",
+        "unknown",
+    ];
 
     if (!name || !state || !status || !mouStatus || !schoolLevel) {
         redirect(`/schools/${schoolId}/edit?error=missing-fields`);
+    }
+
+    if (!validSchoolLevels.includes(schoolLevel)) {
+        redirect(`/schools/${schoolId}/edit?error=invalid-school-level`);
     }
 
     const {
@@ -44,7 +58,11 @@ export async function updateSchool(schoolId: string, formData: FormData) {
         .eq("id", schoolId);
 
     if (error) {
-        redirect(`/schools/${schoolId}/edit?error=update-failed`);
+        redirect(
+            `/schools/${schoolId}/edit?error=${
+                error.code === "23514" ? "school-level-update-failed" : "update-failed"
+            }`,
+        );
     }
     redirect(`/schools/${schoolId}`);
 }

@@ -44,7 +44,7 @@ export default async function EditTeacherPage({
     const { data: teacher } = await supabase
         .from("teachers")
         .select(
-            "id, name, first_name, last_name, email, phone, status, username, password_status, is_new_teacher",
+            "id, name, first_name, last_name, email, phone, status, username, program_level, notes, password_status, is_new_teacher",
         )
         .eq("id", teacherId)
         .eq("school_id",school.id)
@@ -191,6 +191,39 @@ export default async function EditTeacherPage({
                                     name="username"
                                     defaultValue={teacher.username ?? ""}
                                     className="mt-2 h-11 w-full rounded-md border border-zinc-300 px-3 text-sm outline-none focus:border-[#c8102e] focus:ring-4 focus:ring-red-100"
+                                />
+                            </label>
+
+                            <label className='block min-w-0'>
+                                <span className='text-sm font-medium text-zinc-800'>
+                                    Teacher Program Level
+                                </span>
+                                <select
+                                    name='program_level'
+                                    defaultValue={teacher.program_level ?? ""}
+                                    className='mt-2 h-11 w-full rounded-md border border-zinc-300 bg-white px-3 text-sm outline-none focus:border-[#c8102e] focus:ring-4 focus:ring-red-100'
+                                >
+                                    <option value="">Unknown</option>
+                                    <option value="elementary">Elementary</option>
+                                    <option value="middle">Middle</option>
+                                    <option value="high">High School</option>
+                                    <option value="middle_high">Middle + High School</option>
+                                    <option value="k_8">K-8</option>
+                                    <option value="k_12">K-12</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </label>
+
+                            <label className='block min-w-0'>
+                                <span className='text-sm font-medium text-zinc-800'>
+                                    Teacher Notes
+                                </span>
+                                <textarea
+                                    name='notes'
+                                    rows={4}
+                                    defaultValue={teacher.notes ?? ""}
+                                    placeholder='Example: Teaches high school LIA only. Middle school teacher is seperate.'
+                                    className='mt-2 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-[#c8102e] focus:ring-4 focus:ring-red-100'
                                 />
                             </label>
 

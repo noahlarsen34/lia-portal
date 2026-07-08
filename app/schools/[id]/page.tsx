@@ -84,6 +84,29 @@ export default async function SchoolProfilePage({
         : { data: null };
 
     const assignedRpmName = assignedRpm?.full_name ?? "Unassigned";
+
+    const formatProgramLevel = (programLevel: string | null) => {
+        switch (programLevel) {
+            case 'elementary':
+                return "Elementary";
+            case "middle":
+                return "Middle School";
+            case "high":
+                return "High School";
+            case "middle_high":
+                return "Middle + High School";
+            case "k_8":
+                return "K-8";
+            case "k_12":
+                return "K-12";
+            case "other":
+                return "Other";
+            case "unknown":
+            default:
+                return "Unknown";
+
+        }
+    };
     
     const { data: contacts } = await supabase
         .from("contacts")
@@ -93,7 +116,7 @@ export default async function SchoolProfilePage({
     
     const { data: teachers } = await supabase
         .from("teachers")
-        .select("id, name, first_name, last_name, email, phone, status, username, password_status, is_new_teacher")
+        .select("id, name, first_name, last_name, email, phone, status, username, program_level, notes, password_status, is_new_teacher")
         .eq("school_id", id)
         .order("name", { ascending: true });
     
@@ -436,6 +459,20 @@ export default async function SchoolProfilePage({
 
                                 <p className="mt-2 break-words text-sm text-zinc-600 [overflow-wrap:anywhere]">{teacher.email}</p>
                                 <p className="break-words text-sm text-zinc-600 [overflow-wrap:anywhere]">{teacher.phone}</p>
+
+                                {teacher.program_level ? (
+                                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                                        <span className="rounded-full bg-red-50 px-2 py-1 text-xs font-semibold text-[#c8102e]">
+                                            {formatProgramLevel(teacher.program_level)}
+                                        </span>
+                                    </div>
+                                ) : null}
+
+                                {teacher.notes ? (
+                                    <p className='mt-3 break-words rounded-md border border-zinc-100 bg-white px-3 py-2 text-sm leading-6 text-zinc-600 [overflow-wrap:anywhere]'>
+                                        {teacher.notes}
+                                    </p>
+                                ) : null}
                                 <div className='mt-3 flex flex-wrap items-center gap-2'>
                                     <span
                                         className={`rounded-full px-2 py-1 text-xs font-semibold capitalize ${

@@ -93,6 +93,10 @@ export function EditSchoolForm({
                 <div className="mb-5 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                     {error === "missing-fields"
                         ? "School name, state, school level, status, and MOU status are required."
+                        : error === "invalid-school-level"
+                        ? "Choose a valid school level."
+                        : error === "school-level-update-failed"
+                        ? "The database is not accepting that school level yet. Update the school level constraint in Supabase, then try again."
                         : "Something went wrong. Please try again."
                     }
                 </div>
@@ -229,6 +233,10 @@ export function EditSchoolForm({
                             <option value="elementary">Elementary</option>
                             <option value="middle">Middle School</option>
                             <option value="high">High School</option>
+                            <option value="middle_high">Middle + High School</option>
+                            <option value="k_8">K-8</option>
+                            <option value="k_12">K-12</option>
+                            <option value="other">Other</option>
                             <option value="unknown">Unknown</option>
                         </select>
                     </label>
@@ -284,4 +292,3 @@ export function EditSchoolForm({
         </section>
     );
 }
-

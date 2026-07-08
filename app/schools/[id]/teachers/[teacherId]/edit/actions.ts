@@ -17,6 +17,8 @@ export async function updateTeacher(
     const phone = String(formData.get("phone") ?? "").trim();
     const status = String(formData.get("status") ?? "").trim();
     const username = String(formData.get("username") ?? "").trim();
+    const programLevel = String(formData.get("program_level") ?? "").trim();
+    const notes = String(formData.get("notes") ?? "").trim();
     const passwordStatus = String(formData.get("password_status") ?? "").trim();
     const isNewTeacher = formData.get("is_new_teacher") === "on";
 
@@ -36,6 +38,8 @@ export async function updateTeacher(
             phone: phone || null,
             status,
             username: username || null,
+            program_level: programLevel || null,
+            notes: notes || null,
             password_status: passwordStatus || "not invited",
             is_new_teacher: isNewTeacher,
         })

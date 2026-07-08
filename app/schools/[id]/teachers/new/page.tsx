@@ -134,6 +134,27 @@ export default async function AddTeacherPage({
                                 />
                             </label>
 
+                            <div className='grid gap-5 sm:grid-cols-2'>
+                                <label className='block min-w-0'>
+                                    <span className='text-sm font-medium text-zinc-800'>
+                                        Teacher Program Level
+                                    </span>
+                                    <select
+                                        name="program_level"
+                                        defaultValue=""
+                                        className='mt-2 h-11 w-full rounded-md border border-zinc-300 bg-white px-3 text-sm outline-none focus:border-[#c8102e] focus:ring-4 focus:ring-red-100'
+                                    >
+                                        <option value="">Unknown</option>
+                                        <option value="elementary">Elementary</option>
+                                        <option value="Middle">Middle</option>
+                                        <option value="high">High School</option>
+                                        <option value="middle_high">Middle + High School</option>
+                                        <option value="k_8">K-8</option>
+                                        <option value="k_12">K-12</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </label>
+
                             <label className='block min-w-0'>
                                 <span className='text-sm font-medium text-zinc-800'>
                                     Status
@@ -147,6 +168,19 @@ export default async function AddTeacherPage({
                                     <option value='inactive'>Inactive</option>
                                 </select>
                             </label>
+                        </div>
+
+                        <label className='block min-w-0'>
+                            <span className='text-sm font-medium text-zinc-800'>
+                                Teacher Notes
+                            </span>
+                            <textarea
+                                name='notes'
+                                rows={4}
+                                placeholder="Example: Teaches high school LIA only. Middle school teacher is separate."
+                                className='mt-2 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-[#c8102e] focus:ring-4 focus:ring-red-100'
+                            />
+                        </label>
 
                             <label className='flex items-start gap-3 rounded-md border border-zinc-200 bg-zinc-50 px-4 py-3'>
                                 <input

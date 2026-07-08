@@ -12,6 +12,8 @@ export async function createTeacher(schoolId: string, formData: FormData) {
     const email = String(formData.get("email") ?? "").trim();
     const phone = String(formData.get("phone") ?? "").trim();
     const username = String(formData.get("username") ?? "").trim();
+    const programLevel = String(formData.get("username") ?? "").trim();
+    const notes = String(formData.get("notes") ?? "").trim();
     const status = String(formData.get("status") ?? "active").trim();
     const isNewTeacher = formData.get("is_new_teacher") === "on";
 
@@ -28,6 +30,8 @@ export async function createTeacher(schoolId: string, formData: FormData) {
         phone: phone || null,
         status: status === "inactive" ? "inactive" : "active",
         username: username || null,
+        program_level: programLevel || null,
+        notes: notes || null,
         password_status: "not invited",
         is_new_teacher: isNewTeacher,
     });

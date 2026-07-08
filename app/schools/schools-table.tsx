@@ -73,6 +73,10 @@ export function SchoolsTable({ schools }: SchoolsTableProps) {
         { value: "elementary", label: "Elementary" },
         { value: "middle", label: "Middle School" },
         { value: "high", label: "High School" },
+        { value: "middle_high", label: "Middle + High School" },
+        { value: "k_8", label: "K-8" },
+        { value: "k_12", label: "K-12" },
+        { value: "other", label: "Other"},
         { value: "unknown", label: "Unknown"},
     ];
 
