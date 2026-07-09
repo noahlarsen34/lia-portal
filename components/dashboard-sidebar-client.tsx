@@ -3,8 +3,21 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X } from "lucide-react";
+import {
+  ClipboardList,
+  FileText,
+  GraduationCap,
+  Home,
+  LogOut,
+  Map,
+  Menu,
+  School,
+  UserRound,
+  Users,
+  X,
+} from "lucide-react";
 import { useEffect, useState } from "react";
+import { signOut } from "@/app/login/actions";
 
 export type DashboardLink = {
   href: string;
@@ -17,6 +30,17 @@ type DashboardSidebarClientProps = {
   roleLabel: string;
 };
 
+const iconsByHref = {
+  "/dashboard": Home,
+  "/schools": School,
+  "/districts": Map,
+  "/activity-log": ClipboardList,
+  "/contacts": UserRound,
+  "/teachers": GraduationCap,
+  "/documents": FileText,
+  "/users": Users,
+};
+
 function DashboardNav({
   links,
   onNavigate,
@@ -27,20 +51,22 @@ function DashboardNav({
   const pathname = usePathname();
 
   return (
-    <nav className="flex flex-1 flex-col gap-3">
+    <nav className="flex flex-1 flex-col gap-2">
       {links.map((link) => {
+        const Icon = iconsByHref[link.href as keyof typeof iconsByHref];
         const isCurrent =
           link.href !== "#" &&
           (pathname === link.href || pathname.startsWith(`${link.href}/`));
         const className = isCurrent
-          ? "rounded-md bg-white px-3 py-3.5 font-semibold text-[#b90f24] shadow-sm"
-          : "rounded-md px-3 py-3.5 font-semibold text-white/90 transition hover:bg-white/10";
+          ? "flex items-center gap-3 rounded-md bg-white px-3 py-3.5 font-semibold text-[#b90f24] shadow-sm"
+          : "flex items-center gap-3 rounded-md px-3 py-3.5 font-semibold text-white/90 transition hover:bg-white/10";
 
         return link.href === "#" ? (
           <span
             key={link.label}
-            className="rounded-md px-3 py-3.5 font-semibold text-white/60"
+            className="flex items-center gap-3 rounded-md px-3 py-3.5 font-semibold text-white/60"
           >
+            {Icon ? <Icon className="h-5 w-5 shrink-0" aria-hidden="true" /> : null}
             {link.label}
           </span>
         ) : (
@@ -50,7 +76,8 @@ function DashboardNav({
             className={className}
             onClick={onNavigate}
           >
-            {link.label}
+            {Icon ? <Icon className="h-5 w-5 shrink-0" aria-hidden="true" /> : null}
+            <span>{link.label}</span>
           </Link>
         );
       })}
@@ -72,6 +99,20 @@ function UserCard({
       </div>
       <div className="text-white/70 capitalize">{roleLabel}</div>
     </div>
+  );
+}
+
+function LogoutButton() {
+  return (
+    <form action={signOut} className="border-t border-white/20 pt-3">
+      <button
+        type="submit"
+        className="flex w-full items-center gap-3 rounded-md px-3 py-3.5 text-left font-semibold text-white/90 transition hover:bg-white/10"
+      >
+        <LogOut className="h-5 w-5 shrink-0" aria-hidden="true" />
+        <span>Log Out</span>
+      </button>
+    </form>
   );
 }
 
@@ -139,7 +180,10 @@ export function DashboardSidebarClient({
 
         <div className="flex min-h-0 flex-1 flex-col px-4 py-5">
           <DashboardNav links={links} />
-          <UserCard displayName={displayName} roleLabel={roleLabel} />
+          <LogoutButton />
+          <div className="mt-3">
+            <UserCard displayName={displayName} roleLabel={roleLabel} />
+          </div>
         </div>
       </aside>
 
@@ -184,7 +228,10 @@ export function DashboardSidebarClient({
 
         <div className="flex min-h-0 flex-1 flex-col px-5 py-5">
           <DashboardNav links={links} onNavigate={() => setIsOpen(false)} />
-          <UserCard displayName={displayName} roleLabel={roleLabel} />
+          <LogoutButton />
+          <div className="mt-3">
+            <UserCard displayName={displayName} roleLabel={roleLabel} />
+          </div>
         </div>
       </aside>
     </>

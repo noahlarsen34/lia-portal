@@ -1,4 +1,3 @@
-import { signOut } from "@/app/login/actions";
 import { createClient } from "@/utils/supabase/server";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { requireStaff } from '@/utils/role-guards';
@@ -201,7 +200,7 @@ export default async function DashboardPage() {
       <DashboardSidebar />
 
       <section className="min-h-screen px-4 py-6 sm:px-6 lg:ml-52 lg:px-8">
-        <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <header className="mb-6">
           <div>
             <h1 className="text-3xl font-semibold">
               Welcome back, {displayName}
@@ -210,15 +209,6 @@ export default async function DashboardPage() {
               LIA School Management Dashboard
             </p>
           </div>
-
-          <form action={signOut} className="w-full sm:w-auto">
-            <button
-              className="w-full rounded-md border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-red-50 hover:text-[#c8102e] sm:w-auto"
-              type="submit"
-            >
-              Sign Out
-            </button>
-          </form>
         </header>
 
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">

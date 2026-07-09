@@ -73,6 +73,29 @@ export default async function SchoolProfilePage({
 
     }
 
+    const { data: schoolClassRows } = await supabase
+        .from("lia_classes")
+        .select("id")
+        .eq("school_id", school.id);
+    
+    const schoolClassIds = schoolClassRows?.map((liaClass) => liaClass.id) ?? [];
+
+    const { data: schoolEnrollmentRows } = schoolClassIds.length > 0
+        ? await supabase
+            .from("lia_class_students")
+            .select("student_id")
+            .in("lia_class_id", schoolClassIds)
+            .neq("status", "removed")
+        : { data: [] };
+    
+    const uniqueActiveStudentIds = new Set(
+        (schoolEnrollmentRows ?? [])
+            .map((enrollment) => enrollment.student_id)
+            .filter(Boolean),
+    );
+
+    const classroomStudentCount = uniqueActiveStudentIds.size;
+
     const updateNotesForSchool = updateSchoolProfileNotes.bind(null, school.id);
 
     const { data: assignedRpm } = school.assigned_rpm_id
@@ -299,17 +322,11 @@ export default async function SchoolProfilePage({
 
                     <div className='min-h-48 rounded-lg border border-red-100 bg-white p-4 shadow-sm sm:p-6'>
                         <h2 className='text-lg font-semibold'>School Snapshot</h2>
-                        <div className='mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-1'>
-                            <div>
-                                <p className='text-sm text-zinc-500'>Total Students</p>
-                                <p className='text-2xl font-semibold'>
-                                    {school.student_count ?? 0}
-                                </p>
-                            </div>
+                        <div className='mt-4'>
                             <div>
                                 <p className='text-sm text-zinc-500'>Chapter Size</p>
                                 <p className='text-2xl font-semibold'>
-                                    {school.chapter_size ?? 0}
+                                    {classroomStudentCount}
                                 </p>
                             </div>
                         </div>

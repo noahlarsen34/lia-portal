@@ -168,6 +168,7 @@ export async function addStudentToClass(classId: string, formData: FormData) {
 
         revalidatePath(`/teacher/classes/${classId}`);
         revalidatePath(`/teacher/classes/${classId}/students`);
+        revalidatePath(`/schools/${liaClass.school_id}`);
         redirect(`/teacher/classes/${classId}/students`);
     }
 
@@ -190,6 +191,7 @@ export async function addStudentToClass(classId: string, formData: FormData) {
 
     revalidatePath(`/teacher/classes/${classId}`);
     revalidatePath(`/teacher/classes/${classId}/students`);
+    revalidatePath(`/schools/${liaClass.school_id}`);
     redirect(`/teacher/classes/${classId}/students`);
 }
 
@@ -246,6 +248,7 @@ export async function updateClassStudent(
                 student_id,
                 lia_classes (
                     id,
+                    school_id,
                     teacher_profile_id
                 )  
             `)
@@ -316,6 +319,11 @@ export async function updateClassStudent(
 
     revalidatePath(`/teacher/classes/${classId}`);
     revalidatePath(`/teacher/classes/${classId}/students`);
+
+    if (liaClass?.school_id) {
+        revalidatePath(`/schools/${liaClass.school_id}`);
+    }
+
     redirect(`/teacher/classes/${classId}/students`);
 }
 
@@ -331,6 +339,7 @@ export async function removeStudentFromClass(
                 id,
                 lia_classes (
                     id,
+                    school_id,
                     teacher_profile_id 
                 ) 
             `)
@@ -361,5 +370,10 @@ export async function removeStudentFromClass(
 
     revalidatePath(`/teacher/classes/${classId}`);
     revalidatePath(`/teacher/classes/${classId}/students`);
+
+    if (liaClass?.school_id) {
+        revalidatePath(`/schools/${liaClass.school_id}`);
+    }
+
     redirect(`/teacher/classes/${classId}/students`);
 }

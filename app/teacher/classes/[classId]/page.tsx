@@ -19,7 +19,12 @@ type TeacherClassPageProps = {
 };
 
 function formatRosterValue(value: string | null | undefined) {
-    return value ? value.replace("_", " ") : "N/A";
+    return value
+        ? value
+            .split("_")
+            .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(" ")
+        : "N/A";
 }
 
 function formatRosterRole(
@@ -328,10 +333,15 @@ export default async function TeacherClassPage({
 
                                         return (
                                             <tr key={enrollment.id}>
-                                                <td className="px-4 py-4 font-semibold text-zinc-950">
-                                                    {student
-                                                        ? `${student.first_name} ${student.last_name}`
-                                                        : "Unknown student"}
+                                                <td className="px-4 py-4 font-semibold">
+                                                    <Link
+                                                        href={`/teacher/classes/${liaClass.id}/students/${enrollment.id}`}
+                                                        className="text-zinc-950 transition hover:text-[#c4122f]"
+                                                    >
+                                                        {student
+                                                            ? `${student.first_name} ${student.last_name}`
+                                                            : "Unknown student"}
+                                                    </Link>
                                                 </td>
                                                 <td className="px-4 py-4 text-zinc-700">
                                                     {student?.email || "N/A"}
