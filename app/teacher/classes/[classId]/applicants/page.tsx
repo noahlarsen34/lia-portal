@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { requireTeacher } from "@/utils/role-guards";
 import { ApplicationQrCode } from "@/components/application-qr-code";
@@ -48,6 +49,7 @@ export default async function ApplicantsPage({
 }: ApplicantsPageProps) {
     const { classId } = await params;
     const { error } = await searchParams;
+    const headerList = await headers();
     const { supabase, profile } = await requireTeacher();
 
     const { data: liaClass } = await supabase
@@ -82,8 +84,16 @@ export default async function ApplicantsPage({
         .eq("lia_class_id", liaClass.id)
         .order("submitted_at", { ascending: false });
     
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://localhost:3000";
-    const applicationUrl = `${appUrl}/apply/${liaClass.application_token}`;
+    const host = headerList.get("host");
+    const protocol =
+        headerList.get("x-forwarded-proto") ??
+        (host?.startsWith("localhost") || host?.startsWith("127.0.0.1")
+            ? "http"
+            : "https");
+    const appUrl = host
+        ? `${protocol}://${host}`
+        : (process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000");
+    const applicationUrl = `${appUrl.replace(/\/$/, "")}/apply/${liaClass.application_token}`;
 
     return (
         <div className="mx-auto max-w-7xl">
@@ -116,7 +126,7 @@ export default async function ApplicantsPage({
                     </Link>
                 </div>
 
-                <div className="mt-5 grid gap-4 lg:gird-cols-[minmax(0,1fr)_auto">
+                <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto]">
                     <div className="rounded-md border border-zinc-100 bg-zinc-50 px-4 py-3">
                         <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
                             Student Application Link
