@@ -3,6 +3,7 @@ import {
     BookOpen,
     ClipboardList,
     FileText,
+    UserCheck,
     Users,
 } from 'lucide-react';
 import { notFound } from "next/navigation";
@@ -95,7 +96,12 @@ export default async function TeacherClassPage({
         .from("lia_class_students")
         .select("id", { count: "exact", head: true })
         .eq("lia_class_id", liaClass.id)
-        .neq("status", "removed");
+        .or("status.is.null,status.neq.removed");
+    
+    const { count: applicantCount } = await supabase
+        .from("lia_class_applications")
+        .select("id", { count: "exact", head: true })
+        .eq("lia_class_id", liaClass.id);
 
     const { data: studentEnrollments } = await supabase
         .from("lia_class_students")
@@ -116,7 +122,7 @@ export default async function TeacherClassPage({
             `,
         )
         .eq("lia_class_id", liaClass.id)
-        .neq("status", "removed")
+        .or("status.is.null,status.neq.removed")
         .order("enrolled_at", { ascending: false });
 
     const hasStudents = (studentCount ?? 0) > 0;
@@ -137,6 +143,13 @@ export default async function TeacherClassPage({
             href: `/teacher/classes/${liaClass.id}/students`,
             icon: Users,
             count: String(studentCount ?? 0),
+        },
+        {
+            title: "Applicants",
+            description: "Review student applications and accept students into this class.",
+            href: `/teacher/classes/${liaClass.id}/applicants`,
+            icon: UserCheck,
+            count: String(applicantCount ?? 0),
         },
         {
             title: "Modules",

@@ -177,6 +177,7 @@ export async function addStudentToClass(classId: string, formData: FormData) {
         .insert({
             lia_class_id: classId,
             student_id: studentId,
+            status: "active",
             committee: enrollmentCommittee,
             officer_role: validOfficerRole,
         });

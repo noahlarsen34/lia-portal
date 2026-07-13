@@ -85,7 +85,7 @@ export default async function SchoolProfilePage({
             .from("lia_class_students")
             .select("student_id")
             .in("lia_class_id", schoolClassIds)
-            .neq("status", "removed")
+            .or("status.is.null,status.neq.removed")
         : { data: [] };
     
     const uniqueActiveStudentIds = new Set(

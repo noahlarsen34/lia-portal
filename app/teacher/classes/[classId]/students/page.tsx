@@ -84,7 +84,7 @@ export default async function StudentsPage({
             `,
         )
         .eq("lia_class_id", liaClass.id)
-        .neq("status", "removed")
+        .or("status.is.null,status.neq.removed")
         .order("enrolled_at", { ascending: false });
 
     const addStudent = addStudentToClass.bind(null, liaClass.id);
