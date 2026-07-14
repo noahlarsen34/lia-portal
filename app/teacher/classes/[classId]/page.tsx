@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { notFound } from "next/navigation";
 import { requireTeacher } from "@/utils/role-guards";
+import { formatStudentTier } from "@/utils/student-tier";
 import { deleteLiaClass } from "./actions";
 
 type TeacherClassPageProps = {
@@ -109,6 +110,7 @@ export default async function TeacherClassPage({
             `
                 id,
                 status,
+                tier,
                 committee,
                 officer_role,
                 enrolled_at,
@@ -327,15 +329,25 @@ export default async function TeacherClassPage({
                 {studentEnrollments && studentEnrollments.length > 0 ? (
                     <div className="mt-5 overflow-hidden rounded-md border border-zinc-200">
                         <div className="overflow-x-auto">
-                            <table className="min-w-full divide-y divide-zinc-200 text-sm">
+                            <table className="min-w-[1040px] table-fixed divide-y divide-zinc-200 text-sm">
+                                <colgroup>
+                                    <col className="w-[17%]" />
+                                    <col className="w-[22%]" />
+                                    <col className="w-[8%]" />
+                                    <col className="w-[9%]" />
+                                    <col className="w-[15%]" />
+                                    <col className="w-[17%]" />
+                                    <col className="w-[12%]" />
+                                </colgroup>
                                 <thead className="bg-zinc-50 text-left text-xs font-bold uppercase tracking-wide text-zinc-500">
                                     <tr>
-                                        <th className="px-4 py-3">Student</th>
-                                        <th className="px-4 py-3">Email</th>
-                                        <th className="px-4 py-3">Grade</th>
-                                        <th className="px-4 py-3">Committee</th>
-                                        <th className="px-4 py-3">Role</th>
-                                        <th className="px-4 py-3">Status</th>
+                                        <th className="px-5 py-3">Student</th>
+                                        <th className="px-5 py-3">Email</th>
+                                        <th className="px-5 py-3">Grade</th>
+                                        <th className="px-5 py-3">Tier</th>
+                                        <th className="px-5 py-3">Committee</th>
+                                        <th className="px-5 py-3">Role</th>
+                                        <th className="px-5 py-3">Status</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-zinc-100 bg-white">
@@ -345,33 +357,36 @@ export default async function TeacherClassPage({
                                             : enrollment.students;
 
                                         return (
-                                            <tr key={enrollment.id}>
-                                                <td className="px-4 py-4 font-semibold">
+                                            <tr key={enrollment.id} className="align-top transition hover:bg-zinc-50/70">
+                                                <td className="px-5 py-4 font-semibold leading-6">
                                                     <Link
                                                         href={`/teacher/classes/${liaClass.id}/students/${enrollment.id}`}
-                                                        className="text-zinc-950 transition hover:text-[#c4122f]"
+                                                        className="break-words text-zinc-950 transition hover:text-[#c4122f]"
                                                     >
                                                         {student
                                                             ? `${student.first_name} ${student.last_name}`
                                                             : "Unknown student"}
                                                     </Link>
                                                 </td>
-                                                <td className="px-4 py-4 text-zinc-700">
+                                                <td className="break-words px-5 py-4 leading-6 text-zinc-700">
                                                     {student?.email || "N/A"}
                                                 </td>
-                                                <td className="px-4 py-4 text-zinc-700">
+                                                <td className="px-5 py-4 leading-6 text-zinc-700">
                                                     {student?.grade_level || "N/A"}
                                                 </td>
-                                                <td className="px-4 py-4 text-zinc-700 capitalize">
+                                                <td className="px-5 py-4 leading-6 text-zinc-700">
+                                                    {formatStudentTier(enrollment.tier)}
+                                                </td>
+                                                <td className="px-5 py-4 leading-6 text-zinc-700 capitalize">
                                                     {formatRosterValue(enrollment.committee)}
                                                 </td>
-                                                <td className="px-4 py-4 text-zinc-700">
+                                                <td className="px-5 py-4 leading-6 text-zinc-700">
                                                     {formatRosterRole(
                                                         enrollment.officer_role,
                                                         enrollment.committee,
                                                     )}
                                                 </td>
-                                                <td className="px-4 py-4">
+                                                <td className="px-5 py-4">
                                                     <span className="rounded-full bg-green-50 px-3 py-1 text-xs font-semibold capitalize text-green-700">
                                                         {enrollment.status}
                                                     </span>

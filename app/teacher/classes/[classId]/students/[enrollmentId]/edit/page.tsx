@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { requireTeacher } from '@/utils/role-guards';
 import { updateClassStudent } from '../../actions';
+import { studentTierOptions } from '@/utils/student-tier';
 
 type EditStudentPageProps = {
     params: Promise<{
@@ -26,6 +27,7 @@ export default async function EditStudentPage({
         .select(`
                 id,
                 status,
+                tier,
                 committee,
                 officer_role,
                 students (
@@ -183,6 +185,24 @@ export default async function EditStudentPage({
                             </select>
                         </label>
                     </div>
+
+                    <label className='block min-w-0'>
+                        <span className='text-sm font-medium text-zinc-800'>
+                            Student Tier
+                        </span>
+                        <select
+                            name='tier'
+                            defaultValue={enrollment.tier ?? ""}
+                            className='mt-2 h-11 w-full rounded-md border border-zinc-300 bg-white px-3 text-sm text-zinc-900 outline-none focus:border-[#c4122f] focus:ring-4 focus:ring-red-100'
+                        >
+                            <option value="">No tier selected</option>
+                            {studentTierOptions.map((tier) => (
+                                <option key={tier.value} value={tier.value}>
+                                    {tier.label} - {tier.description}
+                                </option>
+                            ))}
+                        </select>
+                    </label>
 
                     <div className='grid gap-5 sm:grid-cols-2'>
                         <label className='block'>

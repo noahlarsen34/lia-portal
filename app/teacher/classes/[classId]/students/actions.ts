@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireTeacher } from "@/utils/role-guards";
+import { getValidStudentTier } from "@/utils/student-tier";
 
 function getValidCommittee(committee: string) {
     return committee === "professional" || committee === "service" || committee === "social"
@@ -69,6 +70,7 @@ export async function addStudentToClass(classId: string, formData: FormData) {
     const validCommittee = getValidCommittee(committee);
     const validOfficerRole = getValidOfficerRole(officerRole);
     const enrollmentCommittee = getEnrollmentCommittee(validOfficerRole, validCommittee);
+    const tier = getValidStudentTier(formData.get("tier"));
 
     if (!firstName || !lastName) {
         redirect(`/teacher/classes/${classId}/students?error=missing-fields`);
@@ -153,6 +155,7 @@ export async function addStudentToClass(classId: string, formData: FormData) {
                 status: "active",
                 committee: enrollmentCommittee,
                 officer_role: validOfficerRole,
+                tier,
                 removed_at: null,
             })
             .eq("id", existingEnrollment.id)
@@ -180,6 +183,7 @@ export async function addStudentToClass(classId: string, formData: FormData) {
             status: "active",
             committee: enrollmentCommittee,
             officer_role: validOfficerRole,
+            tier,
         });
 
     if (enrollmentError) {
@@ -215,6 +219,7 @@ export async function updateClassStudent(
     const validCommittee = getValidCommittee(committee);
     const validOfficerRole = getValidOfficerRole(officerRole);
     const enrollmentCommittee = getEnrollmentCommittee(validOfficerRole, validCommittee);
+    const tier = getValidStudentTier(formData.get("tier"));
 
     if (!firstName || !lastName) {
         redirect (
@@ -298,6 +303,7 @@ export async function updateClassStudent(
             status: validEnrollmentStatus,
             committee: enrollmentCommittee,
             officer_role: validOfficerRole,
+            tier,
             removed_at:
                 validEnrollmentStatus === "removed"
                     ? new Date().toISOString()

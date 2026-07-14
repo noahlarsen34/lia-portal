@@ -6,6 +6,8 @@ import {
     updateApplicationReview,
     updateApplicationStatus,
 } from "../actions";
+import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
+import { studentTierOptions } from "@/utils/student-tier";
 
 type ApplicantDetailPageProps = {
     params: Promise<{
@@ -183,9 +185,13 @@ export default async function ApplicantDetailPage({
             ? "Could not save the review details. Please try again."
             : error === "already-enrolled"
                 ? "A student with this email is already enrolled in this class. Use a unique student email for new applicants."
-                : error
-                    ? "Something went wrong. Please try again."
-                    : null;
+                : error === "final-decision"
+                    ? "This application already has a final decision and cannot be changed."
+                    : error === "tier-required"
+                        ? "Choose a student tier before accepting this applicant."
+                        : error
+                            ? "Something went wrong. Please try again."
+                            : null;
 
     const answerSections = [
         {
@@ -281,22 +287,36 @@ export default async function ApplicantDetailPage({
                             </button>
                         </form>
                         <form action={decline}>
-                            <button
-                                type="submit"
+                            <ConfirmSubmitButton
+                                message={`Decline ${studentName}'s application?`}
                                 disabled={isFinalDecision}
                                 className="inline-flex h-10 w-full items-center justify-center rounded-md border border-red-200 bg-white px-4 text-sm font-semibold text-[#c4122f] hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                             >
                                 Decline
-                            </button>
+                            </ConfirmSubmitButton>
                         </form>
-                        <form action={accept}>
-                            <button
-                                type="submit"
+                        <form action={accept} className="flex flex-col gap-2 sm:flex-row">
+                            <select
+                                name="tier"
+                                required
+                                disabled={isFinalDecision}
+                                defaultValue=""
+                                className="h-10 rounded-md border border-zinc-300 bg-white px-3 text-sm text-zinc-900 outline-none focus:border-[#c4122f] focus:ring-4 focus:ring-red-100 disabled:cursor-not-allowed disabled:bg-zinc-100 disabled:text-zinc-400"
+                            >
+                                <option value="">Choose tier</option>
+                                {studentTierOptions.map((tier) => (
+                                    <option key={tier.value} value={tier.value}>
+                                        {tier.label} - {tier.description}
+                                    </option>
+                                ))}
+                            </select>
+                            <ConfirmSubmitButton
+                                message={`Accept ${studentName}'s application?`}
                                 disabled={isFinalDecision}
                                 className="inline-flex h-10 w-full items-center justify-center rounded-md bg-[#c4122f] px-4 text-sm font-semibold text-white hover:bg-[#a70d25] disabled:cursor-not-allowed disabled:bg-zinc-300 sm:w-auto"
                             >
                                 Accept Student
-                            </button>
+                            </ConfirmSubmitButton>
                         </form>
                     </div>
                 </div>

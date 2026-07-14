@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireTeacher } from "@/utils/role-guards";
+import { formatStudentTier } from "@/utils/student-tier";
 
 type StudentProfilePageProps = {
     params: Promise<{
@@ -63,6 +64,7 @@ export default async function StudentProfilePage({
             `
                 id,
                 status,
+                tier,
                 committee,
                 officer_role,
                 enrolled_at,
@@ -124,6 +126,7 @@ export default async function StudentProfilePage({
     ];
 
     const enrollmentDetails = [
+        { label: "Tier", value: formatStudentTier(enrollment.tier) },
         { label: "Committee", value: formatValue(enrollment.committee) },
         {
             label: "Class Leadership Role",

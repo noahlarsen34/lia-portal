@@ -4,8 +4,13 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireTeacher } from "@/utils/role-guards";
 import { sendEmail, escapeHtml } from '@/utils/email';
+import { getValidStudentTier } from "@/utils/student-tier";
 
 type ApplicationStatus = "submitted" | "maybe" | "accepted" | "declined";
+
+function isFinalApplicationStatus(status: string | null | undefined) {
+    return status === "accepted" || status === "declined";
+}
 
 async function getTeacherApplication(
     classId: string,
@@ -61,6 +66,12 @@ export async function updateApplicationStatus (
     }
 
     const { supabase, application, liaClass } = await getTeacherApplication(classId, applicationId);
+
+    if (isFinalApplicationStatus(application.status)) {
+        redirect(
+            `/teacher/classes/${classId}/applicants/${applicationId}?error=final-decision`,
+        );
+    }
 
     const { error } = await supabase
         .from("lia_class_applications")
@@ -130,11 +141,25 @@ export async function updateApplicationReview(
 export async function acceptApplication(
     classId: string,
     applicationId: string,
+    formData: FormData,
 ) {
     const { supabase, application, liaClass } = await getTeacherApplication(
         classId,
         applicationId,
     )
+    const tier = getValidStudentTier(formData.get("tier"));
+
+    if (!tier) {
+        redirect(
+            `/teacher/classes/${classId}/applicants/${applicationId}?error=tier-required`,
+        );
+    }
+
+    if (isFinalApplicationStatus(application.status)) {
+        redirect(
+            `/teacher/classes/${classId}/applicants/${applicationId}?error=final-decision`,
+        );
+    }
 
     let studentId: string | null = null;
     const normalizedEmail = application.email?.trim().toLowerCase() || null;
@@ -189,6 +214,7 @@ export async function acceptApplication(
                 .from("lia_class_students")
                 .update({
                     status: "active",
+                    tier,
                     removed_at: null,
                 })
                 .eq("id", existingEnrollment.id)
@@ -206,6 +232,7 @@ export async function acceptApplication(
                 student_id: studentId,
                 status: "active",
                 officer_role: "member",
+                tier,
             });
         if (enrollmentError) {
             redirect(

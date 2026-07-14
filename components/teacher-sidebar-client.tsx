@@ -16,6 +16,7 @@ import {
     MessagesSquare,
     Users,
     X,
+    Award,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { signOut } from '@/app/login/actions';
@@ -31,9 +32,9 @@ const teacherLinks: TeacherLink[] = [
     { href: "/teacher/classes", label: "My Classes", icon: Users },
     { href: "/teacher/events", label: "Events", icon: CalendarDays },
     {
-        href: "/teacher/institute",
-        label: "Educator Institute",
-        icon: GraduationCap,
+        href: "/teacher/microcredentials",
+        label: "Microcredentials",
+        icon: Award,
     },
     { href: "/teacher/modules", label: "Teacher Modules", icon: BookOpen },
     { href: "/teacher/discussions", label: "Discussions", icon: MessagesSquare },

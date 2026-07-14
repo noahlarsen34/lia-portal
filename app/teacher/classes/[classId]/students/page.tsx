@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireTeacher } from "@/utils/role-guards";
 import { addStudentToClass, removeStudentFromClass } from "./actions";
+import { studentTierOptions, formatStudentTier } from "@/utils/student-tier";
 
 type StudentsPageProps = {
     params: Promise<{
@@ -71,6 +72,7 @@ export default async function StudentsPage({
             `
                 id,
                 status,
+                tier,
                 committee,
                 officer_role,
                 enrolled_at,
@@ -90,7 +92,7 @@ export default async function StudentsPage({
     const addStudent = addStudentToClass.bind(null, liaClass.id);
 
     return (
-        <div className="mx-auto max-w-5xl">
+        <div className="mx-auto max-w-7xl">
             <Link
                 href={`/teacher/classes/${liaClass.id}`}
                 className="text-sm font-semibold text-[#c4122f] hover:text-[#a70d25]"
@@ -222,6 +224,25 @@ export default async function StudentsPage({
 
                     <label className="block min-w-0">
                         <span className="text-sm font-medium text-zinc-800">
+                            Student Tier
+                        </span>
+                        <select
+                            name="tier"
+                            defaultValue=""
+                            required
+                            className="mt-2 h-11 w-full rounded-md border border-zinc-300 bg-white px-3 text-sm text-zinc-900 outline-none focus:border-[#c4122f] focus:ring-4 focus:ring-red-100"
+                        >
+                            <option value="">No tier selected</option>
+                            {studentTierOptions.map((tier) => (
+                                <option key={tier.value} value={tier.value}>
+                                    {tier.label} - {tier.description}
+                                </option>
+                            ))}
+                        </select>
+                    </label>
+
+                    <label className="block min-w-0">
+                        <span className="text-sm font-medium text-zinc-800">
                             Notes
                         </span>
                         <textarea
@@ -253,16 +274,27 @@ export default async function StudentsPage({
 
                 {enrollments && enrollments.length > 0 ? (
                     <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-zinc-200 text-sm">
+                        <table className="min-w-[1120px] table-fixed divide-y divide-zinc-200 text-sm">
+                            <colgroup>
+                                <col className="w-[15%]" />
+                                <col className="w-[18%]" />
+                                <col className="w-[7%]" />
+                                <col className="w-[8%]" />
+                                <col className="w-[11%]" />
+                                <col className="w-[13%]" />
+                                <col className="w-[8%]" />
+                                <col className="w-[20%]" />
+                            </colgroup>
                             <thead className="bg-zinc-50 text-left text-xs font-bold uppercase tracking-wide text-zinc-500">
                                 <tr>
-                                    <th className="px-4 py-3">Student</th>
-                                    <th className="px-4 py-3">Email</th>
-                                    <th className="px-4 py-3">Grade</th>
-                                    <th className="px-4 py-3">Committee</th>
-                                    <th className="px-4 py-3">Role</th>
-                                    <th className="px-4 py-3">Status</th>
-                                    <th className="px-4 py-3 text-right">Actions</th>
+                                    <th className="px-5 py-3">Student</th>
+                                    <th className="px-5 py-3">Email</th>
+                                    <th className="px-5 py-3">Grade</th>
+                                    <th className="px-5 py-3">Tier</th>
+                                    <th className="px-5 py-3">Committee</th>
+                                    <th className="px-5 py-3">Role</th>
+                                    <th className="px-5 py-3">Status</th>
+                                    <th className="px-5 py-3 text-right">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-zinc-100">
@@ -277,56 +309,63 @@ export default async function StudentsPage({
                                     );
 
                                     return (
-                                        <tr key={enrollment.id}>
-                                            <td className="px-4 py-4 font-semibold">
+                                        <tr key={enrollment.id} className="align-top transition hover:bg-zinc-50/70">
+                                            <td className="px-5 py-4 font-semibold leading-6">
                                                 <Link
                                                     href={`/teacher/classes/${liaClass.id}/students/${enrollment.id}`}
-                                                    className="text-zinc-950 transition hover:text-[#c4122f]"
+                                                    className="break-words text-zinc-950 transition hover:text-[#c4122f]"
                                                 >
                                                     {student
                                                         ? `${student.first_name} ${student.last_name}`
                                                         : "Unknown student"}
                                                 </Link>
                                             </td>
-                                            <td className="px-4 py-4 text-zinc-700">
+                                            <td className="break-words px-5 py-4 leading-6 text-zinc-700">
                                                 {student?.email || "N/A"}
                                             </td>
-                                            <td className="px-4 py-4 text-zinc-700">
+                                            <td className="px-5 py-4 leading-6 text-zinc-700">
                                                 {student?.grade_level || "N/A"}
                                             </td>
-                                            <td className="px-4 py-4 text-zinc-700 capitalize">
+                                            <td className="px-5 py-4 leading-6 text-zinc-700">
+                                                {formatStudentTier(enrollment.tier)}
+                                            </td>
+                                            <td className="px-5 py-4 leading-6 text-zinc-700 capitalize">
                                                 {formatRosterValue(enrollment.committee)}
                                             </td>
-                                            <td className="px-4 py-4 text-zinc-700">
+                                            <td className="px-5 py-4 leading-6 text-zinc-700">
                                                 {formatRosterRole(
                                                     enrollment.officer_role,
                                                     enrollment.committee,
                                                 )}
                                             </td>
-                                            <td className="px-4 py-4 text-zinc-700 capitalize">
-                                                {enrollment.status}
+                                            <td className="px-5 py-4">
+                                                <span className="inline-flex rounded-full bg-green-50 px-2.5 py-1 text-xs font-semibold capitalize text-green-700">
+                                                    {enrollment.status}
+                                                </span>
                                             </td>
-                                            <td className="px-4 py-4 text-right">
-                                                <Link
-                                                    href={`/teacher/classes/${liaClass.id}/students/${enrollment.id}`}
-                                                    className="font-semibold text-[#c4122f] hover:text-[#a70d25]"
-                                                >
-                                                    View
-                                                </Link>
-                                                <Link
-                                                    href={`/teacher/classes/${liaClass.id}/students/${enrollment.id}/edit`}
-                                                    className="ml-4 font-semibold text-[#c4122f] hover:text-[#a70d25]"
-                                                >
-                                                    Edit
-                                                </Link>
-                                                <form action={removeStudent} className="inline">
-                                                    <button
-                                                        type="submit"
-                                                        className="ml-4 font-semibold text-zinc-500 hover:text-[#c4122f]"
+                                            <td className="px-5 py-4">
+                                                <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-2 text-right">
+                                                    <Link
+                                                        href={`/teacher/classes/${liaClass.id}/students/${enrollment.id}`}
+                                                        className="font-semibold text-[#c4122f] hover:text-[#a70d25]"
                                                     >
-                                                        Remove from Class
-                                                    </button>
-                                                </form>
+                                                        View
+                                                    </Link>
+                                                    <Link
+                                                        href={`/teacher/classes/${liaClass.id}/students/${enrollment.id}/edit`}
+                                                        className="font-semibold text-[#c4122f] hover:text-[#a70d25]"
+                                                    >
+                                                        Edit
+                                                    </Link>
+                                                    <form action={removeStudent}>
+                                                        <button
+                                                            type="submit"
+                                                            className="font-semibold text-zinc-500 hover:text-[#c4122f]"
+                                                        >
+                                                            Remove from Class
+                                                        </button>
+                                                    </form>
+                                                </div>
                                             </td>
                                         </tr>
                                     );

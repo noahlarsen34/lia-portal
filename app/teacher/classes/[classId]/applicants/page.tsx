@@ -3,6 +3,8 @@ import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { requireTeacher } from "@/utils/role-guards";
 import { ApplicationQrCode } from "@/components/application-qr-code";
+import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
+import { studentTierOptions } from "@/utils/student-tier";
 import {
     acceptApplication,
     archiveApplication,
@@ -169,7 +171,9 @@ export default async function ApplicantsPage({
                                         ? "Could not update the application."
                                         : error === "archive-failed"
                                             ? "Could not archive that application."
-                                            : "Something went wrong. Please try again."}
+                                            : error === "tier-required"
+                                                ? "Choose a student tier before accepting an applicant."
+                                                : "Something went wrong. Please try again."}
                 </div>
             ) : null}
 
@@ -233,7 +237,7 @@ export default async function ApplicantsPage({
                                 <col className="w-[80px]" />
                                 <col className="w-[130px]" />
                                 <col className="w-[130px]" />
-                                <col className="w-[260px]" />
+                                <col className="w-[340px]" />
                             </colgroup>
                             <thead className="bg-zinc-50 text-left text-xs font-bold uppercase tracking-wide text-zinc-500">
                                 <tr>
@@ -248,6 +252,9 @@ export default async function ApplicantsPage({
                             <tbody className="divide-y divide-zinc-100">
                                 {applications.map((application) => {
                                     const studentName = `${application.first_name} ${application.last_name}`.trim();
+                                    const isFinalDecision =
+                                        application.status === "accepted" ||
+                                        application.status === "declined";
                                     const markMaybe = updateApplicationStatus.bind(
                                         null,
                                         liaClass.id,
@@ -306,34 +313,52 @@ export default async function ApplicantsPage({
                                                     <form action={markMaybe}>
                                                         <button
                                                             type="submit"
-                                                            className="font-semibold text-yellow-700 hover:text-yellow-800"
+                                                            disabled={isFinalDecision || application.status === "maybe"}
+                                                            className="font-semibold text-yellow-700 hover:text-yellow-800 disabled:cursor-not-allowed disabled:text-zinc-300"
                                                         >
                                                             Maybe
                                                         </button> 
                                                     </form>
-                                                    <form action={accept}>
-                                                        <button
-                                                            type="submit"
-                                                            className="font-semibold text-green-700 hover:text-green-800"
+                                                    <form action={accept} className="flex items-center gap-2">
+                                                        <select
+                                                            name="tier"
+                                                            required
+                                                            disabled={isFinalDecision}
+                                                            defaultValue=""
+                                                            aria-label={`Tier for ${studentName}`}
+                                                            className="h-8 w-28 rounded-md border border-zinc-200 bg-white px-2 text-xs font-semibold text-zinc-700 outline-none focus:border-[#c4122f] focus:ring-2 focus:ring-red-100 disabled:cursor-not-allowed disabled:bg-zinc-50 disabled:text-zinc-300"
+                                                        >
+                                                            <option value="">Tier</option>
+                                                            {studentTierOptions.map((tier) => (
+                                                                <option key={tier.value} value={tier.value}>
+                                                                    {tier.label}
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                        <ConfirmSubmitButton
+                                                            message={`Accept ${studentName} and move them into the class roster?`}
+                                                            disabled={isFinalDecision}
+                                                            className="font-semibold text-green-700 hover:text-green-800 disabled:cursor-not-allowed disabled:text-zinc-300"
                                                         >
                                                             Accept
-                                                        </button>
+                                                        </ConfirmSubmitButton>
                                                     </form>
                                                     <form action={decline}>
-                                                        <button
-                                                            type="submit"
-                                                            className="font-semibold text-[#c4122f] hover:text-[#a70d25]"
+                                                        <ConfirmSubmitButton
+                                                            message={`Decline ${studentName}'s application?`}
+                                                            disabled={isFinalDecision}
+                                                            className="font-semibold text-[#c4122f] hover:text-[#a70d25] disabled:cursor-not-allowed disabled:text-zinc-300"
                                                         >
                                                             Decline
-                                                        </button>
+                                                        </ConfirmSubmitButton>
                                                     </form>
                                                     <form action={archive}>
-                                                        <button
-                                                            type="submit"
+                                                        <ConfirmSubmitButton
+                                                            message={`Archive ${studentName}'s application? This will hide it from the applicant tracker.`}
                                                             className="font-semibold text-zinc-500 hover:text-zinc-900"
                                                         >
                                                             Archive
-                                                        </button>
+                                                        </ConfirmSubmitButton>
                                                     </form>
                                                 </div>
                                             </td>
