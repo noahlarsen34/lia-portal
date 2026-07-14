@@ -17,7 +17,7 @@ export default async function ApplicationPageProps({
     if (success === "submitted") {
         return (
             <main className="min-h-screen bg-[#f8f4f4] px-4 py-10 text-zinc-950">
-                <section className="mx-auto max-w-2xl rounded-md border broder-red-100 bg-white p-6 shadow-sm sm:p-8">
+                <section className="mx-auto max-w-2xl rounded-md border border-red-100 bg-white p-6 shadow-sm sm:p-8">
                     <p className="text-sm font-semibold uppercase tracking-wide text-[#c4122f]">
                         Latinos In Action
                     </p>
@@ -55,14 +55,6 @@ export default async function ApplicationPageProps({
                         </ol>
                     </div>
 
-                    <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-                        <Link
-                            href='/apply'
-                            className="inline-flex h-10 items-center justify-center rounded-md border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-700 hover:bg-red-50 hover:text-[#c4122f]"
-                        >
-                            Submit another application
-                        </Link>
-                    </div>
                 </section>
             </main>
         );

@@ -5,6 +5,7 @@ import { requireTeacher } from "@/utils/role-guards";
 import { ApplicationQrCode } from "@/components/application-qr-code";
 import {
     acceptApplication,
+    archiveApplication,
     updateApplicationStatus,
 } from "./actions";
 
@@ -14,6 +15,8 @@ type ApplicantsPageProps = {
     }>;
     searchParams: Promise<{
         error?: string;
+        success?: string;
+        status?: string;
     }>;
 };
 
@@ -48,7 +51,9 @@ export default async function ApplicantsPage({
     searchParams,
 }: ApplicantsPageProps) {
     const { classId } = await params;
-    const { error } = await searchParams;
+    const { error, success, status } = await searchParams;
+    const validStatuses = ["submitted", "maybe", "accepted", "declined"];
+    const statusFilter = validStatuses.includes(status ?? "") ? status : "all";
     const headerList = await headers();
     const { supabase, profile } = await requireTeacher();
 
@@ -63,7 +68,7 @@ export default async function ApplicantsPage({
         notFound();
     }
 
-    const { data: applications } = await supabase
+    let applicationsQuery = supabase
         .from("lia_class_applications")
         .select(`
                 id,
@@ -82,7 +87,14 @@ export default async function ApplicantsPage({
             `,
         )
         .eq("lia_class_id", liaClass.id)
+        .is("archived_at", null)
         .order("submitted_at", { ascending: false });
+    
+    if (statusFilter !== "all") {
+        applicationsQuery = applicationsQuery.eq("status", statusFilter);
+    }
+
+    const { data: applications, error: applicationsError } = await applicationsQuery;
     
     const host = headerList.get("host");
     const protocol =
@@ -153,11 +165,56 @@ export default async function ApplicantsPage({
                             ? "Could not create the student record"
                             : error === "enroll-failed"
                                 ? "Could not enroll the student"
-                                : error === "update-failed"
-                                    ? "Could not update the application."
-                                    : "Something went wrong. Please try again."}
+                                    : error === "update-failed"
+                                        ? "Could not update the application."
+                                        : error === "archive-failed"
+                                            ? "Could not archive that application."
+                                            : "Something went wrong. Please try again."}
                 </div>
             ) : null}
+
+            {success === "archived" ? (
+                <div className="mt-5 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+                    Application archived.
+                </div>
+            ) : null}
+
+            {applicationsError ? (
+                <div className="mt-5 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    Could not load applications. Please confirm the applicant archive
+                    database migration has been run.
+                </div>
+            ) : null}
+
+            <div className="mt-5 flex flex-wrap gap-2">
+                {[
+                    { label: "All", value: "all" },
+                    { label: "Submitted", value: "submitted"},
+                    { label: "Maybe", value: "maybe" },
+                    { label: "Accepted", value: "accepted" },
+                    { label: "Declined", value: "declined"},
+                ].map((filter) => {
+                    const active = statusFilter === filter.value;
+                    const href =
+                        filter.value === "all"
+                            ? `/teacher/classes/${liaClass.id}/applicants`
+                            : `/teacher/classes/${liaClass.id}/applicants?status=${filter.value}`;
+                    
+                    return (
+                        <Link
+                            key={filter.value}
+                            href={href}
+                            className={
+                                active 
+                                    ? "rounded-md bg-[#c4122f] px-3 py-2 text-sm font-semibold text-white"
+                                    : "rounded-md border border-zinc-200 bg-white px-3 py-2 text-sm font-semibold text-zinc-700 hover:bg-red-50 hover:text-[#c4122f]"
+                            }
+                        >
+                            {filter.label}
+                        </Link>
+                    );
+                })}
+            </div>
 
             <section className="mt-5 overflow-hidden rounded-md border border-red-100 bg-white shadow-sm">
                 <div className="border-b border-zinc-100 px-5 py-4 sm:px-6">
@@ -169,30 +226,20 @@ export default async function ApplicantsPage({
 
                 {applications && applications.length > 0 ? (
                     <div className="overflow-x-auto">
-                        <table className="min-w-[1280px] table-fixed divide-y divide-zinc-200 text-sm">
+                        <table className="min-w-[900px] table-fixed divide-y divide-zinc-200 text-sm">
                             <colgroup>
-                                <col className="w-[135px]" />
-                                <col className="w-[180px]" />
-                                <col className="w-[70px]" />
-                                <col className="w-[105px]" />
-                                <col className="w-[115px]" />
-                                <col className="w-[145px]" />
-                                <col className="w-[110px]" />
-                                <col className="w-[120px]" />
-                                <col className="w-[120px]" />
-                                <col className="w-[110px]" />
-                                <col className="w-[170px]" />
+                                <col className="w-[220px]" />
+                                <col className="w-[240px]" />
+                                <col className="w-[80px]" />
+                                <col className="w-[130px]" />
+                                <col className="w-[130px]" />
+                                <col className="w-[260px]" />
                             </colgroup>
                             <thead className="bg-zinc-50 text-left text-xs font-bold uppercase tracking-wide text-zinc-500">
                                 <tr>
                                     <th className="px-4 py-3 align-middle">Student</th>
                                     <th className="px-4 py-3 align-middle">Email</th>
                                     <th className="px-4 py-3 text-center align-middle">Grade</th>
-                                    <th className="px-4 py-3 align-middle">Color Team</th>
-                                    <th className="px-4 py-3 text-center align-middle">Application</th>
-                                    <th className="px-4 py-3 text-center align-middle">Recommendation</th>
-                                    <th className="px-4 py-3 text-center align-middle">Interview</th>
-                                    <th className="px-4 py-3 text-center align-middle">Interview Again</th>
                                     <th className="px-4 py-3 text-center align-middle">Status</th>
                                     <th className="px-4 py-3 align-middle">Submitted</th>
                                     <th className="sticky right-0 bg-zinc-50 px-4 py-3 text-right align-middle shadow-[-8px_0_12px_-12px_rgba(0,0,0,0.35)]">Actions</th>
@@ -218,32 +265,27 @@ export default async function ApplicantsPage({
                                         liaClass.id,
                                         application.id
                                     );
+                                    const archive = archiveApplication.bind(
+                                        null,
+                                        liaClass.id,
+                                        application.id,
+                                    );
 
                                     return (
                                         <tr key={application.id} className="align-middle">
-                                            <td className="break-words px-4 py-4 font-semibold leading-5 [overflow-wrap:anywhere]">
-                                                {studentName}
+                                            <td className="break-words px-4 py-4 leading-5 [overflow-wrap:anywhere]">
+                                                <p className="font-semibold text-zinc-950">
+                                                    {studentName}
+                                                </p>
+                                                <p className="mt-1 text-xs text-zinc-500">
+                                                    Color Team: {application.color_team || "N/A"}
+                                                </p>
                                             </td>
                                             <td className="break-words px-4 py-4 text-zinc-700 [overflow-wrap:anywhere]">
                                                 {application.email || "N/A"}
                                             </td>
                                             <td className="px-4 py-4 text-center text-zinc-700">
                                                 {application.grade_level || "N/A"}
-                                            </td>
-                                            <td className="break-words px-4 py-4 text-zinc-700 [overflow-wrap:anywhere]">
-                                                {application.color_team || "N/A"}
-                                            </td>
-                                            <td className="px-4 py-4 text-center text-zinc-700">
-                                                {application.application_complete ? "Complete" : "Incomplete"}
-                                            </td>
-                                            <td className="px-4 py-4 text-center text-zinc-700">
-                                                {application.recommendation_complete ? "Complete" : "Missing"}
-                                            </td>
-                                            <td className="px-4 py-4 text-center text-zinc-700">
-                                                {application.completed_interview ? "Complete" : "Not yet"}
-                                            </td>
-                                            <td className="px-4 py-4 text-center text-zinc-700">
-                                                {application.interview_again ? "Yes" : "No"}
                                             </td>
                                             <td className="px-4 py-4 text-center">
                                                 <span className={statusClassName(application.status)}>
@@ -254,7 +296,7 @@ export default async function ApplicantsPage({
                                                 {formatDate(application.submitted_at)}
                                             </td>
                                             <td className="sticky right-0 bg-white px-4 py-4 text-right shadow-[-8px_0_12px_-12px_rgba(0,0,0,0.35)]">
-                                                <div className="flex items-center justify-end gap-2 whitespace-nowrap">
+                                                <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-2">
                                                     <Link
                                                         href={`/teacher/classes/${liaClass.id}/applicants/${application.id}`}
                                                         className="font-semibold text-[#c4122f] hover:text-[#a70d25]"
@@ -283,6 +325,14 @@ export default async function ApplicantsPage({
                                                             className="font-semibold text-[#c4122f] hover:text-[#a70d25]"
                                                         >
                                                             Decline
+                                                        </button>
+                                                    </form>
+                                                    <form action={archive}>
+                                                        <button
+                                                            type="submit"
+                                                            className="font-semibold text-zinc-500 hover:text-zinc-900"
+                                                        >
+                                                            Archive
                                                         </button>
                                                     </form>
                                                 </div>

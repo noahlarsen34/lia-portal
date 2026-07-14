@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { signIn } from "./actions";
 import { createClient } from "@/utils/supabase/server";
 import { PasswordInput } from "./password-input";
+import Link from "next/link";
 
 type LoginPageProps = {
   searchParams: Promise<{
@@ -76,6 +77,19 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             Sign In
           </button>
         </form>
+
+        <div className="mt-6 border-t border-zinc-100 pt-6">
+          <Link
+            href="/apply"
+            className="inline-flex h-11 w-full items-center justify-center rounded-md border border-[#c8102e] bg-white px-4 text-sm font-semibold text-[#c8102e] transition hover:bg-red-50 focus:outline-none focus:ring-4 focus:ring-red-100"
+          >
+            Student Application
+          </Link>
+
+          <p className="mt-3 text-center text-xs leading-5 text-zinc-500">
+            New students can apply to join a Latinos In Action class.
+          </p>
+        </div>
       </section>
     </main>
   );

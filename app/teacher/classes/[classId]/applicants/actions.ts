@@ -292,3 +292,25 @@ async function sendApplicationDecisionEmail({
     `,
   });
 }
+
+export async function archiveApplication(
+    classId: string,
+    applicationId: string,
+) {
+    const { supabase } = await getTeacherApplication(classId, applicationId);
+
+    const { error } = await supabase
+        .from("lia_class_applications")
+        .update({
+            archived_at: new Date().toISOString(),
+        })
+        .eq("id", applicationId)
+        .eq("lia_class_id", classId);
+    
+    if (error) {
+        redirect(`/teacher/classes/${classId}/applicants?error=archive-failed`);
+    }
+
+    revalidatePath(`/teacher/classes/${classId}/applicants`);
+    redirect(`/teacher/classes/${classId}/applicants?success=archived`);
+}
