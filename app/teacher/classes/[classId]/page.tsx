@@ -1,7 +1,7 @@
 import Link from "next/link";
 import {
-    BookOpen,
     ClipboardList,
+    Crown,
     FileText,
     UserCheck,
     Users,
@@ -138,6 +138,12 @@ export default async function TeacherClassPage({
         { label: "Status", value: liaClass.status },
     ];
 
+    const leadershipCount = 
+        studentEnrollments?.filter(
+            (enrollment) =>
+                enrollment.officer_role !== "member" || enrollment.committee,
+        ).length ?? 0;
+
     const sections = [
         {
             title: "Students",
@@ -154,11 +160,13 @@ export default async function TeacherClassPage({
             count: String(applicantCount ?? 0),
         },
         {
-            title: "Modules",
-            description: "Assign teacher-created or LIA program modules.",
-            href: `/teacher/classes/${liaClass.id}/modules`,
-            icon: BookOpen,
-            count: "0",
+            title: "Leadership",
+            description: "View class officers and committee participation.",
+            href: `/teacher/classes/${liaClass.id}/leadership`,
+            icon: Crown,
+            count: String(
+                leadershipCount
+            ),
         },
         {
             title: "Assignments",
@@ -168,9 +176,9 @@ export default async function TeacherClassPage({
             count: "0",
         },
         {
-            title: "Resources",
-            description: "Share links, files, and class-specific materials.",
-            href: `/teacher/classes/${liaClass.id}/resources`,
+            title: "Curriculum",
+            description: "Open LIA curriculum, lesson plans, documents, and videos.",
+            href: `/teacher/resources`,
             icon: FileText,
             count: "0",
         },
@@ -219,7 +227,7 @@ export default async function TeacherClassPage({
                             </span>
                         </div>
                         <p className="mt-2 text-sm text-zinc-600">
-                            Manage class roster, assignments, modules, and resources.
+                            Manage class roster, leadership, assignments, and curriculum.
                         </p>
                     </div>
 
