@@ -1,6 +1,6 @@
-import { ExternalLink } from "lucide-react";
+import Link from "next/link";
 import { requireTeacher } from "@/utils/role-guards";
-import { curriculumSections } from "@/utils/curriculum-links";
+import { curriculumTabs } from "@/utils/curriculum-links";
 
 export default async function TeacherResourcesPage() {
     await requireTeacher();
@@ -18,31 +18,55 @@ export default async function TeacherResourcesPage() {
             </section>
 
             <section className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                {curriculumSections.map((section) => (
-                    <a
-                        key={section.title}
-                        href={section.href}
-                        target='_blank'
-                        rel="noreferrer"
-                        className="rounded-md border border-red-100 bg-white p-5 shadow-sm transition hover:border-red-200 hover:shadow-md"
-                    >
+                {curriculumTabs.map((section) => {
+                    const isReady = section.key === "elementary";
+                    const href =
+                        section.source.type === "page"
+                            ? `/teacher/resources/page/${section.source.id}`
+                            : null;
+
+                    const content = (
                         <div className="flex items-start justify-between gap-4">
                             <div>
                                 <h2 className="text-lg font-semibold text-zinc-950">
-                                    {section.title}
+                                    {section.label}
                                 </h2>
                                 <p className="mt-2 text-sm leading-6 text-zinc-600">
                                     {section.description}
                                 </p>
                             </div>
 
-                            <ExternalLink
-                                className="h-5 w-5 shrink-0 text-[#c4122f]"
-                                aria-hidden
-                            />
+                            {!isReady ? (
+                                <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-500">
+                                    Coming soon
+                                </span>
+                            ) : null}
                         </div>
-                    </a>
-                ))}
+                    );
+
+                    const activeClassName =
+                        "rounded-md border border-red-100 bg-white p-5 shadow-sm transition hover:border-red-200 hover:shadow-md";
+                    const disabledClassName =
+                        "rounded-md border border-zinc-200 bg-zinc-50 p-5 shadow-sm";
+
+                    return isReady && href ? (
+                        <Link
+                            key={section.key}
+                            href={href}
+                            className={activeClassName}
+                        >
+                            {content}
+                        </Link>
+                    ) : (
+                        <div
+                            key={section.key}
+                            className={disabledClassName}
+                            aria-disabled="true"
+                        >
+                            {content}
+                        </div>
+                    );
+                })}
             </section>
         </div>
     );

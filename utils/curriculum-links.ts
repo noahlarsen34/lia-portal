@@ -1,33 +1,37 @@
-export const curriculumSections = [
+export const curriculumTabs = [
     {
-        title: "High School Curriculum",
-        description: "Browse high school units, lessons, lesson plans, and materials.",
-        href: "https://program.latinosinaction.org/high-school/",
+        key: "elementary",
+        label: "Elementary",
+        description: "Elementary LIA curriculum lessons and activities.",
+        source: {
+            type: "page",
+            id: 10099,
+        },
     },
     {
-        title: "Middle School Curriculum",
-        description: "Browse middle school curriculum units and lessons.",
-        href: "https://program.latinosinaction.org/lia-middle-school/",
+        key: "high-school",
+        label: "High School",
+        description: "High school curriculum posts and lesson resources.",
+        source: {
+            type: "category",
+            id: 22,
+        },
     },
     {
-        title: "Elementary Curriculum",
-        description: "Browse elementary LIA curriculum lessons and activities.",
-        href: "https://program.latinosinaction.org/lia-elementary/",
+        key: "middle-school",
+        label: "Middle School",
+        description: "Middle school curriculum resources.",
+        source: {
+            type: "page",
+            id: 11606,
+        },
     },
+] as const;
+
+export const teacherModuleSections = [
     {
-        title: "LIA Docs",
-        description: "Open shared documents and teacher-facing curriculum resources.",
-        href: "https://program.latinosinaction.org/lia-docs-2/",
-    },
-    {
-        title: "By Teachers",
-        description: "Browse curriculum resources created or shared by teachers.",
-        href: "https://program.latinosinaction.org/created-by-teachers/",
-    },
-    {
-        title: "Video Library",
-        description: "Open LIA curriculum videos and supporting media.",
-        href: "https://latinosinaction.org/lia-video-gallery/",
-        
+        title: "New Teacher Modules",
+        description: "Training modules and onboarding resources for new LIA teachers.",
+        href: "/teacher/resources/page/11535",
     },
 ] as const;
