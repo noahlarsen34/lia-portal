@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { signOut } from '@/app/login/actions';
+import { teacherModulePageSlugs } from "@/utils/curriculum-links";
 
 type TeacherLink = {
     href: string;
@@ -43,17 +44,30 @@ const teacherLinks: TeacherLink[] = [
     { href: "/teacher/profile", label: "Profile", icon: CircleUserRound },
 ];
 
+function isTeacherModuleResourcePath(pathname: string) {
+    const match = pathname.match(/^\/teacher\/resources\/page\/([^/]+)$/);
+    const currentSlugOrId = match?.[1];
+
+    return currentSlugOrId
+        ? teacherModulePageSlugs.includes(
+            currentSlugOrId as (typeof teacherModulePageSlugs)[number],
+        )
+        : false;
+}
+
 function TeacherNav({ onNavigate }: { onNavigate?: () => void}) {
     const pathname = usePathname();
+    const isTeacherModulePage = isTeacherModuleResourcePath(pathname);
 
     return (
         <nav className="flex flex-1 flex-col gap-2">
             {teacherLinks.map((link) => {
                 const Icon = link.icon;
-                const isCurrent =
-                    link.href === "/teacher"
-                        ? pathname === link.href
-                        : pathname === link.href || pathname.startsWith(`${link.href}/`);
+                const isCurrent = isTeacherModulePage
+                    ? link.href === "/teacher/modules"
+                    : link.href === "/teacher"
+                    ? pathname === link.href
+                    : pathname === link.href || pathname.startsWith(`${link.href}/`);
                 
                 return (
                     <Link

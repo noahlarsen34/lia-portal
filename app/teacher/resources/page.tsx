@@ -1,6 +1,25 @@
 import Link from "next/link";
+import {
+    BookOpen,
+    Building2,
+    FileText,
+    FolderOpen,
+    GraduationCap,
+    Users,
+    Video,
+    type LucideIcon,
+} from "lucide-react";
 import { requireTeacher } from "@/utils/role-guards";
 import { curriculumTabs } from "@/utils/curriculum-links";
+
+const curriculumIcons: Record<string, LucideIcon> = {
+    elementary: BookOpen,
+    "high-school": GraduationCap,
+    "middle-school": Building2,
+    "lia-docs": FileText,
+    "by-teachers": Users,
+    "video-library": Video,
+};
 
 export default async function TeacherResourcesPage() {
     await requireTeacher();
@@ -19,18 +38,27 @@ export default async function TeacherResourcesPage() {
 
             <section className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 {curriculumTabs.map((section) => {
-                    const isReady = section.key === "elementary";
+                    const Icon = curriculumIcons[section.key] ?? FolderOpen;
                     const href =
-                        section.source.type === "page"
+                        "href" in section
+                            ? section.href
+                            : section.source.type === "page"
                             ? `/teacher/resources/page/${section.source.id}`
                             : null;
+                    const isReady = Boolean(href);
+                    const isExternal = href?.startsWith("http");
 
                     const content = (
                         <div className="flex items-start justify-between gap-4">
-                            <div>
-                                <h2 className="text-lg font-semibold text-zinc-950">
-                                    {section.label}
-                                </h2>
+                            <div className="min-w-0">
+                                <div className="flex items-center gap-3">
+                                    <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-red-50 text-[#c4122f] ring-1 ring-red-100">
+                                        <Icon size={21} strokeWidth={2.2} aria-hidden />
+                                    </span>
+                                    <h2 className="text-lg font-semibold text-zinc-950">
+                                        {section.label}
+                                    </h2>
+                                </div>
                                 <p className="mt-2 text-sm leading-6 text-zinc-600">
                                     {section.description}
                                 </p>
@@ -53,6 +81,8 @@ export default async function TeacherResourcesPage() {
                         <Link
                             key={section.key}
                             href={href}
+                            target={isExternal ? "_blank" : undefined}
+                            rel={isExternal ? "noreferrer" : undefined}
                             className={activeClassName}
                         >
                             {content}
