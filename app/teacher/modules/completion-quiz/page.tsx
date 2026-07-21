@@ -2,7 +2,16 @@ import { requireTeacher } from "@/utils/role-guards";
 import { newTeacherQuizQuestions } from "@/utils/new-teacher-quiz";
 import { submitNewTeacherQuiz } from "./actions";
 
-export default async function NewTeacherCompletionQuizPage() {
+type NewTeacherCompletionQuizPageProps = {
+    searchParams: Promise<{
+        error?: string;
+    }>;
+};
+
+export default async function NewTeacherCompletionQuizPage({
+    searchParams,
+}: NewTeacherCompletionQuizPageProps) {
+    const params = await searchParams;
     const { supabase, profile } = await requireTeacher();
 
     const { data: teacher } = await supabase
@@ -57,6 +66,12 @@ export default async function NewTeacherCompletionQuizPage() {
                         {school?.state ? `, ${school.state}` : ""}
                     </p>
                 </div>
+
+                {params.error === "submission-failed" && (
+                    <div className="mt-6 rounded-md border border-red-200 bg-red-50 p-4 text-sm font-medium text-[#c4122f]">
+                        Something went wrong submitting the quiz. Please try again.
+                    </div>
+                )}
 
                 <form action={submitNewTeacherQuiz} className="mt-8 space-y-8">
                     {newTeacherQuizQuestions.map((question, index) => (
