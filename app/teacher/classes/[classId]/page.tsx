@@ -1,6 +1,6 @@
 import Link from "next/link";
 import {
-    ClipboardList,
+    Clock,
     Crown,
     FileText,
     UserCheck,
@@ -52,6 +52,13 @@ function formatRosterRole(
     }
 
     return "Member";
+}
+
+function formatLoggedHours(minutes: number) {
+    const hours = minutes / 60;
+    const formattedHours = Number.isInteger(hours) ? String(hours) : hours.toFixed(1);
+
+    return `${formattedHours} ${hours === 1 ? "hr" : "hrs"}`;
 }
 
 export default async function TeacherClassPage({
@@ -127,6 +134,11 @@ export default async function TeacherClassPage({
         .or("status.is.null,status.neq.removed")
         .order("enrolled_at", { ascending: false });
 
+    const { data: tutoringLogs } = await supabase
+        .from("tutoring_logs")
+        .select("duration_minutes, status")
+        .eq("lia_class_id", liaClass.id);
+
     const hasStudents = (studentCount ?? 0) > 0;
     const deleteClassById = deleteLiaClass.bind(null, liaClass.id);
     
@@ -144,20 +156,27 @@ export default async function TeacherClassPage({
                 enrollment.officer_role !== "member" || enrollment.committee,
         ).length ?? 0;
 
+    const loggedMinutes = (tutoringLogs ?? [])
+        .filter((log) => log.status !== "rejected")
+        .reduce(
+            (total, log) => total + Number(log.duration_minutes ?? 0),
+            0,
+        );
+
     const sections = [
-        {
-            title: "Students",
-            description: "Add and manage students enrolled in this LIA class.",
-            href: `/teacher/classes/${liaClass.id}/students`,
-            icon: Users,
-            count: String(studentCount ?? 0),
-        },
         {
             title: "Applicants",
             description: "Review student applications and accept students into this class.",
             href: `/teacher/classes/${liaClass.id}/applicants`,
             icon: UserCheck,
             count: String(applicantCount ?? 0),
+        },
+        {
+            title: "Students",
+            description: "Add and manage students enrolled in this LIA class.",
+            href: `/teacher/classes/${liaClass.id}/students`,
+            icon: Users,
+            count: String(studentCount ?? 0),
         },
         {
             title: "Leadership",
@@ -169,18 +188,18 @@ export default async function TeacherClassPage({
             ),
         },
         {
-            title: "Assignments",
-            description: "Create submissions, activities, and class tasks",
-            href: `/teacher/classes/${liaClass.id}/assignments`,
-            icon: ClipboardList,
-            count: "0",
+            title: "Tutoring",
+            description: "Track tutoring and service hours submitted by students.",
+            href: `/teacher/classes/${liaClass.id}/tutoring`,
+            icon: Clock,
+            count: formatLoggedHours(loggedMinutes),
         },
         {
             title: "Curriculum",
             description: "Open LIA curriculum, lesson plans, documents, and videos.",
             href: `/teacher/resources`,
             icon: FileText,
-            count: "0",
+            count: null,
         },
     ];
 
@@ -286,7 +305,7 @@ export default async function TeacherClassPage({
                 ) : null}
             </header>
 
-            <section className="mt-5 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+            <section className="mt-5 grid gap-5 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
                 {sections.map((section) => {
                     const Icon = section.icon;
 
@@ -294,22 +313,24 @@ export default async function TeacherClassPage({
                         <Link
                             key={section.title}
                             href={section.href}
-                            className="rounded-md border border-red-100 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-red-200 hover:shadow-md"
+                            className="flex h-full min-w-0 flex-col rounded-md border border-red-100 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-red-200 hover:shadow-md"
                         >
                             <div className="flex items-start justify-between gap-4">
                                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-[#c4122f]">
                                     <Icon className="h-6 w-6" aria-hidden />
                                 </div>
 
-                                <span className="rounded-full bg-zinc-50 px-3 py-1 text-xs font-semibold text-zinc-600">
-                                    {section.count}
-                                </span>
+                                {section.count !== null ? (
+                                    <span className="whitespace-nowrap rounded-full bg-zinc-50 px-3 py-1 text-xs font-semibold text-zinc-600">
+                                        {section.count}
+                                    </span>
+                                ) : null}
                             </div>
 
                             <h2 className="mt-4 text-lg font-semibold text-zinc-950">
                                 {section.title}
                             </h2>
-                            <p className="mt-2 text-sm leading-6 text-zinc-600">
+                            <p className="mt-2 flex-1 text-sm leading-6 text-zinc-600">
                                 {section.description}
                             </p>
                         </Link>

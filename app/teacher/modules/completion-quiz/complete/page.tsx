@@ -1,10 +1,13 @@
 import Link from "next/link";
 import { requireTeacher } from "@/utils/role-guards";
+import { getNewTeacherQuizPassingScore } from "@/utils/new-teacher-quiz";
 
 type CompletionPageProps = {
     searchParams: Promise<{
         score?: string;
         total?: string;
+        passing?: string;
+        passed?: string;
     }>;
 };
 
@@ -16,7 +19,12 @@ export default async function NewTeacherQuizCompletePage({
     const params = await searchParams;
     const score = Number(params.score ?? 0);
     const total = Number(params.total ?? 0);
-    const passed = total > 0 && score >= Math.ceil(total * 0.8);
+    const passingScore = Number(
+        params.passing ?? getNewTeacherQuizPassingScore(total),
+    );
+    const passed = params.passed
+        ? params.passed === "true"
+        : total > 0 && score >= passingScore;
 
     return (
         <div className="mx-auto max-w-4xl">
@@ -37,11 +45,12 @@ export default async function NewTeacherQuizCompletePage({
                     }`}
                 >
                     <h2 className="text-lg font-semibold text-zinc-900">
-                        {passed ? "Congratulations!" : "Quiz Submitted"}
+                        {passed ? "Congratulations, you passed!" : "You did not pass yet"}
                     </h2>
 
                     <p className="mt-2 text-base leading-7 text-zinc-700">
-                        You scored {score} out of {total}.
+                        You scored {score} out of {total}. A passing score is{" "}
+                        {passingScore} out of {total}, or 80%.
                     </p>
 
                     {passed ? (
@@ -51,7 +60,8 @@ export default async function NewTeacherQuizCompletePage({
                         </p>
                     ) : (
                         <p className="mt-2 text-base leading-7 text-zinc-700">
-                            Please review the modules and try again.
+                            Please review the modules and retake the quiz. Your attempt was saved,
+                            but you will need to score 80% or higher to complete the training.
                         </p>
                     )}
                 </div>

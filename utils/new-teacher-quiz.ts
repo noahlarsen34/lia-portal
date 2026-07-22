@@ -150,6 +150,10 @@ export const newTeacherQuizQuestions: QuizQuestion[] = [
     },
 ];
 
+export function getNewTeacherQuizPassingScore(totalQuestions: number) {
+    return Math.ceil(totalQuestions * 0.8);
+}
+
 export function scoreNewTeacherQuiz(answers: Record<string, string>) {
     const totalQuestions = newTeacherQuizQuestions.length;
     const score = newTeacherQuizQuestions.reduce((total,question) => {
@@ -159,6 +163,7 @@ export function scoreNewTeacherQuiz(answers: Record<string, string>) {
     return {
         score,
         totalQuestions,
-        passed: score >= Math.ceil(totalQuestions * 0.8),
+        passingScore: getNewTeacherQuizPassingScore(totalQuestions),
+        passed: score >= getNewTeacherQuizPassingScore(totalQuestions),
     };
 }

@@ -79,6 +79,6 @@ export async function submitNewTeacherQuiz(formData: FormData) {
     }
 
     redirect(
-        `/teacher/modules/completion-quiz/complete?score=${result.score}&total=${result.totalQuestions}`,
+        `/teacher/modules/completion-quiz/complete?score=${result.score}&total=${result.totalQuestions}&passing=${result.passingScore}&passed=${result.passed ? "true" : "false"}`,
     );
 }
