@@ -50,11 +50,10 @@ export default async function TeacherMicrocredentialsPage() {
                             </p>
 
                             <Link
-                                href={`/microcredentials/${liaClass.application_token}`}
-                                target="_blank"
+                                href={`/teacher/classes/${liaClass.id}/microcredentials`}
                                 className="mt-5 inline-flex h-10 items-center justify-center gap-2 rounded-md border border-red-200 bg-white px-4 text-sm font-semibold text-[#c4122f] transition hover:bg-red-50"
                             >
-                                Open Student Form
+                                Review Submissions
                                 <ExternalLink className="h-4 w-4" aria-hidden />
                             </Link>
                         </article>
