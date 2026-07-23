@@ -189,15 +189,15 @@ export default async function ClassMicrocredentialsPage({
 
             <section className="mt-5 overflow-hidden rounded-md border border-red-100 bg-white shadow-sm">
                 <div className="overflow-x-auto">
-                    <table className="w-full min-w-[1100px] table-fixed text-left text-sm">
+                    <table className="w-full min-w-[1200px] table-fixed text-left text-sm">
                         <colgroup>
                             <col className="w-[14%]" />
                             <col className="w-[12%]" />
-                            <col className="w-[30%]" />
+                            <col className="w-[28%]" />
                             <col className="w-[11%]" />
                             <col className="w-[11%]" />
                             <col className="w-[12%]" />
-                            <col className="w-[10%]" />
+                            <col className="w-[12%]" />
                         </colgroup>
                         <thead className="bg-zinc-50 text-xs uppercase text-zinc-500">
                             <tr>
@@ -207,7 +207,7 @@ export default async function ClassMicrocredentialsPage({
                                 <th className="px-5 py-4 text-center">Submitted</th>
                                 <th className="px-5 py-4 text-center">Status</th>
                                 <th className="px-5 py-4 text-center">Feedback</th>
-                                <th className="px-5 py-4 text-center">Actions</th>
+                                <th className="px-3 py-4 text-center">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-zinc-100">
@@ -270,7 +270,7 @@ export default async function ClassMicrocredentialsPage({
                                     <td className="px-5 py-4 text-center leading-6 text-zinc-600">
                                         {submission.teacher_feedback || "—"}
                                     </td>
-                                    <td className="px-5 py-4">
+                                    <td className="px-3 py-4">
                                         <div className="flex items-start justify-center gap-1.5">
                                             {submission.status === "pending" ? (
                                                 <>

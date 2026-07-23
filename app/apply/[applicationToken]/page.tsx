@@ -39,8 +39,8 @@ export default async function ApplicationPageProps({
                         </p>
 
                         <p>
-                            If you entered an email address, you may receive a confirmation 
-                            email once email notifications are enabled for the portal.
+                            If you entered an email address, a confirmation email has been
+                            sent to you.
                         </p>
                     </div>
 

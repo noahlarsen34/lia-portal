@@ -1,7 +1,8 @@
 import { Resend } from "resend";
 
 const resendApiKey = process.env.RESEND_API_KEY;
-const fromEmail = process.env.LIA_FROM_EMAIL ?? "Latinos In Action <contact@latinosinaction.org>";
+const fromEmail =
+    process.env.LIA_FROM_EMAIL ?? "Latinos In Action <no-reply@lia-portal.org>";
 
 export async function sendEmail({
     to,
