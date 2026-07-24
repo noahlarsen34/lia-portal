@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createApplicationClient } from "../application-client";
-import { sendEmail, escapeHtml } from "@/utils/email";
+import { escapeHtml, renderBrandedEmail, sendEmail } from "@/utils/email";
 
 export async function submitApplication(
     applicationToken: string,
@@ -35,6 +35,8 @@ export async function submitApplication(
             .select("id")
             .eq("lia_class_id", liaClass.id)
             .eq("email", email)
+            .is("archived_at", null)
+            .limit(1)
             .maybeSingle();
 
         if (existingApplication) {
@@ -73,22 +75,40 @@ export async function submitApplication(
         await sendEmail({
             to: email,
             subject: "Your LIA application has been received",
-            html:`
-                <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-                    <h1>Your LIA application has been received</h1>
-                    <p>Hi ${escapeHtml(firstName)},</p>
-                    <p>
-                        Thank you for applying to Latinos In Action.
-                        Your application for <strong>${escapeHtml(liaClass.name)}</strong>
-                        ${school?.name ? `at <strong>${escapeHtml(school.name)}</strong>` : ""}
-                        has been received.
-                    </p>
-                    <p>
-                        Your teacher will review your application and follow up with a final decision.
-                    </p>
-                    <p>Thank you, <br/>Latinos In Action</p>
-                </div>
+            html: renderBrandedEmail({
+                preheader: `We received your application for ${liaClass.name}.`,
+                eyebrow: "Application received",
+                title: `Thanks for applying, ${firstName}!`,
+                body: `
+                  <p style="margin:0 0 22px; color:#3f3f46; font-size:16px; line-height:1.7;">
+                    Your Latinos In Action application is safely in. Here is a quick
+                    confirmation of what you submitted.
+                  </p>
+                  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%; background-color:#fafafa; border:1px solid #e4e4e7; border-radius:6px;">
+                    <tr>
+                      <td style="padding:20px 22px;">
+                        <p style="margin:0 0 5px; color:#71717a; font-size:11px; font-weight:700; text-transform:uppercase;">Program</p>
+                        <p style="margin:0; color:#18181b; font-size:16px; font-weight:700; line-height:1.5;">${escapeHtml(liaClass.name)}</p>
+                        ${
+                            school?.name
+                                ? `<p style="margin:6px 0 0; color:#52525b; font-size:14px; line-height:1.5;">${escapeHtml(school.name)}</p>`
+                                : ""
+                        }
+                      </td>
+                    </tr>
+                  </table>
+                  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%; margin-top:20px; background-color:#fff5f6; border-left:4px solid #c4122f;">
+                    <tr>
+                      <td style="padding:18px 20px;">
+                        <p style="margin:0 0 5px; color:#991b31; font-size:14px; font-weight:700;">What happens next?</p>
+                        <p style="margin:0; color:#52525b; font-size:14px; line-height:1.6;">
+                          Your teacher will review your application and contact you when a final decision is ready.
+                        </p>
+                      </td>
+                    </tr>
+                  </table>
                 `,
+            }),
         });
     }
     

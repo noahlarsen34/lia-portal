@@ -288,7 +288,7 @@ export default async function ApplicantDetailPage({
                         </form>
                         <form action={decline}>
                             <ConfirmSubmitButton
-                                message={`Decline ${studentName}'s application?`}
+                                message={`Decline ${studentName}'s application? The decision email will be sent to ${application.email || "no email address"}.`}
                                 disabled={isFinalDecision}
                                 className="inline-flex h-10 w-full items-center justify-center rounded-md border border-red-200 bg-white px-4 text-sm font-semibold text-[#c4122f] hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                             >
@@ -311,7 +311,7 @@ export default async function ApplicantDetailPage({
                                 ))}
                             </select>
                             <ConfirmSubmitButton
-                                message={`Accept ${studentName}'s application?`}
+                                message={`Accept ${studentName}'s application? The decision email will be sent to ${application.email || "no email address"}.`}
                                 disabled={isFinalDecision}
                                 className="inline-flex h-10 w-full items-center justify-center rounded-md bg-[#c4122f] px-4 text-sm font-semibold text-white hover:bg-[#a70d25] disabled:cursor-not-allowed disabled:bg-zinc-300 sm:w-auto"
                             >

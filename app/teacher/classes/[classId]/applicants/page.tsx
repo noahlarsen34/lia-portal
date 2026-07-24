@@ -336,7 +336,7 @@ export default async function ApplicantsPage({
                                                             ))}
                                                         </select>
                                                         <ConfirmSubmitButton
-                                                            message={`Accept ${studentName} and move them into the class roster?`}
+                                                            message={`Accept ${studentName} and move them into the class roster? The decision email will be sent to ${application.email || "no email address"}.`}
                                                             disabled={isFinalDecision}
                                                             className="font-semibold text-green-700 hover:text-green-800 disabled:cursor-not-allowed disabled:text-zinc-300"
                                                         >
@@ -345,7 +345,7 @@ export default async function ApplicantsPage({
                                                     </form>
                                                     <form action={decline}>
                                                         <ConfirmSubmitButton
-                                                            message={`Decline ${studentName}'s application?`}
+                                                            message={`Decline ${studentName}'s application? The decision email will be sent to ${application.email || "no email address"}.`}
                                                             disabled={isFinalDecision}
                                                             className="font-semibold text-[#c4122f] hover:text-[#a70d25] disabled:cursor-not-allowed disabled:text-zinc-300"
                                                         >

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireTeacher } from "@/utils/role-guards";
-import { sendEmail, escapeHtml } from '@/utils/email';
+import { escapeHtml, renderBrandedEmail, sendEmail } from "@/utils/email";
 import { getValidStudentTier } from "@/utils/student-tier";
 
 type ApplicationStatus = "submitted" | "maybe" | "accepted" | "declined";
@@ -300,24 +300,67 @@ async function sendApplicationDecisionEmail({
 
     await sendEmail({
         to: application.email,
-        subject: "Your LIA application decision",
-        html: `
-            <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-                <h1>Your LIA application decision</h1>
-                <p>Hi ${escapeHtml(application.first_name)},</p>
-                <p>
-                    Thank you for applying to Latinos In Action
-                    ${school?.name ? `at <strong>${escapeHtml(school.name)}</strong>` : ""}
-                </p>
-                ${
-                    accepted
-                        ? `<p><strong>Congratulations!</strong> Your application for <strong>${escapeHtml(liaClass.name)}</strong> has been accepted.</p>`
-            : `<p>After reviewing your application, you were not selected for <strong>${escapeHtml(liaClass.name)}</strong> at this time.</p>`
-        }
-        <p>Thank you,<br/>Latinos In Action</p>
-      </div>
-    `,
-  });
+        subject: accepted
+            ? "Welcome to Latinos In Action!"
+            : "An update on your LIA application",
+        html: renderBrandedEmail({
+            preheader: accepted
+                ? `Your application for ${liaClass.name} has been accepted.`
+                : `A decision has been made on your application for ${liaClass.name}.`,
+            eyebrow: accepted ? "Application accepted" : "Application update",
+            title: accepted
+                ? `Welcome to LIA, ${application.first_name}!`
+                : `Thank you for applying, ${application.first_name}`,
+            body: accepted
+                ? `
+                  <p style="margin:0 0 22px; color:#3f3f46; font-size:16px; line-height:1.7;">
+                    Congratulations! We are excited to let you know that your application
+                    to Latinos In Action has been accepted.
+                  </p>
+                  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%; background-color:#f0fdf4; border-left:4px solid #16a34a;">
+                    <tr>
+                      <td style="padding:20px 22px;">
+                        <p style="margin:0 0 5px; color:#15803d; font-size:12px; font-weight:700; text-transform:uppercase;">You are accepted</p>
+                        <p style="margin:0; color:#18181b; font-size:18px; font-weight:700; line-height:1.5;">${escapeHtml(liaClass.name)}</p>
+                        ${
+                            school?.name
+                                ? `<p style="margin:6px 0 0; color:#52525b; font-size:14px; line-height:1.5;">${escapeHtml(school.name)}</p>`
+                                : ""
+                        }
+                      </td>
+                    </tr>
+                  </table>
+                  <p style="margin:22px 0 0; color:#52525b; font-size:15px; line-height:1.7;">
+                    Your teacher will share any next steps and details with you. We look
+                    forward to seeing the leadership, strengths, and perspective you bring.
+                  </p>
+                `
+                : `
+                  <p style="margin:0 0 22px; color:#3f3f46; font-size:16px; line-height:1.7;">
+                    Thank you for the time and thought you put into your Latinos In Action
+                    application.
+                  </p>
+                  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%; background-color:#fafafa; border-left:4px solid #a1a1aa;">
+                    <tr>
+                      <td style="padding:20px 22px;">
+                        <p style="margin:0 0 5px; color:#71717a; font-size:12px; font-weight:700; text-transform:uppercase;">Application decision</p>
+                        <p style="margin:0; color:#18181b; font-size:17px; font-weight:700; line-height:1.5;">${escapeHtml(liaClass.name)}</p>
+                        ${
+                            school?.name
+                                ? `<p style="margin:6px 0 0; color:#52525b; font-size:14px; line-height:1.5;">${escapeHtml(school.name)}</p>`
+                                : ""
+                        }
+                      </td>
+                    </tr>
+                  </table>
+                  <p style="margin:22px 0 0; color:#52525b; font-size:15px; line-height:1.7;">
+                    After careful review, you were not selected for this class at this time.
+                    We appreciate your interest and encourage you to continue seeking ways
+                    to grow as a leader and serve your community.
+                  </p>
+                `,
+        }),
+    });
 }
 
 export async function archiveApplication(
