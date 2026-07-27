@@ -80,7 +80,9 @@ export default async function ApplicationPageProps({
                 {error ? (
                     <div className="mt-5 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                         {error === "missing-fields"
-                            ? "First name and last name are required."
+                            ? "First name, last name, and GPA are required."
+                            : error === "invalid-gpa"
+                                ? "Enter a valid GPA between 0.00 and 5.00."
                             : error === "closed"
                                 ? "This application is currently closed."
                                 : error === "already-submitted"
@@ -105,12 +107,40 @@ export default async function ApplicationPageProps({
                     <input name="advisory_teacher" placeholder="Advisory teacher" className="h-11 w-full rounded-md border px-3" />
                     <input name="color_team" placeholder="Color team / advisory group" className="h-11 w-full rounded-md border px-3" />
 
+                    <label className="block">
+                        <span className="text-sm font-semibold text-zinc-950">
+                            Add your GPA
+                        </span>
+                        <input
+                            name="gpa"
+                            type="number"
+                            min="0"
+                            max="5"
+                            step="0.01"
+                            inputMode="decimal"
+                            required
+                            placeholder="For example, 3.25"
+                            className="mt-2 h-11 w-full rounded-md border px-3"
+                        />
+                    </label>
+
                     <textarea name="why_lia" rows={4} placeholder="Why do you want to join LIA?" className="w-full rounded-md border px-3 py-2" />
                     <textarea name="skills_strengths" rows={4} placeholder="What skills, interests, or strengths would you bring?" className="w-full rounded-md border px-3 py-2" />
                     <textarea name="why_good_fit" rows={4} placeholder="Why would you be a good addition to LIA?" className="w-full rounded-md border px-3 py-2" />
                     <textarea name="extracurriculars" rows={4} placeholder="List extracurricular activities or future plans" className="w-full rounded-md border px-3 py-2" />
                     <textarea name="inspiration" rows={4} placeholder="Who or what inspires you?" className="w-full rounded-md border px-3 py-2" />
                     <textarea name="academic_review" rows={4} placeholder="Describe your academic peformance." className="w-full rounded-md border px-3 py-2" />
+                    <label className="block">
+                        <span className="text-sm font-semibold text-zinc-950">
+                            If you have a low grade in any class, please explain why
+                        </span>
+                        <textarea
+                            name="low_grade_explanation"
+                            rows={4}
+                            placeholder="Share any circumstances or challenges that affected your grade. Leave this blank if it does not apply."
+                            className="mt-2 w-full rounded-md border px-3 py-2"
+                        />
+                    </label>
                     <textarea name="three_rs_review" rows={4} placeholder="Reflect on being ready, respectful, and responsible." className="w-full rounded-md border px-3 py-2" />
                     
                     <button className="h-10 rounded-md bg-[#c4122f] px-4 text-sm font-semibold text-white">

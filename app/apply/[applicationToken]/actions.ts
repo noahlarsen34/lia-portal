@@ -23,10 +23,16 @@ export async function submitApplication(
     const firstName = String(formData.get("first_name") ?? "").trim();
     const lastName = String(formData.get("last_name") ?? "").trim();
     const email = String(formData.get("email") ?? "").trim().toLowerCase();
+    const gpaValue = String(formData.get("gpa") ?? "").trim();
+    const gpa = Number(gpaValue);
 
 
-    if (!firstName || !lastName) {
+    if (!firstName || !lastName || !gpaValue) {
         redirect(`/apply/${applicationToken}?error=missing-fields`);
+    }
+
+    if (!Number.isFinite(gpa) || gpa < 0 || gpa > 5) {
+        redirect(`/apply/${applicationToken}?error=invalid-gpa`);
     }
 
     if (email) {
@@ -60,6 +66,9 @@ export async function submitApplication(
         extracurriculars: String(formData.get("extracurriculars") ?? "").trim() || null,
         inspiration: String(formData.get("inspiration") ?? "").trim() || null,
         academic_review: String(formData.get("academic_review") ?? "").trim() || null,
+        gpa,
+        low_grade_explanation:
+            String(formData.get("low_grade_explanation") ?? "").trim() || null,
         three_rs_review: String(formData.get("three_rs_review") ?? "").trim() || null,
     })
 

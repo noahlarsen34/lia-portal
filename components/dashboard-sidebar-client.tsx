@@ -15,6 +15,7 @@ import {
   UserRound,
   Users,
   X,
+  Megaphone,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { signOut } from "@/app/login/actions";
@@ -39,6 +40,7 @@ const iconsByHref = {
   "/teachers": GraduationCap,
   "/documents": FileText,
   "/users": Users,
+  "/announcements": Megaphone
 };
 
 function DashboardNav({

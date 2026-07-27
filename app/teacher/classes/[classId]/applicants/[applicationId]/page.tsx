@@ -114,6 +114,8 @@ export default async function ApplicantDetailPage({
                 extracurriculars,
                 inspiration,
                 academic_review,
+                gpa,
+                low_grade_explanation,
                 three_rs_review,
                 application_complete,
                 recommendation_complete,
@@ -168,6 +170,13 @@ export default async function ApplicantDetailPage({
     const applicantDetails = [
         { label: "Email", value: application.email || "N/A" },
         { label: "Grade", value: application.grade_level || "N/A" },
+        {
+            label: "GPA",
+            value:
+                application.gpa === null || application.gpa === undefined
+                    ? "N/A"
+                    : Number(application.gpa).toFixed(2),
+        },
         { label: "School", value: school?.name ?? "N/A" },
         { label: "Class", value: liaClass.name },
         { label: "Advisory Teacher", value: application.advisory_teacher || "N/A" },
@@ -217,6 +226,10 @@ export default async function ApplicantDetailPage({
         {
             title: "Academic performance review",
             value: application.academic_review,
+        },
+        {
+            title: "Low grade explanation",
+            value: application.low_grade_explanation,
         },
         {
             title: "Ready, Respectful, Responsible reflection",

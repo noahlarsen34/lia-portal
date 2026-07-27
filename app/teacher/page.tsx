@@ -81,17 +81,6 @@ const upcomingEvents = [
     },
 ];
 
-const announcements = [
-    {
-        title: "Welcome to the new LIA Teacher Dashbaord!",
-        detail: "We are excited to have you here.",
-    },
-    {
-        title: "2025 Educator Institute registration is now open!",
-        detail: "Secure your spot today.",
-    },
-];
-
 const resources = [
     { label: "Teacher Toolkit", href: "/teacher/resources" },
     { label: "Program Guides", href: "/teacher/resources" },
@@ -100,8 +89,56 @@ const resources = [
 ];
 
 export default async function TeacherDashBoardPage() {
-    const { profile } = await requireTeacher();
+    const { supabase, profile } = await requireTeacher();
     const displayName = profile.full_name ?? "Teacher";
+
+    const { data: teacher, error: teacherError } = await supabase
+        .from("teachers")
+        .select("school_id")
+        .eq("profile_id", profile.id)
+        .maybeSingle();
+
+    if (teacherError) {
+        throw new Error(`Unable to load teacher assignment: ${teacherError.message}`);
+    }
+
+    let assignedRpmId: string | null = null;
+
+    if (teacher?.school_id) {
+        const { data: school, error: schoolError } = await supabase
+            .from("schools")
+            .select("assigned_rpm_id")
+            .eq("id", teacher.school_id)
+            .maybeSingle();
+
+        if (schoolError) {
+            throw new Error(`Unable to load school assignment: ${schoolError.message}`);
+        }
+
+        assignedRpmId = school?.assigned_rpm_id ?? null;
+    }
+
+    let announcementsQuery = supabase
+        .from("announcements")
+        .select("id, title, body, published_at")
+        .eq("status", "published");
+
+    announcementsQuery = assignedRpmId
+        ? announcementsQuery.or(
+            `audience.eq.all_teachers,target_rpm_id.eq.${assignedRpmId}`,
+        )
+        : announcementsQuery.eq("audience", "all_teachers");
+
+    const { data: announcements, error: announcementsError } =
+        await announcementsQuery
+            .order("published_at", { ascending: false })
+            .limit(2);
+
+    if (announcementsError) {
+        throw new Error(
+            `Unable to load recent announcements: ${announcementsError.message}`,
+        );
+    }
 
     return (
         <div className="mx-auto max-w-7xl">
@@ -198,14 +235,37 @@ export default async function TeacherDashBoardPage() {
                             Recent Announcements
                         </h2>
                         <div className="divide-y divide-red-100 px-4">
-                            {announcements.map((announcement) => (
-                                <div key={announcement.title} className="py-4">
-                                    <h3 className="font-bold text-zinc-950">
-                                        {announcement.title}
-                                    </h3>
-                                    <p className="text-sm text-zinc-600">{announcement.detail}</p>
-                                </div>
-                            ))}
+                            {announcements.length > 0 ? (
+                                announcements.map((announcement) => (
+                                    <Link
+                                        key={announcement.id}
+                                        href="/teacher/announcements"
+                                        className="block py-4 transition hover:bg-red-50/60"
+                                    >
+                                        <div className="flex flex-wrap items-start justify-between gap-2">
+                                            <h3 className="font-bold text-zinc-950">
+                                                {announcement.title}
+                                            </h3>
+                                            {announcement.published_at ? (
+                                                <time className="text-xs font-medium text-zinc-500">
+                                                    {new Intl.DateTimeFormat("en-US", {
+                                                        month: "short",
+                                                        day: "numeric",
+                                                        year: "numeric",
+                                                    }).format(new Date(announcement.published_at))}
+                                                </time>
+                                            ) : null}
+                                        </div>
+                                        <p className="mt-1 line-clamp-2 text-sm leading-6 text-zinc-600">
+                                            {announcement.body}
+                                        </p>
+                                    </Link>
+                                ))
+                            ) : (
+                                <p className="py-5 text-sm text-zinc-600">
+                                    No announcements have been published yet.
+                                </p>
+                            )}
                         </div>
                         <Link
                             href="/teacher/announcements"
