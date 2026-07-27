@@ -14,7 +14,9 @@ export default async function ApplicationPageProps({
     const { error, success } = await searchParams;
     const submitForClass = submitApplication.bind(null, applicationToken);
 
-    if (success === "submitted") {
+    if (success === "submitted" || success === "email-sent") {
+        const confirmationEmailSent = success === "email-sent";
+
         return (
             <main className="min-h-screen bg-[#f8f4f4] px-4 py-10 text-zinc-950">
                 <section className="mx-auto max-w-2xl rounded-md border border-red-100 bg-white p-6 shadow-sm sm:p-8">
@@ -28,7 +30,9 @@ export default async function ApplicationPageProps({
                             Thank you for applying
                         </h1>
                         <p className="mt-3 text-sm leading-6">
-                            Your LIA application has been submitted successfully.
+                            {confirmationEmailSent
+                                ? "Your application was submitted, and a confirmation email has been sent to the address you provided."
+                                : "Your LIA application has been submitted successfully."}
                         </p>
                     </div>
 
@@ -38,10 +42,12 @@ export default async function ApplicationPageProps({
                             final decision.
                         </p>
 
-                        <p>
-                            If you entered an email address, a confirmation email has been
-                            sent to you.
-                        </p>
+                        {confirmationEmailSent ? (
+                            <p>
+                                Check your inbox for your application confirmation. It may
+                                take a few minutes to arrive.
+                            </p>
+                        ) : null}
                     </div>
 
                     <div className="mt-6 rounded-md border border-zinc-100 bg-zinc-50 px-4 py-4">

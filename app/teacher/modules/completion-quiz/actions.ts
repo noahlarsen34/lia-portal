@@ -6,6 +6,7 @@ import {
     newTeacherQuizQuestions,
     scoreNewTeacherQuiz,
 } from "@/utils/new-teacher-quiz";
+import { sendNewTeacherCertificate } from "@/utils/send-new-teacher-certificate";
 
 export async function submitNewTeacherQuiz(formData: FormData) {
     const { supabase, user, profile } = await requireTeacher();
@@ -52,10 +53,15 @@ export async function submitNewTeacherQuiz(formData: FormData) {
         : school?.districts;
     
     const teacherEmail = teacher?.email ?? profile.email ?? user.email ?? "";
+    const certificateTestEmail =
+        process.env.NODE_ENV !== "production"
+            ? process.env.NEW_TEACHER_CERTIFICATE_TEST_EMAIL?.trim()
+            : undefined;
+    const certificateRecipient = certificateTestEmail || teacherEmail;
     const firstName = teacher?.first_name ?? profile.full_name?.split(" ")[0] ?? "";
     const lastName = teacher?.last_name ?? "";
 
-    const { error } = await supabase.from("teacher_module_quiz_attempts").insert({
+    const { data: attempt, error } = await supabase.from("teacher_module_quiz_attempts").insert({
         teacher_profile_id: profile.id,
         teacher_record_id: teacher?.id ?? null,
         school_id: teacher?.school_id ?? null,
@@ -72,13 +78,32 @@ export async function submitNewTeacherQuiz(formData: FormData) {
         total_questions: result.totalQuestions,
         passed: result.passed,
         answers,
-    });
+    })
+    .select("id, created_at")
+    .single();
 
-    if (error) {
+    if (error || !attempt) {
         redirect("/teacher/modules/completion-quiz?error=submission-failed");
     }
 
+    let certificateStatus = "not-earned";
+
+    if (result.passed) {
+        certificateStatus = await sendNewTeacherCertificate({
+            attempt: {
+                id: attempt.id,
+                createdAt: attempt.created_at,
+                teacherProfileId: profile.id,
+                teacherEmail: certificateRecipient,
+                firstName,
+                lastName,
+                score: result.score,
+                totalQuestions: result.totalQuestions,
+            },
+        });
+    }
+
     redirect(
-        `/teacher/modules/completion-quiz/complete?score=${result.score}&total=${result.totalQuestions}&passing=${result.passingScore}&passed=${result.passed ? "true" : "false"}`,
+        `/teacher/modules/completion-quiz/complete?score=${result.score}&total=${result.totalQuestions}&passing=${result.passingScore}&passed=${result.passed ? "true" : "false"}&certificate=${certificateStatus}`,
     );
 }

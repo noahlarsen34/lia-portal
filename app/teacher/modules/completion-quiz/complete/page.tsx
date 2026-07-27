@@ -8,6 +8,7 @@ type CompletionPageProps = {
         total?: string;
         passing?: string;
         passed?: string;
+        certificate?: string;
     }>;
 };
 
@@ -25,6 +26,25 @@ export default async function NewTeacherQuizCompletePage({
     const passed = params.passed
         ? params.passed === "true"
         : total > 0 && score >= passingScore;
+    const certificateStatus = params.certificate ?? "not-earned";
+
+    const certificateMessage: Record<string, string> = {
+        sent: "Your personalized certificate was emailed successfully.",
+        "already-sent":
+            "A certificate has already been issued for your account, so another email was not sent.",
+        "missing-email":
+            "Your certificate could not be emailed because your account does not have an email address.",
+        "lookup-failed":
+            "Your quiz was recorded, but we could not verify your existing certificate history.",
+        "delivery-pending":
+            "Your certificate was created previously, but its email delivery needs administrator review.",
+        "generation-failed":
+            "Your quiz was recorded, but the certificate PDF could not be generated.",
+        "email-failed":
+            "Your certificate was created, but the email could not be sent.",
+        "recording-failed":
+            "The certificate email was sent, but its delivery record could not be saved. Please do not retake the quiz.",
+    };
 
     return (
         <div className="mx-auto max-w-4xl">
@@ -55,8 +75,8 @@ export default async function NewTeacherQuizCompletePage({
 
                     {passed ? (
                         <p className="mt-2 text-base leading-7 text-zinc-700">
-                            Your completion has been recorded. Once email certificates are connected,
-                            your personalized certificate will be sent automatically.
+                            {certificateMessage[certificateStatus] ??
+                                "Your completion has been recorded."}
                         </p>
                     ) : (
                         <p className="mt-2 text-base leading-7 text-zinc-700">

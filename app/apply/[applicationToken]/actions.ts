@@ -71,8 +71,10 @@ export async function submitApplication(
         ? liaClass.schools[0]
         : liaClass.schools;
     
+    let confirmationEmailSent = false;
+
     if (email) {
-        await sendEmail({
+        const emailResult = await sendEmail({
             to: email,
             subject: "Your LIA application has been received",
             html: renderBrandedEmail({
@@ -110,7 +112,13 @@ export async function submitApplication(
                 `,
             }),
         });
+
+        confirmationEmailSent = !emailResult.error;
     }
     
-    redirect(`/apply/${applicationToken}?success=submitted`);
+    redirect(
+        `/apply/${applicationToken}?success=${
+            confirmationEmailSent ? "email-sent" : "submitted"
+        }`,
+    );
 }

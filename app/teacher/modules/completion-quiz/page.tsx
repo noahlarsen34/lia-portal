@@ -41,6 +41,10 @@ export default async function NewTeacherCompletionQuizPage({
     const district = Array.isArray(school?.districts)
         ? school.districts[0]
         : school?.districts;
+    const certificateTestEmail =
+        process.env.NODE_ENV !== "production"
+            ? process.env.NEW_TEACHER_CERTIFICATE_TEST_EMAIL?.trim()
+            : undefined;
     
     return (
         <div className="mx-auto max-w-4xl">
@@ -65,6 +69,12 @@ export default async function NewTeacherCompletionQuizPage({
                         {district?.name ? `, ${district.name}` : ""}
                         {school?.state ? `, ${school.state}` : ""}
                     </p>
+                    {certificateTestEmail && (
+                        <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+                            <span className="font-semibold">Test delivery:</span>{" "}
+                            Certificate emails will be sent to {certificateTestEmail}.
+                        </div>
+                    )}
                 </div>
 
                 {params.error === "submission-failed" && (

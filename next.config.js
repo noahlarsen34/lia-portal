@@ -5,6 +5,10 @@ const nextConfig = {
       bodySizeLimit: "11mb",
     },
   },
+
+  outputFileTracingIncludes: {
+    "/*": ["./assets/certificates/**/*"],
+  },
 };
 
 module.exports = nextConfig;

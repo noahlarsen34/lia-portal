@@ -5,40 +5,69 @@ const fromEmail =
     process.env.LIA_FROM_EMAIL ??
     "Latinos In Action <no-reply@mail.lia-portal.org>";
 
+type EmailAttachment = {
+  filename: string;
+  content: Buffer | string;
+  contentType?: string;
+};
+
 export async function sendEmail({
-    to,
-    subject,
-    html,
+  to,
+  subject,
+  html,
+  attachments,
+  idempotencyKey,
 } : {
-    to: string;
-    subject: string;
-    html: string;
+  to: string;
+  subject: string;
+  html: string;
+  attachments?: EmailAttachment[];
+  idempotencyKey?: string;
 }) {
-    if (!resendApiKey) {
-        console.warn("RESEND_API_KEY is not configured. Skipping email.");
-        return;
-    }
+  if (!resendApiKey) {
+    const error = "RESEND_API_KEY is not configured.";
+    console.warn(error);
+    return { id: null, error };
+  }
 
-    const resend = new Resend(resendApiKey);
+  const resend = new Resend(resendApiKey);
 
-    const { data, error } = await resend.emails.send({
-        from: fromEmail,
-        to,
-        subject,
-        html,
+  const { data, error } = await resend.emails.send(
+    {
+      from: fromEmail,
+      to,
+      subject,
+      html,
+      attachments,
+    },
+    idempotencyKey ? { idempotencyKey } : undefined,
+  );
+
+  if (error) {
+    console.error("Resend email failed:", {
+      to,
+      subject,
+      error,
     });
 
-    if (error) {
-        console.error("Resend email failed:", {
-            to,
-            subject,
-            error,
-        });
-        return;
-    }
+    return {
+      id: null,
+      error: error.message,
+    };
+  }
 
-    console.info("Resend email sent:", { to, subject, id: data?.id });
+  console.info("Resend email sent:", {
+    to,
+    subject,
+    id: data?.id,
+  });
+
+  return {
+    id: data?.id ?? null,
+    error: null,
+  };
 }
+
 
 export function escapeHtml(value: string) {
     return value
