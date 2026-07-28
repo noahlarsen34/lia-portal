@@ -24,11 +24,91 @@ type CertificateAttempt = {
 
 export async function sendNewTeacherCertificate({
     attempt,
+    testMode = false,
 }: {
     attempt: CertificateAttempt;
+    testMode?: boolean;
 }) {
     if (!attempt.teacherEmail) {
         return "missing-email";
+    }
+
+    const teacherName =
+        `${attempt.firstName} ${attempt.lastName}`.trim() || "LIA Educator";
+    const completedAt = new Date(attempt.createdAt);
+
+    if (testMode) {
+        const certificateNumber = `TEST-${createCertificateNumber()}`;
+        let certificate: Buffer;
+
+        try {
+            certificate = await generateNewTeacherCertificate({
+                teacherName,
+                completedAt,
+                certificateNumber,
+            });
+        } catch (error) {
+            console.error("Test certificate generation failed:", error);
+            return "generation-failed";
+        }
+
+        const safeName =
+            teacherName.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "") ||
+            "lia-educator";
+
+        const emailResult = await sendEmail({
+            to: attempt.teacherEmail,
+            subject: "[TEST] Your LIA New Teacher Training certificate",
+            html: renderBrandedEmail({
+                preheader: "Test delivery of an LIA training certificate.",
+                eyebrow: "Test certificate",
+                title: `Congratulations, ${attempt.firstName || teacherName}!`,
+                body:`
+                    <p style="margin:0 0 20px; color:#3f3f46; font-size:16px; line-height:1.7;">
+                        This is a test delivery from the local LIA Portal.
+                        The attached certificate is a preview and does not
+                        create another official certificate record.
+                    </p>
+
+                    <table role="presentation" width="100%" cellspacing="0"
+                        cellpadding="0" border="0"
+                        style="width:100%; background-color:#f0fdf4;
+                        border-left:4px solid #16a34a;">
+                        <tr>
+                            <td style="padding:20px 22px;">
+                                <p style="margin:0 0 6px; color:#15803d;
+                                    font-size:12px; font-weight:700;
+                                    text-transform:uppercase;">
+                                    Test certificate attached
+                                </p>
+                                <p style="margin:0; color:#18181b;
+                                    font-size:17px; font-weight:700;">
+                                    ${escapeHtml(teacherName)}
+                                </p>
+                                <p style="margin:6px 0 0; color:#52525b;
+                                    font-size:14px;">
+                                    Score: ${attempt.score} out of ${attempt.totalQuestions}
+                                </p>
+                            </td>
+                        </tr>
+                    </table>
+                `,
+            }),
+            attachments: [
+                {
+                    filename: `${safeName}-lia-training-certificate-test.pdf`,
+                    content: certificate,
+                    contentType: "application/pdf",
+                },
+            ],
+            idempotencyKey: `new-teacher-certificate-test-${attempt.id}`,
+        });
+
+        if (emailResult.error) {
+            return "email-failed";
+        }
+
+        return "test-sent";
     }
 
     const admin = createAdminClient();
@@ -69,8 +149,6 @@ export async function sendNewTeacherCertificate({
 
     const targetAttemptId = attempt.id;
     const certificateNumber = createCertificateNumber();
-    const completedAt = new Date(attempt.createdAt);
-
     const { data: claimedAttempt, error: claimError } = await admin
         .from("teacher_module_quiz_attempts")
         .update({
@@ -99,9 +177,6 @@ export async function sendNewTeacherCertificate({
         return "delivery-pending";
     }
 
-    const teacherName = 
-        `${attempt.firstName} ${attempt.lastName}`.trim() || "LIA Educator";
-    
     let certificate: Buffer;
 
     try {

@@ -90,6 +90,7 @@ export async function submitNewTeacherQuiz(formData: FormData) {
 
     if (result.passed) {
         certificateStatus = await sendNewTeacherCertificate({
+            testMode: Boolean(certificateTestEmail),
             attempt: {
                 id: attempt.id,
                 createdAt: attempt.created_at,

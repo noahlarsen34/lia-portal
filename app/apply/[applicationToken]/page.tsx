@@ -1,9 +1,10 @@
 import { submitApplication } from "./actions";
 import Link from "next/link";
+import ApplicationForm from "./application-form";
 
 type ApplicationPageProps = {
     params: Promise<{ applicationToken: string }>;
-    searchParams: Promise<{ error?: string; success?: string}>;
+    searchParams: Promise<{ error?: string; success?: string; lang?: string;}>;
 };
 
 export default async function ApplicationPageProps({
@@ -11,9 +12,46 @@ export default async function ApplicationPageProps({
     searchParams,
 }: ApplicationPageProps) {
     const { applicationToken } = await params;
-    const { error, success } = await searchParams;
+    const { error, success, lang } = await searchParams;
+    const isSpanish = lang === "es";
     const submitForClass = submitApplication.bind(null, applicationToken);
 
+    const confirmationText = isSpanish
+    ? {
+          received: "Solicitud recibida",
+          thankYou: "Gracias por enviar tu solicitud",
+          emailSent:
+              "Tu solicitud fue enviada y se envió un correo de confirmación a la dirección que proporcionaste.",
+          submitted: "Tu solicitud de LIA fue enviada correctamente.",
+          review:
+              "Tu maestro revisará tu solicitud y se comunicará contigo con una decisión final.",
+          inbox:
+              "Revisa tu correo para encontrar la confirmación de tu solicitud. Puede tardar unos minutos en llegar.",
+          next: "¿Qué sucede después?",
+          steps: [
+              "Tu solicitud aparecerá en la lista de solicitantes de tu maestro.",
+              "Tu maestro revisará tus respuestas.",
+              "Tu maestro aceptará, rechazará o se comunicará contigo.",
+          ],
+      }
+    : {
+          received: "Application received",
+          thankYou: "Thank you for applying",
+          emailSent:
+              "Your application was submitted, and a confirmation email has been sent to the address you provided.",
+          submitted: "Your LIA application has been submitted successfully.",
+          review:
+              "Your teacher will review your application and follow up with a final decision.",
+          inbox:
+              "Check your inbox for your application confirmation. It may take a few minutes to arrive.",
+          next: "What happens next?",
+          steps: [
+              "Your application appears on your teacher's applicant list.",
+              "Your teacher reviews your responses.",
+              "Your teacher accepts, declines, or follows up with you.",
+          ],
+      };
+      
     if (success === "submitted" || success === "email-sent") {
         const confirmationEmailSent = success === "email-sent";
 
@@ -25,39 +63,35 @@ export default async function ApplicationPageProps({
                     </p>
 
                     <div className="mt-5 rounded-md border border-green-200 bg-green-50 px-4 py-4 text-green-800">
-                        <p className="text-sm font-semibold">Application received</p>
+                        <p className="text-sm font-semibold">
+                            {confirmationText.received}
+                        </p>
                         <h1 className="mt-2 text-3xl font-semibold text-zinc-950">
-                            Thank you for applying
+                            {confirmationText.thankYou}
                         </h1>
                         <p className="mt-3 text-sm leading-6">
                             {confirmationEmailSent
-                                ? "Your application was submitted, and a confirmation email has been sent to the address you provided."
-                                : "Your LIA application has been submitted successfully."}
+                                ? confirmationText.emailSent
+                                : confirmationText.submitted}
                         </p>
                     </div>
 
                     <div className="mt-6 space-y-4 text-sm leading-6 text-zinc-700">
-                        <p>
-                            Your teacher will review your application and follow up with a 
-                            final decision.
-                        </p>
+                        <p>{confirmationText.review}</p>
 
                         {confirmationEmailSent ? (
-                            <p>
-                                Check your inbox for your application confirmation. It may
-                                take a few minutes to arrive.
-                            </p>
+                            <p>{confirmationText.inbox}</p>
                         ) : null}
                     </div>
 
                     <div className="mt-6 rounded-md border border-zinc-100 bg-zinc-50 px-4 py-4">
                         <h2 className="text-sm font-semibold text-zinc-950">
-                            What happens next?
+                            {confirmationText.next}
                         </h2>
                         <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm leading-6 text-zinc-700">
-                            <li>Your application appears on your teacher&apos;s applicant list.</li>
-                            <li>Your teacher reviews your responses.</li>
-                            <li>Your teacher accepts, declines, or follows up with you.</li>
+                            {confirmationText.steps.map((step) => (
+                                <li key={step}>{step}</li>
+                            ))}
                         </ol>
                     </div>
 
@@ -72,81 +106,8 @@ export default async function ApplicationPageProps({
                 <p className="text-sm font-semibold uppercase tracking-wide text-[#c4122f]">
                     Latinos In Action
                 </p>
-                <h1 className="mt-2 text-3xl font-semibold">Student Application</h1>
-                <p className="mt-2 text-sm leading-6 text-zinc-600">
-                    Complete this application if you are interested in joining LIA.
-                </p>
-
-                {error ? (
-                    <div className="mt-5 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                        {error === "missing-fields"
-                            ? "First name, last name, and GPA are required."
-                            : error === "invalid-gpa"
-                                ? "Enter a valid GPA between 0.00 and 5.00."
-                            : error === "closed"
-                                ? "This application is currently closed."
-                                : error === "already-submitted"
-                                    ? "An application with this email has already been submitted for this class."
-                                    : "Could not submit your application. Please try again."}
-                    </div>
-                ) : null}
-
-                <Link href="/apply">Choose a different school or teacher</Link>
-
-                <form action={submitForClass} className="mt-6 space-y-5">
-                    <div className="grid gap-5 sm:grid-cols-2">
-                        <input name="first_name" required placeholder="First name" className="h-11 rounded-md border px-3" />
-                        <input name="last_name" required placeholder="Last name" className="h-11 rounded-md border px-3" />
-                    </div>
-
-                    <div className="grid gap-5 sm:grid-cols-2">
-                        <input name="email" type="email" placeholder="School email" className="h-11 rounded-md border px-3" />
-                        <input name="grade_level" placeholder="Grade level" className="h-11 rounded-md border px-3" />
-                    </div>
-
-                    <input name="advisory_teacher" placeholder="Advisory teacher" className="h-11 w-full rounded-md border px-3" />
-                    <input name="color_team" placeholder="Color team / advisory group" className="h-11 w-full rounded-md border px-3" />
-
-                    <label className="block">
-                        <span className="text-sm font-semibold text-zinc-950">
-                            Add your GPA
-                        </span>
-                        <input
-                            name="gpa"
-                            type="number"
-                            min="0"
-                            max="5"
-                            step="0.01"
-                            inputMode="decimal"
-                            required
-                            placeholder="For example, 3.25"
-                            className="mt-2 h-11 w-full rounded-md border px-3"
-                        />
-                    </label>
-
-                    <textarea name="why_lia" rows={4} placeholder="Why do you want to join LIA?" className="w-full rounded-md border px-3 py-2" />
-                    <textarea name="skills_strengths" rows={4} placeholder="What skills, interests, or strengths would you bring?" className="w-full rounded-md border px-3 py-2" />
-                    <textarea name="why_good_fit" rows={4} placeholder="Why would you be a good addition to LIA?" className="w-full rounded-md border px-3 py-2" />
-                    <textarea name="extracurriculars" rows={4} placeholder="List extracurricular activities or future plans" className="w-full rounded-md border px-3 py-2" />
-                    <textarea name="inspiration" rows={4} placeholder="Who or what inspires you?" className="w-full rounded-md border px-3 py-2" />
-                    <textarea name="academic_review" rows={4} placeholder="Describe your academic peformance." className="w-full rounded-md border px-3 py-2" />
-                    <label className="block">
-                        <span className="text-sm font-semibold text-zinc-950">
-                            If you have a low grade in any class, please explain why
-                        </span>
-                        <textarea
-                            name="low_grade_explanation"
-                            rows={4}
-                            placeholder="Share any circumstances or challenges that affected your grade. Leave this blank if it does not apply."
-                            className="mt-2 w-full rounded-md border px-3 py-2"
-                        />
-                    </label>
-                    <textarea name="three_rs_review" rows={4} placeholder="Reflect on being ready, respectful, and responsible." className="w-full rounded-md border px-3 py-2" />
-                    
-                    <button className="h-10 rounded-md bg-[#c4122f] px-4 text-sm font-semibold text-white">
-                        Submit Application
-                    </button>
-                </form>
+                
+                <ApplicationForm action={submitForClass} error={error} />
             </section>
         </main>
     );

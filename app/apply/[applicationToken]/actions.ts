@@ -20,6 +20,9 @@ export async function submitApplication(
         redirect(`/apply/${applicationToken}?error=closed`);
     }
 
+    const language =
+        String(formData.get("language") ?? "") === "es" ? "es" : "en";
+
     const firstName = String(formData.get("first_name") ?? "").trim();
     const lastName = String(formData.get("last_name") ?? "").trim();
     const email = String(formData.get("email") ?? "").trim().toLowerCase();
@@ -57,6 +60,7 @@ export async function submitApplication(
         first_name: firstName,
         last_name: lastName,
         email: email || null,
+        preferred_language: language,
         grade_level: String(formData.get("grade_level") ?? "").trim() || null,
         advisory_teacher: String(formData.get("advisory_teacher") ?? "").trim() || null,
         color_team: String(formData.get("color_team") ?? "").trim() || null,
@@ -82,43 +86,69 @@ export async function submitApplication(
     
     let confirmationEmailSent = false;
 
+    const confirmationCopy =
+        language === "es"
+            ? {
+                subject: "Recibimos tu solicitud de LIA",
+                preheader: `Recibimos tu solicitud para ${liaClass.name}.`,
+                eyebrow: "Solicitud recibida",
+                title: `¡Gracias por enviar tu solicitud, ${firstName}!`,
+                intro:
+                "Tu solicitud de Latinos In Action se envió correctamente.",
+                programLabel: "Programa",
+                nextTitle: "¿Qué sucede después?",
+                nextBody:
+                "Tu maestro revisará tu solicitud y se comunicará contigo cuando haya una decisión final.",
+            }
+            : {
+                subject: "Your LIA application has been received",
+                preheader: `We received your application for ${liaClass.name}.`,
+                eyebrow: "Application received",
+                title: `Thank you for applying, ${firstName}!`,
+                intro:
+                "Your Latinos In Action application was submitted successfully.",
+                programLabel: "Program",
+                nextTitle: "What happens next?",
+                nextBody:
+                "Your teacher will review your application and follow up when a final decision has been made.",
+            }
+
     if (email) {
         const emailResult = await sendEmail({
             to: email,
-            subject: "Your LIA application has been received",
+            subject: confirmationCopy.subject,
             html: renderBrandedEmail({
-                preheader: `We received your application for ${liaClass.name}.`,
-                eyebrow: "Application received",
-                title: `Thanks for applying, ${firstName}!`,
+                preheader: confirmationCopy.preheader,
+                eyebrow: confirmationCopy.eyebrow,
+                title: confirmationCopy.title,
+                language,
                 body: `
-                  <p style="margin:0 0 22px; color:#3f3f46; font-size:16px; line-height:1.7;">
-                    Your Latinos In Action application is safely in. Here is a quick
-                    confirmation of what you submitted.
-                  </p>
-                  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%; background-color:#fafafa; border:1px solid #e4e4e7; border-radius:6px;">
-                    <tr>
-                      <td style="padding:20px 22px;">
-                        <p style="margin:0 0 5px; color:#71717a; font-size:11px; font-weight:700; text-transform:uppercase;">Program</p>
-                        <p style="margin:0; color:#18181b; font-size:16px; font-weight:700; line-height:1.5;">${escapeHtml(liaClass.name)}</p>
-                        ${
-                            school?.name
-                                ? `<p style="margin:6px 0 0; color:#52525b; font-size:14px; line-height:1.5;">${escapeHtml(school.name)}</p>`
-                                : ""
-                        }
-                      </td>
-                    </tr>
-                  </table>
-                  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%; margin-top:20px; background-color:#fff5f6; border-left:4px solid #c4122f;">
-                    <tr>
-                      <td style="padding:18px 20px;">
-                        <p style="margin:0 0 5px; color:#991b31; font-size:14px; font-weight:700;">What happens next?</p>
-                        <p style="margin:0; color:#52525b; font-size:14px; line-height:1.6;">
-                          Your teacher will review your application and contact you when a final decision is ready.
+                        <p style="margin:0 0 20px;">
+                            ${confirmationCopy.intro}
                         </p>
-                      </td>
-                    </tr>
-                  </table>
-                `,
+
+                        <div style="padding:18px; background:#f8f8f8; border-left:4px solid #ce0e2d;">
+                            <div style="font-size:12px; font-weight:700; color:#71717a; text-transform:uppercase;">
+                            ${confirmationCopy.programLabel}
+                            </div>
+
+                            <div style="margin-top:6px; font-size:17px; font-weight:700; color:#18181b;">
+                            ${escapeHtml(liaClass.name)}
+                            </div>
+
+                            <div style="margin-top:4px; color:#52525b;">
+                            ${escapeHtml(school?.name ?? "")}
+                            </div>
+                        </div>
+
+                        <h2 style="margin:26px 0 8px; font-size:18px; color:#18181b;">
+                            ${confirmationCopy.nextTitle}
+                        </h2>
+
+                        <p style="margin:0;">
+                            ${confirmationCopy.nextBody}
+                        </p>
+                        `,
             }),
         });
 
@@ -128,6 +158,6 @@ export async function submitApplication(
     redirect(
         `/apply/${applicationToken}?success=${
             confirmationEmailSent ? "email-sent" : "submitted"
-        }`,
+        }&lang=${language}`,
     );
 }

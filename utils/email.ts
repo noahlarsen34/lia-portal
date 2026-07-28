@@ -83,14 +83,27 @@ export function renderBrandedEmail({
     eyebrow,
     title,
     body,
+    language = "en",
 }: {
     preheader: string;
     eyebrow: string;
     title: string;
     body: string;
+    language?: "en" | "es";
 }) {
+    const isSpanish = language === "es";
+    const headerTagline = isSpanish
+        ? "Empoderando a la juventud latina a través de la educación"
+        : "Empowering Latino youth through education";
+    const footerTagline = isSpanish
+        ? "Liderazgo. Cultura. Preparación universitaria y profesional."
+        : "Leadership. Culture. College and career readiness.";
+    const automatedMessage = isSpanish
+        ? "Este es un mensaje automatizado del Portal de Latinos In Action."
+        : "This is an automated message from the Latinos In Action Portal.";
+
     return `<!doctype html>
-<html lang="en">
+<html lang="${language}">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -110,7 +123,7 @@ export function renderBrandedEmail({
                   LATINOS IN ACTION
                 </p>
                 <p style="margin:7px 0 0; color:#ffe4e8; font-size:12px; font-weight:700; line-height:1.4; text-transform:uppercase;">
-                  Empowering Latino youth through education
+                  ${headerTagline}
                 </p>
               </td>
             </tr>
@@ -130,7 +143,7 @@ export function renderBrandedEmail({
                         Latinos In Action
                       </p>
                       <p style="margin:4px 0 0; color:#71717a; font-size:13px; line-height:1.5;">
-                        Leadership. Culture. College and career readiness.
+                        ${footerTagline}
                       </p>
                     </td>
                   </tr>
@@ -140,7 +153,7 @@ export function renderBrandedEmail({
             <tr>
               <td align="center" style="padding:18px 20px 0;">
                 <p style="margin:0; color:#8a7f82; font-size:11px; line-height:1.5;">
-                  This is an automated message from the Latinos In Action Portal.
+                  ${automatedMessage}
                 </p>
               </td>
             </tr>

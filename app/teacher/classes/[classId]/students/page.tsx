@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Eye, Pencil, UserMinus } from "lucide-react";
 import { requireTeacher } from "@/utils/role-guards";
 import { addStudentToClass, removeStudentFromClass } from "./actions";
 import { studentTierOptions, formatStudentTier } from "@/utils/student-tier";
@@ -277,13 +278,13 @@ export default async function StudentsPage({
                         <table className="min-w-[1120px] table-fixed divide-y divide-zinc-200 text-sm">
                             <colgroup>
                                 <col className="w-[15%]" />
-                                <col className="w-[18%]" />
+                                <col className="w-[20%]" />
                                 <col className="w-[7%]" />
                                 <col className="w-[8%]" />
                                 <col className="w-[11%]" />
-                                <col className="w-[13%]" />
-                                <col className="w-[8%]" />
-                                <col className="w-[20%]" />
+                                <col className="w-[14%]" />
+                                <col className="w-[10%]" />
+                                <col className="w-[15%]" />
                             </colgroup>
                             <thead className="bg-zinc-50 text-left text-xs font-bold uppercase tracking-wide text-zinc-500">
                                 <tr>
@@ -294,7 +295,7 @@ export default async function StudentsPage({
                                     <th className="px-5 py-3">Committee</th>
                                     <th className="px-5 py-3">Role</th>
                                     <th className="px-5 py-3">Status</th>
-                                    <th className="px-5 py-3 text-right">Actions</th>
+                                    <th className="px-5 py-3 text-center">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-zinc-100">
@@ -307,17 +308,18 @@ export default async function StudentsPage({
                                         liaClass.id,
                                         enrollment.id,
                                     );
+                                    const studentName = student
+                                        ? `${student.first_name} ${student.last_name}`
+                                        : "Unknown student";
 
                                     return (
-                                        <tr key={enrollment.id} className="align-top transition hover:bg-zinc-50/70">
+                                        <tr key={enrollment.id} className="align-middle transition hover:bg-zinc-50/70">
                                             <td className="px-5 py-4 font-semibold leading-6">
                                                 <Link
                                                     href={`/teacher/classes/${liaClass.id}/students/${enrollment.id}`}
                                                     className="break-words text-zinc-950 transition hover:text-[#c4122f]"
                                                 >
-                                                    {student
-                                                        ? `${student.first_name} ${student.last_name}`
-                                                        : "Unknown student"}
+                                                    {studentName}
                                                 </Link>
                                             </td>
                                             <td className="break-words px-5 py-4 leading-6 text-zinc-700">
@@ -343,26 +345,32 @@ export default async function StudentsPage({
                                                     {enrollment.status}
                                                 </span>
                                             </td>
-                                            <td className="px-5 py-4">
-                                                <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-2 text-right">
+                                            <td className="whitespace-nowrap px-5 py-4">
+                                                <div className="flex items-center justify-center gap-2">
                                                     <Link
                                                         href={`/teacher/classes/${liaClass.id}/students/${enrollment.id}`}
-                                                        className="font-semibold text-[#c4122f] hover:text-[#a70d25]"
+                                                        aria-label={`View ${studentName}`}
+                                                        title="View student"
+                                                        className="inline-flex size-9 shrink-0 items-center justify-center rounded-md border border-zinc-200 bg-white text-zinc-600 transition hover:border-[#c4122f]/40 hover:bg-red-50 hover:text-[#c4122f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c4122f]/30"
                                                     >
-                                                        View
+                                                        <Eye className="size-4" aria-hidden="true" />
                                                     </Link>
                                                     <Link
                                                         href={`/teacher/classes/${liaClass.id}/students/${enrollment.id}/edit`}
-                                                        className="font-semibold text-[#c4122f] hover:text-[#a70d25]"
+                                                        aria-label={`Edit ${studentName}`}
+                                                        title="Edit student"
+                                                        className="inline-flex size-9 shrink-0 items-center justify-center rounded-md border border-zinc-200 bg-white text-zinc-600 transition hover:border-[#c4122f]/40 hover:bg-red-50 hover:text-[#c4122f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c4122f]/30"
                                                     >
-                                                        Edit
+                                                        <Pencil className="size-4" aria-hidden="true" />
                                                     </Link>
-                                                    <form action={removeStudent}>
+                                                    <form action={removeStudent} className="m-0">
                                                         <button
                                                             type="submit"
-                                                            className="font-semibold text-zinc-500 hover:text-[#c4122f]"
+                                                            aria-label={`Remove ${studentName} from class`}
+                                                            title="Remove from class"
+                                                            className="inline-flex size-9 shrink-0 items-center justify-center rounded-md border border-red-200 bg-white text-[#c4122f] transition hover:border-[#c4122f] hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c4122f]/30"
                                                         >
-                                                            Remove from Class
+                                                            <UserMinus className="size-4" aria-hidden="true" />
                                                         </button>
                                                     </form>
                                                 </div>

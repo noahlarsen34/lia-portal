@@ -30,6 +30,8 @@ export default async function NewTeacherQuizCompletePage({
 
     const certificateMessage: Record<string, string> = {
         sent: "Your personalized certificate was emailed successfully.",
+        "test-sent":
+            "A test certificate was emailed to the configured test address. No additional official certificate was issued.",
         "already-sent":
             "A certificate has already been issued for your account, so another email was not sent.",
         "missing-email":
