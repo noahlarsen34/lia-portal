@@ -19,6 +19,10 @@ export function WhatsAppShareButton({
     const [copyStatus, setCopyStatus] = useState<
         "idle" | "copied" | "manual"
     >("idle");
+    const communityOwner = communityName.replace(
+        /'s WhatsApp Community$/,
+        "",
+    );
 
     function copyAnnouncement(message: string) {
         const textarea = document.createElement("textarea");
@@ -56,18 +60,19 @@ export function WhatsAppShareButton({
     <button
         type="button"
         onClick={handleShare}
-        className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-green-600 px-4 py-2 text-sm font-semibold text-green-700 transition hover:bg-green-50"
+        className="inline-flex min-h-10 items-center justify-center gap-1.5 whitespace-nowrap rounded-md border border-green-600 px-3 py-1.5 text-xs font-semibold text-green-700 transition hover:bg-green-50"
+        aria-label={`Share to ${communityName}`}
     >
         {copyStatus === "copied" ? (
-            <Copy size={17} />
+            <Copy size={15} />
         ) : (
-            <ExternalLink size={17} />
+            <ExternalLink size={15} />
         )}
         {copyStatus === "copied"
             ? "Copied - paste in WhatsApp"
             : copyStatus === "manual"
               ? "WhatsApp opened - copy manually"
-              : `Share to ${communityName}`}
+              : `Share to ${communityOwner}`}
     </button>
   );
 }

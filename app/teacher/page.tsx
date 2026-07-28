@@ -1,5 +1,6 @@
 import Link from "next/link";
 import {
+    AwardIcon,
     BookOpen,
     CalendarDays,
     FolderOpen,
@@ -10,6 +11,11 @@ import {
     type LucideIcon,
 } from "lucide-react";
 import { requireTeacher } from "@/utils/role-guards";
+import {
+    getTeacherEventDirectionsHref,
+    hasConfirmedTeacherEventLocation,
+    upcomingTeacherEvents,
+} from "@/utils/teacher-events";
 
 type ActionCard = {
     title: string;
@@ -26,16 +32,10 @@ const actionCards: ActionCard[] = [
         icon: Users,
     },
     {
-        title: "View Events",
+        title: "View & Register For Events",
         description: "See upcoming LIA events, deadlines, and important dates.",
         href: "/teacher/events",
         icon: CalendarDays,
-    },
-    {
-        title: "Register for Educator Institute & Conference",
-        description: "Join professional development opportunities.",
-        href: "/teacher/institute",
-        icon: GraduationCap,
     },
     {
         title: "Complete Teacher Modules",
@@ -44,48 +44,70 @@ const actionCards: ActionCard[] = [
         icon: BookOpen,
     },
     {
-        title: "Participate in Discussions",
-        description: "Connect with other educators, share ideas, and grow together.",
-        href: "/teacher/discussions",
-        icon: MessagesSquare,
-    },
-    {
-        title: "View Announcements & Resources",
-        description: "Stay informed with the latest updates and helpful resources.",
-        href: "/teacher/resources",
+        title: "View Announcements",
+        description: "Stay informed with the latest updates.",
+        href: "/teacher/announcements",
         icon: Megaphone,
     },
+    {
+        title: "Access the Curriculum",
+        description: "Use the curriculum to build your lessons.",
+        href: "/teacher/resources",
+        icon: FolderOpen,
+    },
+    {
+        title: "View Uploaded Assignments",
+        description: "View assignments students have uploaded to your classes.",
+        href: "/teacher/microcredentials",
+        icon: AwardIcon,
+    }
 ];
 
-const upcomingEvents = [
-    {
-        month: "May",
-        day: "24",
-        title: "Educator Institute",
-        detail: "May 24 - May 25, 2025",
-        location: "Salt Lake City",
-    },
-    {
-        month: "Jun",
-        day: "12",
-        title: "Leadership Conference",
-        detail: "June 12, 2025",
-        location: "West Jordan, UT",
-    },
-    {
-        month: "Jul",
-        day: "08",
-        title: "Summer Boot Camp",
-        detail: "July 8 2025",
-        location: "Various Locations",
-    },
-];
+{upcomingTeacherEvents.map((event) => (
+    <div key={event.id} className="flex gap-3 py-4">
+        <div className="w-14 shrink-0 overflow-hidden rounded-md border border-red-100 text-center">
+            <div className="bg-[#c4122f] py-1 text-xs font-bold uppercase text-white">
+                {event.month}
+            </div>
+
+            <div
+                className={`flex h-11 items-center justify-center bg-red-50 font-black text-zinc-900 ${
+                    event.day === "TBD" ? "text-xs" : "text-xl"
+                }`}
+            >
+                {event.day}
+            </div>
+        </div>
+
+        <div className="min-w-0">
+            <h3 className="font-bold text-zinc-950">
+                {event.title}
+            </h3>
+
+            <p className="text-sm text-zinc-600">
+                {event.dateLabel}
+            </p>
+
+            {hasConfirmedTeacherEventLocation(event) ? (
+                <a
+                    href={getTeacherEventDirectionsHref(event)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-zinc-600 underline decoration-zinc-300 underline-offset-2 hover:text-[#c4122f]"
+                >
+                    {event.location}
+                </a>
+            ) : (
+                <p className="text-sm text-zinc-600">{event.location}</p>
+            )}
+        </div>
+    </div>
+))}
 
 const resources = [
-    { label: "Teacher Toolkit", href: "/teacher/resources" },
-    { label: "Program Guides", href: "/teacher/resources" },
-    { label: "Student Resources", href: "/teacher/resources" },
-    { label: "LIA Website", href: "/teacher/resources" },
+    { label: "Teacher Toolkit", href: "/teacher/resources/page/6796" },
+    { label: "Program Guide", href: "https://drive.google.com/file/d/111mHToRoejdYJw_L9Ah5HvlWwYL40zXD/view" },
+    { label: "LIA Website", href: "https://latinosinaction.org/" },
 ];
 
 export default async function TeacherDashBoardPage() {
@@ -201,37 +223,6 @@ export default async function TeacherDashBoardPage() {
                 <aside className="space-y-4">
                     <section className="overflow-hidden rounded-md border border-red-100 bg-white shadow-sm">
                         <h2 className="bg-[#c4122f] px-4 py-2 text-sm font-bold uppercase text-white">
-                            Upcoming Events
-                        </h2>
-                        <div className="divide-y divide-red-100 px-4">
-                            {upcomingEvents.map((event) => (
-                                <div key={`${event.month}-${event.day}`} className="flex gap-3 py-4">
-                                    <div className="w-14 shrink-0 overflow-hidden rounded-md border border-red-100 text-center">
-                                        <div className="bg-[#c4122f] py-1 text-xs font-bold uppercase text-white">
-                                            {event.month}
-                                        </div>
-                                        <div className="bg-red-50 py-2 text-xl font-black text-zinc-900">
-                                            {event.day}
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <h3 className="font-bold text-zinc-950">{event.title}</h3>
-                                        <p className="text-sm text-zinc-600">{event.detail}</p>
-                                        <p className="text-sm text-zinc-600">{event.location}</p>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                        <Link
-                            href="/teacher/events"
-                            className="block px-4 pb-4 text-right text-sm font-bold text-[#c4122f]"
-                        >
-                            View all events
-                        </Link>
-                    </section>
-
-                    <section className="overflow-hidden rounded-md border border-red-100 bg-white shadow-sm">
-                        <h2 className="bg-[#c4122f] px-4 py-2 text-sm font-bold uppercase text-white">
                             Recent Announcements
                         </h2>
                         <div className="divide-y divide-red-100 px-4">
@@ -272,6 +263,50 @@ export default async function TeacherDashBoardPage() {
                             className="block px-4 pb-4 text-right text-sm font-bold text-[#c4122f]"
                         >
                             View all announcements
+                        </Link>
+                    </section>
+
+                    <section className="overflow-hidden rounded-md border border-red-100 bg-white shadow-sm">
+                        <h2 className="bg-[#c4122f] px-4 py-2 text-sm font-bold uppercase text-white">
+                            Upcoming Events
+                        </h2>
+                        <div className="divide-y divide-red-100 px-4">
+                            {upcomingTeacherEvents.map((event) => (
+                                <div key={`${event.month}-${event.day}`} className="flex gap-3 py-4">
+                                    <div className="w-14 shrink-0 overflow-hidden rounded-md border border-red-100 text-center">
+                                        <div className="bg-[#c4122f] py-1 text-xs font-bold uppercase text-white">
+                                            {event.month}
+                                        </div>
+                                        <div className="bg-red-50 py-2 text-xl font-black text-zinc-900">
+                                            {event.day}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <h3 className="font-bold text-zinc-950">{event.title}</h3>
+                                        <p className="text-sm text-zinc-600">{event.dateLabel}</p>
+                                        {hasConfirmedTeacherEventLocation(event) ? (
+                                            <a
+                                                href={getTeacherEventDirectionsHref(event)}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-sm text-zinc-600 underline decoration-zinc-300 underline-offset-2 hover:text-[#c4122f]"
+                                            >
+                                                {event.location}
+                                            </a>
+                                        ) : (
+                                            <p className="text-sm text-zinc-600">
+                                                {event.location}
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        <Link
+                            href="/teacher/events"
+                            className="block px-4 pb-4 text-right text-sm font-bold text-[#c4122f]"
+                        >
+                            View all events
                         </Link>
                     </section>
 
