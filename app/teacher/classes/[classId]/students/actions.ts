@@ -4,26 +4,52 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireTeacher } from "@/utils/role-guards";
 import { getValidStudentTier } from "@/utils/student-tier";
+import { toLeadershipOptionValue } from "@/utils/class-leadership-options";
 
-function getValidCommittee(committee: string) {
-    return committee === "professional" || committee === "service" || committee === "social"
-        ? committee
-        : null;
-}
+async function resolveLeadershipSelection(
+    supabase: Awaited<ReturnType<typeof requireTeacher>>["supabase"],
+    classId: string,
+    submittedCommittee: string,
+    submittedRole: string,
+) {
+    const [
+        { data: committees },
+        { data: roles },
+    ] = await Promise.all([
+        supabase
+            .from("lia_class_committees")
+            .select("name")
+            .eq("lia_class_id", classId)
+            .is("archived_at", null),
+        supabase
+            .from("lia_class_roles")
+            .select("name, role_scope, max_assignees")
+            .eq("lia_class_id", classId)
+            .is("archived_at", null),
+    ]);
 
-function getValidOfficerRole(officerRole: string) {
-    return officerRole === "president" ||
-        officerRole === "vice_president" ||
-        officerRole === "secretary" ||
-        officerRole === "historian"
-        ? officerRole
+    const committee = (committees ?? []).find(
+        (option) =>
+            toLeadershipOptionValue(option.name) === submittedCommittee,
+    );
+    const role = (roles ?? []).find(
+        (option) => toLeadershipOptionValue(option.name) === submittedRole,
+    );
+
+    const officerRole = role
+        ? toLeadershipOptionValue(role.name)
         : "member";
-}
-
-function getEnrollmentCommittee(officerRole: string, committee: string | null) {
-    return officerRole === "member" || officerRole === "vice_president"
-        ? committee
+    const committeeValue = committee
+        ? toLeadershipOptionValue(committee.name)
         : null;
+    const committeeBased = role?.role_scope === "committee";
+
+    return {
+        officerRole,
+        committee: committeeValue,
+        committeeBased,
+        maxAssignees: role?.max_assignees ?? null,
+    };
 }
 
 async function findOfficerRoleConflict(
@@ -31,9 +57,11 @@ async function findOfficerRoleConflict(
     classId: string,
     officerRole: string,
     committee: string | null,
+    committeeBased: boolean,
+    maxAssignees: number | null,
     currentEnrollmentId?: string,
 ) {
-    if (officerRole === "member") {
+    if (maxAssignees === null) {
         return false;
     }
 
@@ -44,7 +72,7 @@ async function findOfficerRoleConflict(
         .eq("officer_role", officerRole)
         .neq("status", "removed");
 
-    if (officerRole === "vice_president") {
+    if (committeeBased) {
         query = query.eq("committee", committee);
     }
 
@@ -52,9 +80,9 @@ async function findOfficerRoleConflict(
         query = query.neq("id", currentEnrollmentId);
     }
 
-    const { data } = await query.limit(1);
+    const { data } = await query.limit(maxAssignees);
 
-    return Boolean(data && data.length > 0);
+    return Boolean(data && data.length >= maxAssignees);
 }
 
 export async function addStudentToClass(classId: string, formData: FormData) {
@@ -67,16 +95,19 @@ export async function addStudentToClass(classId: string, formData: FormData) {
     const notes = String(formData.get("notes") ?? "").trim();
     const committee = String(formData.get("committee") ?? "").trim();
     const officerRole = String(formData.get("officer_role") ?? "member").trim();
-    const validCommittee = getValidCommittee(committee);
-    const validOfficerRole = getValidOfficerRole(officerRole);
-    const enrollmentCommittee = getEnrollmentCommittee(validOfficerRole, validCommittee);
+    const leadership = await resolveLeadershipSelection(
+        supabase,
+        classId,
+        committee,
+        officerRole,
+    );
     const tier = getValidStudentTier(formData.get("tier"));
 
     if (!firstName || !lastName) {
         redirect(`/teacher/classes/${classId}/students?error=missing-fields`);
     }
 
-    if (validOfficerRole === "vice_president" && !validCommittee) {
+    if (leadership.committeeBased && !leadership.committee) {
         redirect(`/teacher/classes/${classId}/students?error=vp-needs-committee`);
     }
 
@@ -84,8 +115,10 @@ export async function addStudentToClass(classId: string, formData: FormData) {
         await findOfficerRoleConflict(
             supabase,
             classId,
-            validOfficerRole,
-            enrollmentCommittee,
+            leadership.officerRole,
+            leadership.committee,
+            leadership.committeeBased,
+            leadership.maxAssignees,
         )
     ) {
         redirect(`/teacher/classes/${classId}/students?error=role-conflict`);
@@ -153,8 +186,8 @@ export async function addStudentToClass(classId: string, formData: FormData) {
             .from("lia_class_students")
             .update({
                 status: "active",
-                committee: enrollmentCommittee,
-                officer_role: validOfficerRole,
+                committee: leadership.committee,
+                officer_role: leadership.officerRole,
                 tier,
                 removed_at: null,
             })
@@ -181,8 +214,8 @@ export async function addStudentToClass(classId: string, formData: FormData) {
             lia_class_id: classId,
             student_id: studentId,
             status: "active",
-            committee: enrollmentCommittee,
-            officer_role: validOfficerRole,
+            committee: leadership.committee,
+            officer_role: leadership.officerRole,
             tier,
         });
 
@@ -216,9 +249,12 @@ export async function updateClassStudent(
     const notes = String(formData.get("notes") ?? "").trim();
     const committee = String(formData.get("committee") ?? "").trim();
     const officerRole = String(formData.get("officer_role") ?? "member").trim();
-    const validCommittee = getValidCommittee(committee);
-    const validOfficerRole = getValidOfficerRole(officerRole);
-    const enrollmentCommittee = getEnrollmentCommittee(validOfficerRole, validCommittee);
+    const leadership = await resolveLeadershipSelection(
+        supabase,
+        classId,
+        committee,
+        officerRole,
+    );
     const tier = getValidStudentTier(formData.get("tier"));
 
     if (!firstName || !lastName) {
@@ -227,7 +263,7 @@ export async function updateClassStudent(
         );
     }
 
-    if (validOfficerRole === "vice_president" && !validCommittee) {
+    if (leadership.committeeBased && !leadership.committee) {
         redirect(
             `/teacher/classes/${classId}/students/${enrollmentId}/edit?error=vp-needs-committee`
         );
@@ -237,8 +273,10 @@ export async function updateClassStudent(
         await findOfficerRoleConflict(
             supabase,
             classId,
-            validOfficerRole,
-            enrollmentCommittee,
+            leadership.officerRole,
+            leadership.committee,
+            leadership.committeeBased,
+            leadership.maxAssignees,
             enrollmentId,
         )
     ) {
@@ -301,8 +339,8 @@ export async function updateClassStudent(
         .from("lia_class_students")
         .update({
             status: validEnrollmentStatus,
-            committee: enrollmentCommittee,
-            officer_role: validOfficerRole,
+            committee: leadership.committee,
+            officer_role: leadership.officerRole,
             tier,
             removed_at:
                 validEnrollmentStatus === "removed"

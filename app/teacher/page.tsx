@@ -220,7 +220,7 @@ export default async function TeacherDashBoardPage() {
                     </div>
                 </section>
 
-                <aside className="space-y-4">
+                <aside className="space-y-4 xl:grid xl:h-full xl:grid-rows-[auto_auto_1fr] xl:space-y-0">
                     <section className="overflow-hidden rounded-md border border-red-100 bg-white shadow-sm">
                         <h2 className="bg-[#c4122f] px-4 py-2 text-sm font-bold uppercase text-white">
                             Recent Announcements
@@ -310,12 +310,12 @@ export default async function TeacherDashBoardPage() {
                         </Link>
                     </section>
 
-                    <section className="overflow-hidden rounded-md border border-red-100 bg-white shadow-sm">
+                    <section className="flex min-h-0 flex-col overflow-hidden rounded-md border border-red-100 bg-white shadow-sm">
                         <h2 className="flex items-center gap-2 bg-[#c4122f] px-4 py-2 text-sm font-bold uppercase text-white">
                             <FolderOpen className="h-4 w-4" aria-hidden />
                             Quick Resources
                         </h2>
-                        <div className="divide-y divide-red-100">
+                        <div className="grid flex-1 divide-y divide-red-100">
                             {resources.map((resource) => (
                                 <Link
                                     key={resource.label}

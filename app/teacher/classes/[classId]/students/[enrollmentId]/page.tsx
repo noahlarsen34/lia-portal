@@ -39,7 +39,7 @@ function formatRole(
         return committee ? `${formatValue(committee)} VP` : "Committee VP";
     }
 
-    return "Member";
+    return role ? formatValue(role) : "Member";
 }
 
 function formatDate(value: string | null | undefined) {

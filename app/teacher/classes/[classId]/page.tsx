@@ -10,6 +10,7 @@ import { notFound } from "next/navigation";
 import { requireTeacher } from "@/utils/role-guards";
 import { formatStudentTier } from "@/utils/student-tier";
 import { deleteLiaClass } from "./actions";
+import { RosterExportButton } from "./roster-export-button";
 
 type TeacherClassPageProps = {
     params: Promise<{
@@ -51,7 +52,7 @@ function formatRosterRole(
             : "Committee VP";
     }
 
-    return "Member";
+    return role ? formatRosterValue(role) : "Member";
 }
 
 function formatLoggedHours(minutes: number) {
@@ -347,18 +348,25 @@ export default async function TeacherClassPage({
                         </p>
                     </div>
 
-                    <Link
-                        href={`/teacher/classes/${liaClass.id}/students`}
-                        className='inline-flex h-10 items-center justify-center rounded-md border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-700 transition hover:bg-red-50 hover:text-[#c4122f]'
-                    >
-                        Manage Students
-                    </Link>
+                    <div className="flex flex-wrap items-start gap-2 sm:justify-end">
+                        <RosterExportButton
+                            classId={liaClass.id}
+                            disabled={!studentEnrollments?.length}
+                        />
+
+                        <Link
+                            href={`/teacher/classes/${liaClass.id}/students`}
+                            className="inline-flex h-10 items-center justify-center whitespace-nowrap rounded-md border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-700 transition hover:bg-red-50 hover:text-[#c4122f]"
+                        >
+                            Manage Students
+                        </Link>
+                    </div>
                 </div>
 
                 {studentEnrollments && studentEnrollments.length > 0 ? (
                     <div className="mt-5 overflow-hidden rounded-md border border-zinc-200">
                         <div className="overflow-x-auto">
-                            <table className="min-w-[1040px] table-fixed divide-y divide-zinc-200 text-sm">
+                            <table className="w-full min-w-[1040px] table-fixed divide-y divide-zinc-200 text-sm">
                                 <colgroup>
                                     <col className="w-[17%]" />
                                     <col className="w-[22%]" />
@@ -397,7 +405,7 @@ export default async function TeacherClassPage({
                                                             : "Unknown student"}
                                                     </Link>
                                                 </td>
-                                                <td className="break-words px-5 py-4 leading-6 text-zinc-700">
+                                                <td className="break-words px-5 py-4 leading-6 text-zinc-700 [overflow-wrap:anywhere]">
                                                     {student?.email || "N/A"}
                                                 </td>
                                                 <td className="px-5 py-4 leading-6 text-zinc-700">

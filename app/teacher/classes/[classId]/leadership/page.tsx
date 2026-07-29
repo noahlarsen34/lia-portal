@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireTeacher } from "@/utils/role-guards";
 import { formatStudentTier } from "@/utils/student-tier";
+import { toLeadershipOptionValue } from "@/utils/class-leadership-options";
+import { LeadershipExportButton } from "./leadership-export-button";
 
 type LeadershipPageProps = {
     params: Promise<{
@@ -32,7 +34,7 @@ function formatRosterRole(role: string | null | undefined, committee: string | n
         return committee ? `${formatRosterValue(committee)} VP` : "Committee VP";
     }
 
-    return "Member";
+    return role ? formatRosterValue(role) : "Member";
 }
 
 export default async function LeadershipPage({
@@ -73,15 +75,31 @@ export default async function LeadershipPage({
         .eq("lia_class_id", liaClass.id)
         .or("status.is.null,status.neq.removed")
         .order("officer_role", {ascending: true});
+
+    const [
+        { data: committeeOptions },
+        { data: roleOptions },
+    ] = await Promise.all([
+        supabase
+            .from("lia_class_committees")
+            .select("id, name")
+            .eq("lia_class_id", liaClass.id)
+            .is("archived_at", null)
+            .order("sort_order")
+            .order("name"),
+        supabase
+            .from("lia_class_roles")
+            .select("id, name, is_default, max_assignees")
+            .eq("lia_class_id", liaClass.id)
+            .is("archived_at", null)
+            .order("sort_order")
+            .order("name"),
+    ]);
     
     const roleFilter = filters.role ?? "all";
     const committeeFilter = filters.committee ?? "all";
     const tierFilter = filters.tier ?? "all";
-    const shouldApplyCommitteeFilter =
-        committeeFilter !== "all" &&
-        (roleFilter === "all" ||
-            roleFilter === "member" ||
-            roleFilter === "vice_president");
+    const shouldApplyCommitteeFilter = committeeFilter !== "all";
     const filterFormKey = `${roleFilter}-${committeeFilter}-${tierFilter}`;
 
     const filteredEnrollments = (enrollments ?? []).filter((enrollment) => {
@@ -146,7 +164,7 @@ export default async function LeadershipPage({
             enrollment.committee === "social",
     );
 
-    const leadershipCards = [
+    const standardLeadershipCards = [
         {
             title: "President",
             student: getStudentName(president),
@@ -191,6 +209,34 @@ export default async function LeadershipPage({
         },
     ];
 
+    const customRoleCards = (roleOptions ?? [])
+        .filter((role) => !role.is_default)
+        .map((role) => {
+            const roleValue = toLeadershipOptionValue(role.name);
+            const assignedEnrollments = (enrollments ?? []).filter(
+                (enrollment) => enrollment.officer_role === roleValue,
+            );
+            const firstAssignment = assignedEnrollments[0];
+            const hasMultipleAssignments = assignedEnrollments.length > 1;
+
+            return {
+                title: role.name,
+                student: hasMultipleAssignments
+                    ? `${assignedEnrollments.length} assigned`
+                    : getStudentName(firstAssignment),
+                href: hasMultipleAssignments
+                    ? `/teacher/classes/${liaClass.id}/leadership?role=${encodeURIComponent(roleValue)}`
+                    : firstAssignment
+                        ? `/teacher/classes/${liaClass.id}/students/${firstAssignment.id}`
+                        : null,
+            };
+        });
+
+    const leadershipCards = [
+        ...standardLeadershipCards,
+        ...customRoleCards,
+    ];
+
     return (
         <div className="mx-auto max-w-7xl">
             <Link
@@ -208,6 +254,12 @@ export default async function LeadershipPage({
                 <p className="mt-1 text-sm text-zinc-600">
                     View class officers, committee members, and leadership assignments.
                 </p>
+                <Link
+                    href={`/teacher/classes/${liaClass.id}/leadership/settings`}
+                    className="mt-4 inline-flex h-10 items-center rounded-md border border-red-200 px-4 text-sm font-semibold text-[#c4122f] transition hover:bg-red-50"
+                >
+                    Manage Committees &amp; Roles
+                </Link>
 
                 <form
                     key={filterFormKey}
@@ -221,11 +273,14 @@ export default async function LeadershipPage({
                             className="mt-2 h-11 w-full rounded-md border border-zinc-300 bg-white px-3 text-sm"
                         >
                             <option value="all">All roles</option>
-                            <option value="president">President</option>
-                            <option value="vice_president">Vice President</option>
-                            <option value="secretary">Secretary</option>
-                            <option value="historian">Historian</option>
-                            <option value="member">Member</option>
+                            {(roleOptions ?? []).map((role) => (
+                                <option
+                                    key={role.id}
+                                    value={toLeadershipOptionValue(role.name)}
+                                >
+                                    {role.name}
+                                </option>
+                            ))}
                         </select>
                     </label>
 
@@ -237,9 +292,14 @@ export default async function LeadershipPage({
                             className="mt-2 h-11 w-full rounded-md border border-zinc-300 bg-white px-3 text-sm"
                         >
                             <option value="all">All committees</option>
-                            <option value="professional">Professional</option>
-                            <option value="service">Service</option>
-                            <option value="social">Social</option>
+                            {(committeeOptions ?? []).map((committee) => (
+                                <option
+                                    key={committee.id}
+                                    value={toLeadershipOptionValue(committee.name)}
+                                >
+                                    {committee.name}
+                                </option>
+                            ))}
                             <option value="none">No committee</option>
                         </select>
                     </label>
@@ -275,14 +335,6 @@ export default async function LeadershipPage({
                         </Link>
                     </div>
 
-                    {committeeFilter !== "all" &&
-                    roleFilter !== "all" &&
-                    roleFilter !== "member" &&
-                    roleFilter !== "vice_president" ? (
-                        <p className="text-sm text-zinc-500 sm:col-span-3">
-                            Committee filters only apply to members and vice presidents.
-                        </p>
-                    ) : null}
                 </form>
             </section>
 
@@ -325,11 +377,23 @@ export default async function LeadershipPage({
             </section>
 
             <section className="mt-5 overflow-hidden rounded-md border border-red-100 bg-white shadow-sm">
-                <div className="border-b border-zinc-100 px-5 py-4 sm:px-6">
-                    <h2 className="text-xl font-semibold">Leadership Directory</h2>
-                    <p className="mt-1 text-sm text-zinc-600">
-                        {filteredEnrollments.length} students match the selected filters.
-                    </p>
+                <div className="flex flex-col gap-4 border-b border-zinc-100 px-5 py-4 sm:flex-row sm:items-start sm:justify-between sm:px-6">
+                    <div>
+                        <h2 className="text-xl font-semibold">
+                            Leadership Directory
+                        </h2>
+                        <p className="mt-1 text-sm text-zinc-600">
+                            {filteredEnrollments.length} students match the selected filters.
+                        </p>
+                    </div>
+
+                    <LeadershipExportButton
+                        classId={liaClass.id}
+                        roleFilter={roleFilter}
+                        committeeFilter={committeeFilter}
+                        tierFilter={tierFilter}
+                        disabled={filteredEnrollments.length === 0}
+                    />
                 </div>
 
                 {filteredEnrollments.length === 0 ? (
@@ -338,7 +402,16 @@ export default async function LeadershipPage({
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
-                        <table className="min-w-[1040px] table-fixed divide-y divide-zinc-200 text-sm">
+                        <table className="w-full min-w-[1040px] table-fixed divide-y divide-zinc-200 text-sm">
+                            <colgroup>
+                                <col className="w-[15%]" />
+                                <col className="w-[20%]" />
+                                <col className="w-[8%]" />
+                                <col className="w-[10%]" />
+                                <col className="w-[14%]" />
+                                <col className="w-[18%]" />
+                                <col className="w-[10%]" />
+                            </colgroup>
                             <thead className="bg-zinc-50 text-left text-xs font-bold uppercase tracking-wide text-zinc-500">
                                 <tr>
                                     <th className="px-5 py-3">Student</th>
@@ -369,7 +442,7 @@ export default async function LeadershipPage({
                                                         : "Unknown Student"}
                                                 </Link>
                                             </td>
-                                            <td className="px-5 py-4 text-zinc-700">
+                                            <td className="break-words px-5 py-4 text-zinc-700 [overflow-wrap:anywhere]">
                                                 {student?.email || "N/A"}
                                             </td>
                                             <td className="px-5 py-4 text-zinc-700">

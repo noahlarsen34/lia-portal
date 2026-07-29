@@ -5,6 +5,7 @@ import { requireTeacher } from "@/utils/role-guards";
 import { ApplicationQrCode } from "@/components/application-qr-code";
 import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
 import { studentTierOptions } from "@/utils/student-tier";
+import { ApplicantsExportButton } from "./applicants-export-button";
 import {
     acceptApplication,
     archiveApplication,
@@ -55,7 +56,8 @@ export default async function ApplicantsPage({
     const { classId } = await params;
     const { error, success, status } = await searchParams;
     const validStatuses = ["submitted", "maybe", "accepted", "declined"];
-    const statusFilter = validStatuses.includes(status ?? "") ? status : "all";
+    const statusFilter =
+        status && validStatuses.includes(status) ? status : "all";
     const headerList = await headers();
     const { supabase, profile } = await requireTeacher();
 
@@ -221,11 +223,22 @@ export default async function ApplicantsPage({
             </div>
 
             <section className="mt-5 overflow-hidden rounded-md border border-red-100 bg-white shadow-sm">
-                <div className="border-b border-zinc-100 px-5 py-4 sm:px-6">
-                    <h2 className="text-xl font-semibold">Application Tracker</h2>
-                    <p className="mt-1 text-sm text-zinc-600">
-                        Students who submitted the public application form.
-                    </p>
+                <div className="flex flex-col gap-4 border-b border-zinc-100 px-5 py-4 sm:flex-row sm:items-start sm:justify-between sm:px-6">
+                    <div>
+                        <h2 className="text-xl font-semibold">
+                            Application Tracker
+                        </h2>
+
+                        <p className="mt-1 text-sm text-zinc-600">
+                            Students who submitted the public application form.
+                        </p>
+                    </div>
+
+                    <ApplicantsExportButton
+                        classId={liaClass.id}
+                        statusFilter={statusFilter}
+                        disabled={!applications?.length}
+                    />
                 </div>
 
                 {applications && applications.length > 0 ? (

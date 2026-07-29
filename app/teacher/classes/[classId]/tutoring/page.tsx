@@ -10,6 +10,7 @@ import {
 } from "./actions";
 import QRCode from "qrcode";
 import DeleteLogButton from "./delete-log-button";
+import { TutoringExportButton } from "./tutoring-export-button";
 
 type TutoringPageProps = {
     params: Promise<{
@@ -501,7 +502,23 @@ export default async function ClassTutoringPage({
                     </div>
                 </div>
 
-                <div className="mt-8 overflow-x-auto rounded-md border border-zinc-200">
+                <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                        <h2 className="text-xl font-semibold">
+                            Tutoring and Service Logs
+                        </h2>
+                        <p className="mt-1 text-sm text-zinc-600">
+                            Export the complete class timesheet to Google Sheets.
+                        </p>
+                    </div>
+
+                    <TutoringExportButton
+                        classId={liaClass.id}
+                        disabled={!logs?.length}
+                    />
+                </div>
+
+                <div className="mt-4 overflow-x-auto rounded-md border border-zinc-200">
                     <table className="w-full min-w-[1100px] text-left text-sm">
                         <thead className="bg-zinc-50 text-xs uppercase tracking-wide text-zinc-500">
                             <tr>

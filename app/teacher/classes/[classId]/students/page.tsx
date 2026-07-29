@@ -4,6 +4,7 @@ import { Eye, Pencil, UserMinus } from "lucide-react";
 import { requireTeacher } from "@/utils/role-guards";
 import { addStudentToClass, removeStudentFromClass } from "./actions";
 import { studentTierOptions, formatStudentTier } from "@/utils/student-tier";
+import { toLeadershipOptionValue } from "@/utils/class-leadership-options";
 
 type StudentsPageProps = {
     params: Promise<{
@@ -45,7 +46,7 @@ function formatRosterRole(
             : "Committee VP";
     }
 
-    return "Member";
+    return role ? formatRosterValue(role) : "Member";
 }
 
 export default async function StudentsPage({
@@ -66,6 +67,26 @@ export default async function StudentsPage({
     if (!liaClass) {
         notFound();
     }
+
+    const [
+        { data: committeeOptions },
+        { data: roleOptions },
+    ] = await Promise.all([
+        supabase
+            .from("lia_class_committees")
+            .select("id, name")
+            .eq("lia_class_id", liaClass.id)
+            .is("archived_at", null)
+            .order("sort_order")
+            .order("name"),
+        supabase
+            .from("lia_class_roles")
+            .select("id, name, role_scope, max_assignees")
+            .eq("lia_class_id", liaClass.id)
+            .is("archived_at", null)
+            .order("sort_order")
+            .order("name"),
+    ]);
 
     const { data: enrollments } = await supabase
         .from("lia_class_students")
@@ -123,7 +144,7 @@ export default async function StudentsPage({
                                     : error === "enroll-failed"
                                         ? "Could not enroll that student. They may already be in this class."
                                         : error === "vp-needs-committee"
-                                            ? "Vice presidents must be assigned to a committee."
+                                            ? "Committee-based roles must be assigned to a committee."
                                             : error === "role-conflict"
                                                 ? "That officer role is already assigned in this class."
                                                 : error === "already-enrolled"
@@ -199,9 +220,14 @@ export default async function StudentsPage({
                                 className="mt-2 h-11 w-full rounded-md border border-zinc-300 bg-white px-3 text-sm outline-none focus:border-[#c4122f] focus:ring-4 focus:ring-red-100"
                             >
                                 <option value="">No committee</option>
-                                <option value="professional">Professional</option>
-                                <option value="service">Service</option>
-                                <option value="social">Social</option>
+                                {(committeeOptions ?? []).map((committee) => (
+                                    <option
+                                        key={committee.id}
+                                        value={toLeadershipOptionValue(committee.name)}
+                                    >
+                                        {committee.name}
+                                    </option>
+                                ))}
                             </select>
                         </label>
 
@@ -214,11 +240,14 @@ export default async function StudentsPage({
                                 defaultValue="member"
                                 className="mt-2 h-11 w-full rounded-md border border-zinc-300 bg-white px-3 text-sm outline-none focus:border-[#c4122f] focus:ring-4 focus:ring-red-100"
                             >
-                                <option value="member">Member</option>
-                                <option value="president">Class President</option>
-                                <option value="vice_president">Vice President of Selected Committee</option>
-                                <option value="secretary">Class Secretary</option>
-                                <option value="historian">Class Historian</option>
+                                {(roleOptions ?? []).map((role) => (
+                                    <option
+                                        key={role.id}
+                                        value={toLeadershipOptionValue(role.name)}
+                                    >
+                                        {role.name}
+                                    </option>
+                                ))}
                             </select>
                         </label>
                     </div>

@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { requireTeacher } from '@/utils/role-guards';
 import { updateClassStudent } from '../../actions';
 import { studentTierOptions } from '@/utils/student-tier';
+import { toLeadershipOptionValue } from '@/utils/class-leadership-options';
 
 type EditStudentPageProps = {
     params: Promise<{
@@ -61,6 +62,26 @@ export default async function EditStudentPage({
         notFound();
     }
 
+    const [
+        { data: committeeOptions },
+        { data: roleOptions },
+    ] = await Promise.all([
+        supabase
+            .from("lia_class_committees")
+            .select("id, name")
+            .eq("lia_class_id", classId)
+            .is("archived_at", null)
+            .order("sort_order")
+            .order("name"),
+        supabase
+            .from("lia_class_roles")
+            .select("id, name, role_scope, max_assignees")
+            .eq("lia_class_id", classId)
+            .is("archived_at", null)
+            .order("sort_order")
+            .order("name"),
+    ]);
+
     const updateStudent = updateClassStudent.bind(null, classId, enrollment.id);
 
     return (
@@ -90,7 +111,7 @@ export default async function EditStudentPage({
                         {error === "missing-fields"
                             ? "First name and last name are required."
                             : error === "vp-needs-committee"
-                                ? "Vice presidents must be assigned to a committee."
+                                ? "Committee-based roles must be assigned to a committee."
                                 : error === "role-conflict"
                                     ? "That officer role is already assigned in this class."
                                     : error === "already-enrolled"
@@ -162,9 +183,14 @@ export default async function EditStudentPage({
                                 className='mt-2 h-11 w-full rounded-md border border-zinc-300 bg-white px-3 text-sm outline-none focus:border-[#c4122f] focus:ring-4 focus:ring-red-100'
                             >
                                 <option value="">No committee</option>
-                                <option value="professional">Professional</option>
-                                <option value="service">Service</option>
-                                <option value="social">Social</option>
+                                {(committeeOptions ?? []).map((committee) => (
+                                    <option
+                                        key={committee.id}
+                                        value={toLeadershipOptionValue(committee.name)}
+                                    >
+                                        {committee.name}
+                                    </option>
+                                ))}
                             </select>
                         </label>
 
@@ -177,11 +203,14 @@ export default async function EditStudentPage({
                                 defaultValue={enrollment.officer_role ?? "member"}
                                 className='mt-2 h-11 w-full rounded-md border border-zinc-300 bg-white px-3 text-sm outline-none focus:border-[#c4122f] focus:ring-4 focus:ring-red-100'
                             >
-                                <option value="member">Member</option>
-                                <option value="president">Class President</option>
-                                <option value="vice_president">Vice President of Selected Committee</option>
-                                <option value="secretary">Class Secretary</option>
-                                <option value="historian">Class Historian</option>
+                                {(roleOptions ?? []).map((role) => (
+                                    <option
+                                        key={role.id}
+                                        value={toLeadershipOptionValue(role.name)}
+                                    >
+                                        {role.name}
+                                    </option>
+                                ))}
                             </select>
                         </label>
                     </div>
