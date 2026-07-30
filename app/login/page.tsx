@@ -14,6 +14,11 @@ type LoginPageProps = {
 const errorMessages: Record<string, string> = {
   "invalid-login": "The email or password was not correct.",
   "missing-fields": "Enter both your email and password.",
+  "invalid-invitation": "That teacher invitation link is invalid.",
+  "expired-invitation": "That teacher invitation has expired. Ask an administrator or RPM to send another invitation.",
+  "teacher-access-unavailable":
+    "Portal access is unavailable for this teacher account. Please contact Latinos In Action support.",
+  "activation-failed": "Your email was verified, but the teacher account could not be activated. Please contact Latinos In Action support.",
 };
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
@@ -46,7 +51,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             Sign in to LIA Portal
             </h1>
           <p className="mt-2 text-center text-sm text-zinc-600">
-            Use your Latinos in Action admin account to continue.
+            Administrators and RPMs can sign in with their staff password.
           </p>
         </div>
 
@@ -78,17 +83,25 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           </button>
         </form>
 
-        <div className="mt-6 border-t border-zinc-100 pt-6">
-          <Link
-            href="/apply"
-            className="inline-flex h-11 w-full items-center justify-center rounded-md border border-[#c8102e] bg-white px-4 text-sm font-semibold text-[#c8102e] transition hover:bg-red-50 focus:outline-none focus:ring-4 focus:ring-red-100"
-          >
-            Student Application
-          </Link>
+        <div className="mt-6 space-y-3 border-t border-zinc-100 pt-6">
+            <Link
+                href="/teacher-login"
+                className="inline-flex h-11 w-full items-center justify-center rounded-md border border-[#c8102e] bg-white px-4 text-sm font-semibold text-[#c8102e] transition hover:bg-red-50 focus:outline-none focus:ring-4 focus:ring-red-100"
+            >
+                Teacher Email Login
+            </Link>
 
-          <p className="mt-3 text-center text-xs leading-5 text-zinc-500">
-            New students can apply to join a Latinos In Action class.
-          </p>
+            <Link
+                href="/apply"
+                className="inline-flex h-11 w-full items-center justify-center rounded-md border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-50 focus:outline-none focus:ring-4 focus:ring-zinc-100"
+            >
+                Student Application
+            </Link>
+
+            <p className="pt-1 text-center text-xs leading-5 text-zinc-500">
+                Teachers receive a secure login code by email. New
+                students can open the application form without signing in.
+            </p>
         </div>
       </section>
     </main>

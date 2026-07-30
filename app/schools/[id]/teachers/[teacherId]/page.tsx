@@ -2,16 +2,21 @@ import Link from 'next/link';
 import { notFound, redirect } from "next/navigation";
 import { DashboardSidebar } from '@/components/dashboard-sidebar';
 import { createClient } from '@/utils/supabase/server';
+import { inviteTeacher } from './invite-actions';
 
 type TeacherPageProps = {
     params: Promise<{
         id: string;
         teacherId: string;
     }>;
+    searchParams: Promise<{
+        invite?: string;
+    }>;
 };
 
-export default async function TeacherPage({ params }: TeacherPageProps) {
+export default async function TeacherPage({ params, searchParams, }: TeacherPageProps) {
     const { id, teacherId } = await params;
+    const { invite } = await searchParams;
     const supabase = await createClient();
 
     const {
@@ -31,7 +36,7 @@ export default async function TeacherPage({ params }: TeacherPageProps) {
     const { data: teacher } = await supabase
         .from("teachers")
         .select(
-            "id, first_name, last_name, name, email, phone, status, username, program_level, notes, password_status, is_new_teacher"
+            "id, first_name, last_name, name, email, phone, status, username, program_level, notes, password_status, is_new_teacher, profile_id, portal_access_status, invited_at, activated_at"
         )
         .eq("id", teacherId)
         .eq("school_id", id)
@@ -44,6 +49,12 @@ export default async function TeacherPage({ params }: TeacherPageProps) {
     const displayName = 
         `${teacher.first_name ?? ""} ${teacher.last_name ?? ""}`.trim() ||
         teacher.name
+    
+    const inviteTeacherAccount = inviteTeacher.bind(
+        null,
+        school.id,
+        teacher.id,
+    )
 
     const formatProgramLevel = (programLevel: string | null) => {
         switch (programLevel) {
@@ -79,6 +90,28 @@ export default async function TeacherPage({ params }: TeacherPageProps) {
                     >
                         Back to {school.name}
                     </Link>
+
+                    {invite === "sent" ? (
+                        <div className='mt-5 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700'>
+                            Invitation sent to {teacher.email}
+                        </div>
+                    ) : null}
+
+                    {invite && invite !== "sent" ? (
+                        <div className='mt-5 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700'>
+                            {invite === "email-required"
+                                ? 'Add an email address before inviting this teacher.'
+                                : invite === "teacher-inactive"
+                                    ? "Only active teachers can be invited."
+                                    : invite === "already-linked"
+                                        ? "This teacher is already linked to a portal account."
+                                        : invite === "configuration-error"
+                                            ? "The portal application URL is not configured."
+                                            : invite === "teacher-not-found"
+                                                ? "That teacher record could not be found."
+                                                : "The invitation could not be sent. Please try again."}
+                        </div>
+                    ) : null}
 
                     <section className='mt-6 rounded-lg border border-red-100 bg-white p-4 shadow-sm sm:p-6'>
                         <p className='text-sm font-medium uppercase tracking-wide text-[#c8102e]'>
@@ -145,10 +178,10 @@ export default async function TeacherPage({ params }: TeacherPageProps) {
 
                             <div>
                                 <p className='text-sm uppercase text-zinc-500'>
-                                    Password Status
+                                    Portal Access
                                 </p>
                                 <p className='mt-1 font-semibold capitalize'>
-                                    {teacher.password_status || "N/A"}
+                                    {teacher.portal_access_status.replace("_", " ")}
                                 </p>
                             </div>
 
@@ -187,6 +220,22 @@ export default async function TeacherPage({ params }: TeacherPageProps) {
                             >
                                 Back
                             </Link>
+
+                            {teacher.profile_id ? (
+                                <span className='inline-flex h-10 w-full items-center justify-center rounded-md border border-green-200 bg-green-50 px-4 text-sm font-semibold text-green-700 sm:w-auto'>
+                                    Portal Account Linked
+                                </span>
+                            ) : (
+                                <form action={inviteTeacherAccount}>
+                                    <button
+                                        type='submit'
+                                        disabled={!teacher.email || teacher.status !== "active"}
+                                        className='inline-flex h-10 w-full items-center justify-center rounded-md border border-[#c8102e] bg-white px-4 text-sm font-semibold text-[#c8102e] transition hover:bg-red-50 disabled:cursor-not-allowed disabled:border-zinc-200 disabled:text-zinc-400 sm:w-auto'
+                                    >
+                                        Invite Teacher
+                                    </button>
+                                </form>
+                            )}
 
                             <Link
                                 href={`/schools/${school.id}/teachers/${teacher.id}/edit`}
