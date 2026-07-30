@@ -2,6 +2,7 @@
 
 import { google } from "googleapis";
 import { requireTeacher } from "@/utils/role-guards";
+import { toLeadershipOptionValue } from "@/utils/class-leadership-options";
 
 function formatHours(minutes: number | null | undefined) {
     return (Number(minutes ?? 0) / 60).toFixed(2);
@@ -26,7 +27,7 @@ function formatDateTime(value: string | null | undefined) {
     }).format(new Date(value));
 }
 
-export async function exportTutoringToGoogleSheet(classId: string) {
+export async function exportTutoringToGoogleSheet(classId: string, studentEnrollmentId?: string, committee?: string) {
     const { supabase, profile, user } = await requireTeacher();
     const exporterEmail = profile.email ?? user.email;
 
@@ -47,7 +48,115 @@ export async function exportTutoringToGoogleSheet(classId: string) {
         throw new Error("This class could not be found.");
     }
 
-    const { data: logs, error: logsError } = await supabase
+    let selectedStudentName: string | null = null;
+
+    if (studentEnrollmentId) {
+        const { data: enrollment, error: enrollmentError } = await supabase
+            .from("lia_class_students")
+            .select(`
+                    id,
+                    students (
+                    first_name,
+                    last_name
+                    )
+                `)
+            .eq("id", studentEnrollmentId)
+            .eq("lia_class_id", liaClass.id)
+            .maybeSingle();
+        
+        if (enrollmentError || !enrollment) {
+            throw new Error(
+                "The selected student could not be found in this class.",
+            );
+        }
+
+        const studentRecord = Array.isArray(enrollment.students)
+            ? enrollment.students[0]
+            : enrollment.students;
+        
+        if (!studentRecord) {
+            throw new Error(
+                "The selected student record could not be loaded.",
+            );
+        }
+
+        selectedStudentName =
+            `${studentRecord.first_name} ${studentRecord.last_name}`.trim();
+    }
+
+    let validatedCommittee: string | undefined;
+    let selectedCommitteeName: string | null = null;
+
+    if (committee === "none") {
+        validatedCommittee = "none";
+        selectedCommitteeName = "No Committee";
+    } else if (committee) {
+        const { data: committeeRecords, error: committeeError } =
+            await supabase
+                .from("lia_class_committees")
+                .select("name")
+                .eq("lia_class_id", liaClass.id)
+                .is("archived_at", null);
+        
+        if (committeeError) {
+            throw new Error("The committee optoins could not be loaded.");
+        }
+
+        const matchingCommittee = (committeeRecords ?? []).find(
+            (record) =>
+                toLeadershipOptionValue(record.name) === committee,
+        );
+
+        if (!matchingCommittee) {
+            throw new Error(
+                "The selected committee could not be found in this class.",
+            );
+        }
+
+        validatedCommittee = committee;
+        selectedCommitteeName = matchingCommittee.name;
+    }
+
+    let exportEnrollmentIds: string[] | null = null;
+
+    if (studentEnrollmentId) {
+        exportEnrollmentIds = [studentEnrollmentId];
+    }
+
+    if (validatedCommittee) {
+        let enrollmentQuery = supabase
+            .from("lia_class_students")
+            .select("id")
+            .eq("lia_class_id", liaClass.id)
+            .or("status.is.null,status.neq.removed");
+        
+        enrollmentQuery =
+            validatedCommittee === "none"
+                ? enrollmentQuery.is("committee", null)
+                : enrollmentQuery.eq("committee", validatedCommittee);
+        
+        const {
+            data: committeeEnrollments,
+            error: committeeEnrollmentsError,
+        } = await enrollmentQuery;
+
+        if (committeeEnrollmentsError) {
+            throw new Error(
+                "The committee students could not be loaded.",
+            );
+        }
+
+        const committeeEnrollmentIds = (committeeEnrollments ?? []).map(
+            (enrollment) => enrollment.id,
+        );
+
+        exportEnrollmentIds = exportEnrollmentIds
+            ? exportEnrollmentIds.filter((id) =>
+                committeeEnrollmentIds.includes(id),
+            )
+            : committeeEnrollmentIds;
+    }
+    let logsQuery = supabase
         .from("tutoring_logs")
         .select(`
             id,
@@ -71,8 +180,19 @@ export async function exportTutoringToGoogleSheet(classId: string) {
             approved_at
         `)
         .eq("lia_class_id", liaClass.id)
-        .order("session_date", { ascending: false })
-        .order("submitted_at", { ascending: false });
+    
+    if (exportEnrollmentIds) {
+    logsQuery = logsQuery.in(
+        "student_enrollment_id",
+        exportEnrollmentIds.length > 0
+            ? exportEnrollmentIds
+            : ["00000000-0000-0000-0000-000000000000"],
+    );
+}
+
+    const { data: logs, error: logsError } = await logsQuery
+        .order("session_date", {ascending: false})
+        .order("submitted_at", {ascending: false});
 
     if (logsError) {
         throw new Error("The tutoring logs could not be loaded.");
@@ -107,9 +227,19 @@ export async function exportTutoringToGoogleSheet(classId: string) {
     const sheets = google.sheets({ version: "v4", auth });
     const today = new Date().toISOString().slice(0, 10);
 
+    const exportLabels = [
+        selectedStudentName,
+        selectedCommitteeName,
+    ].filter(Boolean);
+
+    const exportSubject =
+        exportLabels.length > 0
+            ? ` - ${exportLabels.join(" - ")}`
+            : "";
+
     const file = await drive.files.create({
         requestBody: {
-            name: `${liaClass.name} Tutoring Timesheet - ${today}`,
+            name: `${liaClass.name} Tutoring Timesheet${exportSubject} - ${today}`,
             mimeType: "application/vnd.google-apps.spreadsheet",
             parents: [folderId],
         },

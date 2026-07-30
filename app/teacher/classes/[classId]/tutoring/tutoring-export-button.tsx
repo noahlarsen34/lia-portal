@@ -6,11 +6,15 @@ import { exportTutoringToGoogleSheet } from "./export-actions";
 
 type TutoringExportButtonProps = {
     classId: string;
+    studentEnrollmentId?: string;
+    committee?: string;
     disabled?: boolean;
 };
 
 export function TutoringExportButton({
     classId,
+    studentEnrollmentId,
+    committee,
     disabled = false,
 }: TutoringExportButtonProps) {
     const [isExporting, setIsExporting] = useState(false);
@@ -23,7 +27,7 @@ export function TutoringExportButton({
         setExportError("");
 
         try {
-            const result = await exportTutoringToGoogleSheet(classId);
+            const result = await exportTutoringToGoogleSheet(classId, studentEnrollmentId, committee,);
 
             setExportUrl(result.url);
             window.open(

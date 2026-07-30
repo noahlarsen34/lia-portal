@@ -11,6 +11,7 @@ import {
 import QRCode from "qrcode";
 import DeleteLogButton from "./delete-log-button";
 import { TutoringExportButton } from "./tutoring-export-button";
+import { toLeadershipOptionValue } from "@/utils/class-leadership-options";
 
 type TutoringPageProps = {
     params: Promise<{
@@ -19,6 +20,8 @@ type TutoringPageProps = {
     searchParams: Promise<{
         editLogId?: string;
         error?: string;
+        student?: string;
+        committee?: string;
     }>;
 };
 
@@ -44,7 +47,7 @@ export default async function ClassTutoringPage({
     searchParams,
 }: TutoringPageProps) {
     const { classId } = await params;
-    const { editLogId, error } = await searchParams;
+    const { editLogId, error, student, committee } = await searchParams;
     const { supabase, profile } = await requireTeacher();
 
     const { data: liaClass } = await supabase
@@ -63,6 +66,72 @@ export default async function ClassTutoringPage({
             </div>
         );
     }
+
+    const { data: enrollments } = await supabase
+        .from("lia_class_students")
+        .select(`
+                id,
+                committee,
+                students (
+                    first_name,
+                    last_name
+                )  
+            `)
+        .eq("lia_class_id", liaClass.id)
+        .or("status.is.null,status.neq.removed");
+    
+    const { data: committeeRecords } = await supabase
+        .from("lia_class_committees")
+        .select("id, name")
+        .eq("lia_class_id", liaClass.id)
+        .is("archived_at", null)
+        .order("sort_order")
+        .order("name");
+    
+    const committeeOptions = (committeeRecords ?? []).map((record) => ({
+        id: record.id,
+        name: record.name,
+        value: toLeadershipOptionValue(record.name),
+    }));
+
+    const selectedCommittee =
+        committeeOptions.find((option) => option.value === committee);
+    
+    const committeeFilter =
+        committee === "none"
+            ? "none"
+            : selectedCommittee?.value ?? "all";
+    
+    const studentOptions = (enrollments ?? [])
+            .map((enrollment) => {
+                const studentRecord = Array.isArray(enrollment.students)
+                    ? enrollment.students[0]
+                    : enrollment.students;
+
+                if (!studentRecord) {
+                    return null;
+                }
+
+                return {
+                    id: enrollment.id,
+                    name: `${studentRecord.first_name} ${studentRecord.last_name}`.trim(),
+                };
+            })
+            .filter(
+                (
+                    option,
+                ): option is {
+                    id: string;
+                    name: string;
+                } => option !== null,
+            )
+            .sort((first, second) => first.name.localeCompare(second.name));
+        
+        const selectedStudent = studentOptions.find(
+            (option) => option.id === student,
+        );
+
+        const selectedStudentId = selectedStudent?.id;
 
     if (editLogId) {
         const { data: editLog } = await supabase
@@ -367,12 +436,55 @@ export default async function ClassTutoringPage({
         );
     }
 
-    const { data: logs } = await supabase
+    let filteredEnrollmentIds: string[] | null = null;
+
+    if (selectedStudentId) {
+        filteredEnrollmentIds = [selectedStudentId];
+    }
+
+    if (committeeFilter !== "all") {
+        const committeeEnrollmentIds = (enrollments ?? [])
+            .filter((enrollment) => {
+                if (committeeFilter === "none") {
+                    return !enrollment.committee;
+                }
+
+                return enrollment.committee === committeeFilter;
+            })
+            .map((enrollment) => enrollment.id);
+
+        filteredEnrollmentIds = filteredEnrollmentIds
+            ? filteredEnrollmentIds.filter((id) =>
+                committeeEnrollmentIds.includes(id),
+            )
+            : committeeEnrollmentIds;
+    }
+
+    let logsQuery = supabase
         .from("tutoring_logs")
         .select("*")
-        .eq("lia_class_id", classId)
+        .eq("lia_class_id", classId);
+
+    if (filteredEnrollmentIds) {
+        logsQuery = logsQuery.in(
+            "student_enrollment_id",
+            filteredEnrollmentIds.length > 0
+                ? filteredEnrollmentIds
+                : ["00000000-0000-0000-0000-000000000000"],
+        );
+    }
+
+    const { data: logs, error: logsError } = await logsQuery
         .order("session_date", { ascending: false })
-        .order("submitted_at", { ascending: false })
+        .order("submitted_at", { ascending: false });
+    
+    if (logsError) {
+        console.error("Could not load tutoring logs", {
+            classId,
+            selectedStudentId,
+            message: logsError.message,
+        });
+    }
     
     const countedLogs =
         logs?.filter((log) => log.status !== "rejected") ?? [];
@@ -437,7 +549,98 @@ export default async function ClassTutoringPage({
                     Review tutoring and service logs submitted by students.
                 </p>
 
-                <div className="mt-6 grid gap-4 md:grid-cols-4">
+                <form
+                    method="get"
+                    className="mt-6 rounded-md border border-zinc-200 bg-zinc-50 p-4"
+                >
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
+                        <label className="block flex-1">
+                            <span className="text-sm font-semibold text-zinc-800">
+                                Filter by student
+                            </span>
+
+                            <select
+                                name="student"
+                                defaultValue={selectedStudentId ?? "all"}
+                                className={fieldClasses}
+                            >
+                                <option value="all">All students</option>
+
+                                {studentOptions.map((option) => (
+                                    <option key={option.id} value={option.id}>
+                                        {option.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </label>
+
+                        <label className="block flex-1">
+                            <span className="text-sm font-semibold text-zinc-800">
+                                Filter by committee
+                            </span>
+
+                            <select
+                                name="committee"
+                                defaultValue={committeeFilter}
+                                className={fieldClasses}
+                            >
+                                <option value="all">All committees</option>
+
+                                {committeeOptions.map((option) => (
+                                    <option key={option.id} value={option.value}>
+                                        {option.name}
+                                    </option>
+                                ))}
+
+                                <option value="none">No committee</option>
+                            </select>
+                        </label>
+
+                        <div className="flex gap-2">
+                            <button
+                                type="submit"
+                                className="inline-flex h-10 items-center justify-center rounded-md bg-[#c4122f] px-5 text-sm font-semibold text-white hover:bg-[#a70d25]"
+                            >
+                                Apply Filter
+                            </button>
+
+                            <Link
+                                href={`/teacher/classes/${classId}/tutoring`}
+                                className="inline-flex h-10 items-center justify-center rounded-md border border-zinc-300 bg-white px-5 text-sm font-semibold text-zinc-700 hover:bg-zinc-50"
+                            >
+                                Clear
+                            </Link>
+                        </div>
+                    </div>
+
+                    {selectedStudent || committeeFilter !== "all" ? (
+                        <p className="mt-3 text-sm text-zinc-600">
+                            Showing Activity
+                            {selectedStudent ? (
+                                <>
+                                    {" "}for{" "}
+                                    <span className="font-semibold text-zinc-900">
+                                        {selectedStudent.name}
+                                    </span>
+                                </>
+                            ) : null}
+
+                            {committeeFilter !== "all" ? (
+                                <>  
+                                    {" "}in{" "}
+                                    <span className="font-semibold text-zinc-900">
+                                        {committeeFilter === "none"
+                                            ? "No committee"
+                                            : selectedCommittee?.name}
+                                    </span>
+                                </>
+                            ) : null}
+                            .
+                        </p>
+                    ) : null}
+                </form>
+
+                <div className="mt-4 grid gap-4 md:grid-cols-4">
                     <div className="rounded-md border border-zinc-200 bg-zinc-50 p-4">
                         <p className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
                             Tutoring Hours
@@ -508,12 +711,20 @@ export default async function ClassTutoringPage({
                             Tutoring and Service Logs
                         </h2>
                         <p className="mt-1 text-sm text-zinc-600">
-                            Export the complete class timesheet to Google Sheets.
+                            {selectedStudent || committeeFilter !== "all"
+                                ? "Export the currently filtered timesheet to Google Sheets."
+                                : "Export the complete class timesheet to Google Sheets."}
                         </p>
                     </div>
 
                     <TutoringExportButton
                         classId={liaClass.id}
+                        studentEnrollmentId={selectedStudentId}
+                        committee={
+                            committeeFilter === "all"
+                                ? undefined
+                                : committeeFilter
+                        }
                         disabled={!logs?.length}
                     />
                 </div>
