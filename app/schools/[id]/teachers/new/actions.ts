@@ -2,6 +2,7 @@
 
 import { redirect } from 'next/navigation';
 import { createClient } from '@/utils/supabase/server';
+import { revalidatePath } from 'next/cache';
 
 export async function createTeacher(schoolId: string, formData: FormData) {
     const supabase = await createClient();
@@ -12,7 +13,7 @@ export async function createTeacher(schoolId: string, formData: FormData) {
     const email = String(formData.get("email") ?? "").trim();
     const phone = String(formData.get("phone") ?? "").trim();
     const username = String(formData.get("username") ?? "").trim();
-    const programLevel = String(formData.get("username") ?? "").trim();
+    const programLevel = String(formData.get("program_level") ?? "").trim();
     const notes = String(formData.get("notes") ?? "").trim();
     const status = String(formData.get("status") ?? "active").trim();
     const isNewTeacher = formData.get("is_new_teacher") === "on";
@@ -39,6 +40,9 @@ export async function createTeacher(schoolId: string, formData: FormData) {
     if (error) {
         redirect(`/schools/${schoolId}/teachers/new?error=create-failed`);
     }
+
+    revalidatePath("/teachers");
+    revalidatePath(`/schools/${schoolId}`);
 
     redirect(`/schools/${schoolId}`);
 }
