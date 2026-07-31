@@ -146,13 +146,6 @@ function isTeacherModuleLessonPage(pageLink: string, html: string) {
 }
 
 function getBackToCurriculumLink(pageLink: string, html: string) {
-    if (isTeacherModuleLessonPage(pageLink, html)) {
-        return {
-            href: "/teacher/modules",
-            label: "Back to Teacher Modules",
-        };
-    }
-
     const linkTargets = [
         {
             pattern: /\/lia-elementary(?:\/|$)/,
@@ -184,7 +177,18 @@ function getBackToCurriculumLink(pageLink: string, html: string) {
         currentTarget.pattern.test(pageLink),
     );
 
-    return target ?? {
+    if (target) {
+        return target;
+    }
+
+    if (isTeacherModuleLessonPage(pageLink, html)) {
+        return {
+            href: "/teacher/modules",
+            label: "Back to Teacher Modules",
+        };
+    }
+
+    return {
         href: "/teacher/resources",
         label: "Back to curriculum",
     };
@@ -350,23 +354,112 @@ function renderSupportSection(resources: string, vocabulary?: string) {
         return "";
     }
 
+    const gridClass = hasResources && hasVocabulary
+        ? "portal-wp-support-grid"
+        : "portal-wp-support-grid portal-wp-support-grid-single";
+
     return `
             <section class="portal-wp-support-section">
                 <h2>Bright Ideas</h2>
-                <div class="portal-wp-support-stack" style="display: flex; flex-direction: column; gap: 1rem;">
-                    ${hasResources ? `
-                    <div class="portal-wp-support-card">
-                        <h3>Resources</h3>
-                        ${resourceContent}
-                    </div>` : ""}
+                <div class="${gridClass}">
                     ${hasVocabulary ? `
                     <div class="portal-wp-support-card">
                         <h3>Vocabulary</h3>
                         ${vocabularyContent}
                     </div>` : ""}
+                    ${hasResources ? `
+                    <div class="portal-wp-support-card">
+                        <h3>Resources</h3>
+                        ${resourceContent}
+                    </div>` : ""}
                 </div>
             </section>
         `;
+}
+
+function getTableCells(rowHtml: string) {
+    return [...rowHtml.matchAll(/<t[dh]\b[^>]*>([\s\S]*?)<\/t[dh]>/gi)].map(
+        (match) => match[1].trim(),
+    );
+}
+
+function renderSupportList(cellHtml: string) {
+    const items = cleanWordPressHtmlNesting(cellHtml)
+        .replace(/<p>([\s\S]*?)<\/p>/gi, "$1\n\n")
+        .split(/\s*(?:<br\s*\/?>|(?:\r?\n\s*){2,})\s*/gi)
+        .map((item) => item.trim())
+        .filter((item) => getHtmlText(item).length > 0);
+
+    if (items.length === 0) {
+        return "";
+    }
+
+    return `<ul>${items.map((item) => `<li>${item}</li>`).join("")}</ul>`;
+}
+
+function wrapBrightIdeasTables(html: string) {
+    return html.replace(
+        /<h3>\s*(?:<(?:strong|b)>)?\s*BRIGHT IDEAS\s*(?:<\/(?:strong|b)>)?\s*<\/h3>\s*(<table\b[^>]*>[\s\S]*?<\/table>)/gi,
+        (match, tableHtml: string) => {
+            const rows = [
+                ...tableHtml.matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/gi),
+            ].map((row) => getTableCells(row[1]));
+
+            const headerIndex = rows.findIndex((cells) => {
+                const labels = cells.map((cell) =>
+                    getHtmlText(cell).toLowerCase(),
+                );
+
+                return (
+                    labels.some((label) => label.startsWith("vocabulary")) &&
+                    labels.some((label) => label === "materials")
+                );
+            });
+
+            const hasTwoColumnContent = rows.some((cells) => cells.length === 2);
+
+            if (headerIndex === -1 && !hasTwoColumnContent) {
+                return match;
+            }
+
+            const headers = headerIndex >= 0
+                ? rows[headerIndex].map((cell) =>
+                    getHtmlText(cell).toLowerCase(),
+                )
+                : [];
+            const vocabularyIndex = headerIndex >= 0
+                ? headers.findIndex((label) => label.startsWith("vocabulary"))
+                : 0;
+            const materialsIndex = headerIndex >= 0
+                ? headers.findIndex((label) => label === "materials")
+                : 1;
+            const contentRows = headerIndex >= 0
+                ? rows.slice(headerIndex + 1)
+                : rows;
+            const vocabularyHtml = contentRows
+                .map((cells) => cells[vocabularyIndex] ?? "")
+                .join("\n\n");
+            const materialsHtml = contentRows
+                .map((cells) => cells[materialsIndex] ?? "")
+                .join("\n\n");
+
+            return `
+                <section class="portal-wp-support-section">
+                    <h2>Bright Ideas</h2>
+                    <div class="portal-wp-support-grid">
+                        <div class="portal-wp-support-card">
+                            <h3>Vocabulary</h3>
+                            ${renderSupportList(vocabularyHtml)}
+                        </div>
+                        <div class="portal-wp-support-card">
+                            <h3>Materials</h3>
+                            ${renderSupportList(materialsHtml)}
+                        </div>
+                    </div>
+                </section>
+            `;
+        },
+    );
 }
 
 function renderLearningObjective(content: string) {
@@ -435,7 +528,7 @@ function renderCongratulations(content: string) {
 function wrapBottomResourceSections(html: string) {
     return html
         .replace(
-            /<h3>\s*(?:<(?:strong|b)>)?\s*BRIGHT IDEAS\s*(?:<\/(?:strong|b)>)?\s*<\/h3>\s*(?:<p>(?:\s|&nbsp;)*<\/p>\s*)?([\s\S]*?)(?:<(?:p|h[2-4])\b[^>]*>\s*)?(?:<(?:span|strong|b)\b[^>]*>\s*)*(?:KEY\s+)?VOCABULARY\s*(?:<\/(?:span|strong|b)>\s*)*(?:<\/(?:p|h[2-4])>)?\s*([\s\S]*?)(?=<div class="portal-wp-nav-row">|<a\b[^>]*portal-wp-button|$)/i,
+            /<h3>\s*(?:<(?:strong|b)>)?\s*BRIGHT IDEAS\s*(?:<\/(?:strong|b)>)?\s*<\/h3>\s*(?:<p>(?:\s|&nbsp;)*<\/p>\s*)?([\s\S]*?)<h3>\s*(?:KEY\s+)?VOCABULARY\s*<\/h3>\s*([\s\S]*?)(?=<div class="portal-wp-nav-row">|<a\b[^>]*portal-wp-button|$)/i,
             (_match, brightIdeas: string, vocabulary: string) =>
                 renderSupportSection(brightIdeas, vocabulary),
         )
@@ -645,7 +738,7 @@ function prepareWordPressHtml(html: string, pageTitle: string) {
     );
     let hasCheckedFirstHeading = false;
 
-    return cleanWordPressHtmlNesting(wrapBottomResourceSections(wrapMainContentSections(wrapMaterialsSection(portalLinkedHtml
+    return cleanWordPressHtmlNesting(wrapBottomResourceSections(wrapBrightIdeasTables(wrapMainContentSections(wrapMaterialsSection(portalLinkedHtml
         .replace(/\[vc_custom_heading\b([^\]]*)\]/g, (_match, shortcode: string) => {
             const attributes = parseShortcodeAttributes(shortcode);
             const headingText = attributes.text;
@@ -730,6 +823,10 @@ function prepareWordPressHtml(html: string, pageTitle: string) {
         )
         .replace(/\[(?:\/)?(?:vc_row|vc_column|vc_row_inner|vc_column_inner|vc_column_text|divider|tabbed_section|tab|ultimate_exp_section)\]/g, "")
         .replace(
+            /(?:<p\b[^>]*>\s*)?<(?:span|strong|b)\b[^>]*>\s*(?:KEY\s+)?VOCABULARY\s*<\/(?:span|strong|b)>\s*(?:<\/p>)?/gi,
+            "<h3>VOCABULARY</h3>",
+        )
+        .replace(
             /<(p|h[2-4])\b[^>]*>\s*(?:<(?:span|strong|b)\b[^>]*>\s*)*(?:KEY\s+)?VOCABULARY\s*(?:<\/(?:span|strong|b)>\s*)*<\/\1>/gi,
             "<h3>VOCABULARY</h3>",
         )
@@ -770,7 +867,7 @@ function prepareWordPressHtml(html: string, pageTitle: string) {
         .replace(
             /(<a\b[^>]*class="[^"]*portal-wp-button[^"]*portal-wp-button-previous[^"]*"[^>]*>\s*(?:←\s*)?Previous (?:Lesson|Module)\s*<\/a>)\s*(<a\b[^>]*class="[^"]*portal-wp-button[^"]*portal-wp-button-next[^"]*"[^>]*>\s*Next (?:Lesson|Module)(?:\s*→)?\s*<\/a>)/g,
             '<div class="portal-wp-nav-row">$1$2</div>',
-        )))));
+        ))))));
 }
 
 export default async function WordPressResourcesPage({

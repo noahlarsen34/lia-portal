@@ -8,6 +8,7 @@ export default async function UsersPage() {
     const { data: profiles } = await supabase
         .from("profiles")
         .select("id, full_name, email, role")
+        .in("role", ["admin", "rpm"])
         .order("full_name", { ascending: true });
     
     const { data: schools } = await supabase

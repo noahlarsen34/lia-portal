@@ -28,6 +28,15 @@ type TeacherTableProps = {
     userRole: string;
 };
 
+function normalizeSearchValue(value: unknown) {
+    return String(value ?? "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-zA-Z0-9@.+]+/g, " ")
+        .trim()
+        .toLowerCase();
+}
+
 export function TeachersTable({ teachers, userRole }: TeacherTableProps) {
     const [search, setSearch] = useState("");
     const [selectedStatus, setSelectedStatus] = useState("all");
@@ -96,21 +105,27 @@ export function TeachersTable({ teachers, userRole }: TeacherTableProps) {
         selectedNewTeacher !== "all";
     
     const filteredTeachers = useMemo(() => {
-        const searchText = search.trim().toLowerCase();
+        const searchTerms = normalizeSearchValue(search)
+            .split(/\s+/)
+            .filter(Boolean);
 
         return teachers.filter((teacher) => {
+            const searchableTeacher = normalizeSearchValue([
+                teacher.name,
+                teacher.firstName,
+                teacher.lastName,
+                teacher.email,
+                teacher.phone,
+                teacher.username,
+                teacher.schoolName,
+                teacher.state,
+                teacher.district,
+                teacher.rpm,
+            ].join(" "));
+
             const matchesSearch =
-                !searchText ||
-                teacher.name.toLowerCase().includes(searchText) ||
-                teacher.firstName.toLowerCase().includes(searchText) ||
-                teacher.lastName.toLowerCase().includes(searchText) ||
-                teacher.email.toLowerCase().includes(searchText) ||
-                teacher.phone.toLowerCase().includes(searchText) ||
-                teacher.username.toLowerCase().includes(searchText) ||
-                teacher.schoolName.toLowerCase().includes(searchText) ||
-                teacher.state.toLowerCase().includes(searchText) ||
-                teacher.district.toLowerCase().includes(searchText) ||
-                teacher.rpm.toLowerCase().includes(searchText);
+                searchTerms.length === 0 ||
+                searchTerms.every((term) => searchableTeacher.includes(term));
             
             const matchesStatus =
                 selectedStatus === "all" || teacher.status === selectedStatus;
