@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireRole } from "@/utils/role-guards";
 import { createAdminClient } from "@/utils/supabase/admin";
-import { last } from "pdf-lib";
 
 export async function updateTeacherProfile(formData: FormData) {
     const { profile } = await requireRole(["teacher"]);

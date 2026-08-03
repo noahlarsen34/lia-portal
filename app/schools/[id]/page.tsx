@@ -4,13 +4,17 @@ import { createClient as createSupabaseAdminClient } from '@supabase/supabase-js
 import { DashboardSidebar } from '@/components/dashboard-sidebar';
 import { createClient } from '@/utils/supabase/server';
 import { Eye } from 'lucide-react';
+import {
+    getSchoolLifeCycleLabel,
+    getSchoolLifeCycleStatus,
+} from "@/utils/school-status";
 import { 
     deleteActivity,
     deleteContact,
     deleteDocument,
     deleteTeacher,
     updateSchoolProfileNotes,
-} from './actions'
+} from './actions';
 
 
 type SchoolProfilePageProps = {
@@ -72,6 +76,14 @@ export default async function SchoolProfilePage({
         redirect('/schools');
 
     }
+
+    const schoolLifeCycleStatus = getSchoolLifeCycleStatus(
+        school.year_lia_started
+    );
+
+    const schoolLifeCycleLabel = getSchoolLifeCycleLabel(
+        schoolLifeCycleStatus,
+    );
 
     const { data: schoolClassRows } = await supabase
         .from("lia_classes")
@@ -212,6 +224,12 @@ export default async function SchoolProfilePage({
                                 <span className='rounded-full bg-green-50 px-3 py-1 text-xs font-semibold text-green-700'>
                                     {school.status}
                                 </span>
+
+                                {schoolLifeCycleStatus === "new" ? (
+                                    <span className='rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700'>
+                                        New School
+                                    </span>
+                                ) : null}
                             </div>
 
                             <p className='text-sm text-zinc-600'>
@@ -322,12 +340,37 @@ export default async function SchoolProfilePage({
 
                     <div className='min-h-48 rounded-lg border border-red-100 bg-white p-4 shadow-sm sm:p-6'>
                         <h2 className='text-lg font-semibold'>School Snapshot</h2>
-                        <div className='mt-4'>
+                        <div className='mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-1'>
                             <div>
-                                <p className='text-sm text-zinc-500'>Chapter Size</p>
-                                <p className='text-2xl font-semibold'>
+                                <p className='text-sm text-zinc-500'>
+                                    Chapter Size
+                                </p>
+
+                                <p className='mt-1 text-2xl font-semibold'>
                                     {classroomStudentCount}
                                 </p>
+                            </div>
+
+                            <div className='border-t border-zinc-100 pt-4'>
+                                <p className='text-sm text-zinc-500'>
+                                    School Type
+                                </p>
+
+                                <p 
+                                    className={
+                                        schoolLifeCycleStatus === "new"
+                                            ?"mt-1 font-semibold text-amber-700"
+                                            :"mt-1 font-semibold text-zinc-900"
+                                    }
+                                >
+                                    {schoolLifeCycleLabel}
+                                </p>
+
+                                {schoolLifeCycleStatus === "new" ? (
+                                    <p className="mt-1 text-xs text-zinc-500">
+                                        Started during the 2026-2027 school year
+                                    </p>
+                                ) : null}
                             </div>
                         </div>
                     </div>

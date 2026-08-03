@@ -2,7 +2,6 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireRole } from "@/utils/role-guards";
 import { updateTeacherProfile } from "./actions";
-import { Redo } from "lucide-react";
 
 type TeacherProfilePageProps = {
     searchParams: Promise<{
@@ -34,10 +33,13 @@ function formatProgramLevel(programLevel: string | null) {
 
 function formatPortalStatus(status: string | null) {
     switch (status) {
+        case "active":
         case "activated":
             return "Account activated";
         case "invited":
             return "Invitation sent";
+        case "disabled":
+            return "Access disabled";
         default:
             return "Not activated";
     }
@@ -127,6 +129,57 @@ export default async function TeacherProfilePage({
                 .maybeSingle()
             : Promise.resolve({ data: null, error: null }),
     ]);
+
+    const { data: classes, error: classesError } = await supabase
+        .from("lia_classes")
+        .select(`
+            id,
+            name,
+            school_year,
+            period,
+            grade_level,
+            status,
+            updated_at
+        `)
+        .eq("teacher_profile_id", profile.id)
+        .order("updated_at", { ascending: false });
+
+    if (classesError) {
+        throw new Error(
+            `Unable to load teacher classes: ${classesError.message}`,
+        );
+    }
+
+    const classRows = classes ?? [];
+    const classIds = classRows.map((liaClass) => liaClass.id);
+
+    const { data: enrollmentRows, error: enrollmentError } =
+        classIds.length > 0
+            ? await supabase
+                .from("lia_class_students")
+                .select("student_id")
+                .in("lia_class_id", classIds)
+                .or("status.is.null,status.neq.removed")
+            : {
+                data: [],
+                error: null,
+            };
+
+    if (enrollmentError) {
+        throw new Error(
+            `Unable to load teacher enrollments: ${enrollmentError.message}`,
+        );
+    }
+
+    const uniqueStudentCount = new Set(
+        (enrollmentRows ?? [])
+            .map((enrollment) => enrollment.student_id)
+            .filter(Boolean),
+    ).size;
+
+    const activeClassCount = classRows.filter(
+        (liaClass) => liaClass.status === "active",
+    ).length;
 
     const displayName =
         teacher.name ||
@@ -314,6 +367,15 @@ export default async function TeacherProfilePage({
                                 <dd className="mt-1 font-semibold text-zinc-900">
                                     {rpmResult.data?.full_name ?? "Not assigned"}
                                 </dd>
+
+                                {rpmResult.data?.email ? (
+                                    <a
+                                        href={`mailto:${rpmResult.data.email}`}
+                                        className="mt-1 inline-block break-all text-sm font-medium text-[#c4122f] hover:underline"
+                                    >
+                                        {rpmResult.data.email}
+                                    </a>
+                                ) : null}
                             </div>
 
                             <div>
@@ -338,7 +400,7 @@ export default async function TeacherProfilePage({
                         <dl className="mt-5 space-y-4 text-sm">
                             <div>
                                 <dt className="text-zinc-500">Portal Access</dt>
-                                <dd className="mt-1 font-semibod text-zinc-900">
+                                <dd className="mt-1 font-semibold text-zinc-900">
                                     {formatPortalStatus(
                                         teacher.portal_access_status,
                                     )}
@@ -362,6 +424,110 @@ export default async function TeacherProfilePage({
                     </section>
                 </div>
             </div>
+
+            <section className="rounded-md border border-red-100 bg-white p-6 shadow-sm">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                        <h2 className="text-xl font-semibold text-zinc-950">
+                            Teaching Overview
+                        </h2>
+
+                        <p className="mt-1 text-sm text-zinc-600">
+                            A summary of your current LIA classes and students.
+                        </p>
+                    </div>
+
+                    <Link
+                        href="/teacher/classes"
+                        className="text-sm font-semibold text-[#c4122f] hover:underline"
+                    >
+                        View all classes
+                    </Link>
+                </div>
+
+                <div className="mt-6 grid gap-4 sm:grid-cols-3">
+                    <div className="rounded-md border border-zinc-100 bg-zinc-50 p-4">
+                        <p className="text-sm text-zinc-500">
+                            Total Classes
+                        </p>
+
+                        <p className="mt-1 text-2xl font-semibold text-zinc-950">
+                            {classRows.length}
+                        </p>
+                    </div>
+
+                    <div className="rounded-md border border-zinc-100 bg-zinc-50 p-4">
+                        <p className="text-sm text-zinc-500">
+                            Active Classes
+                        </p>
+
+                        <p className="mt-1 text-2xl font-semibold text-zinc-950">
+                            {activeClassCount}
+                        </p>
+                    </div>
+
+                    <div className="rounded-md border border-zinc-100 bg-zinc-50 p-4">
+                        <p className="text-sm text-zinc-500">
+                            Enrolled Students
+                        </p>
+
+                        <p className="mt-1 text-2xl font-semibold text-zinc-950">
+                            {uniqueStudentCount}
+                        </p>
+                    </div>
+                </div>
+
+                {classRows.length > 0 ? (
+                    <div className="mt-6">
+                        <h3 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
+                            Recent Classes
+                        </h3>
+
+                        <div className="mt-3 divide-y divide-zinc-100 rounded-md border border-zinc-100">
+                            {classRows.slice(0, 3).map((liaClass) => (
+                                <Link
+                                    key={liaClass.id}
+                                    href={`/teacher/classes/${liaClass.id}`}
+                                    className="flex flex-col gap-2 p-4 transition hover:bg-red-50 sm:flex-row sm:items-center sm:justify-between"
+                                >
+                                    <div className="min-w-0">
+                                        <p className="break-words font-semibold text-zinc-950 [overflow-wrap:anywhere]">
+                                            {liaClass.name}
+                                        </p>
+
+                                        <p className="mt-1 text-sm text-zinc-500">
+                                            {liaClass.school_year}
+                                            {liaClass.period
+                                                ? ` · ${liaClass.period}`
+                                                : ""}
+                                            {liaClass.grade_level
+                                                ? ` · ${liaClass.grade_level}`
+                                                : ""}
+                                        </p>
+                                    </div>
+
+                                    <span className="shrink-0 text-sm font-semibold capitalize text-[#c4122f]">
+                                        {liaClass.status}
+                                    </span>
+                                </Link>
+                            ))}
+                        </div>
+                    </div>
+                ) : (
+                    <div className="mt-6 rounded-md border border-dashed border-zinc-200 p-6 text-center">
+                        <p className="text-sm text-zinc-600">
+                            You have not created any classes yet.
+                        </p>
+
+                        <Link
+                            href="/teacher/classes/new"
+                            className="mt-3 inline-flex h-10 items-center justify-center rounded-md bg-[#c4122f] px-4 text-sm font-semibold text-white hover:bg-[#a70d25]"
+                        >
+                            Create Your First Class
+                        </Link>
+                    </div>
+                )}
+            </section>
 
             <section className="flex flex-wrap gap-3">
                 <Link
@@ -388,4 +554,3 @@ export default async function TeacherProfilePage({
         </div>
     );
 }
-
