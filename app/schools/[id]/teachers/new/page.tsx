@@ -146,7 +146,7 @@ export default async function AddTeacherPage({
                                     >
                                         <option value="">Unknown</option>
                                         <option value="elementary">Elementary</option>
-                                        <option value="Middle">Middle</option>
+                                        <option value="middle">Middle</option>
                                         <option value="high">High School</option>
                                         <option value="middle_high">Middle + High School</option>
                                         <option value="k_8">K-8</option>
