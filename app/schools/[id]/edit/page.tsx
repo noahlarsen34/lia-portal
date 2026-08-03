@@ -60,6 +60,7 @@ export default async function EditSchoolPage({
   const { data: rpms } = await supabase
     .from("profiles")
     .select("id, full_name")
+    .in("role", ["admin", "rpm"])
     .order("full_name", { ascending: true });
 
   return (

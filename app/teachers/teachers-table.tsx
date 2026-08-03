@@ -16,6 +16,9 @@ type TeacherRow = {
     status: string;
     username: string;
     passwordStatus: string;
+    portalAccessStatus: string;
+    invitedAt: string | null;
+    activatedAt: string | null;
     isNewTeacher: boolean;
     schoolName: string;
     state: string;
@@ -46,6 +49,7 @@ export function TeachersTable({ teachers, userRole }: TeacherTableProps) {
     const [isExporting, setIsExporting] = useState(false);
     const [exportUrl, setExportUrl] = useState("");
     const [exportError, setExportError] = useState("");
+    const [selectedPortalAccess, setSelectedPortalAccess] = useState("all");
 
     const isAdmin = userRole === "admin";
     const statusOptions = ["active", "inactive"];
@@ -71,12 +75,41 @@ export function TeachersTable({ teachers, userRole }: TeacherTableProps) {
             .sort();
     }, [teachers]);
 
+    const getPortalAccessLabel = (status: string) => {
+        switch (status) {
+            case "invited":
+                return "Invited";
+            case "active":
+                return "Activated";
+            case "disabled":
+                return "Disabled";
+            case "not_invited":
+            default:
+                return "Not Invited";
+        }
+    };
+
+    const getPortalAccessClassName = (status: string) => {
+        switch (status) {
+            case "invited":
+                return "whitespace-nowrap rounded-full bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-700";
+            case "active":
+                return "whitespace-nowrap rounded-full bg-green-50 px-2 py-1 text-xs font-semibold text-green-700";
+            case "disabled":
+                return "whitespace-nowrap rounded-full bg-red-50 px-2 py-1 text-xs font-semibold text-red-700";
+            case "not_invited":
+            default:
+                return "whitespace-nowrap rounded-full bg-zinc-50 px-2 py-1 text-xs font-semibold text-zinc-600";
+        }
+    }
+
     const clearFilters = () => {
         setSearch("");
         setSelectedStatus("all");
         setSelectedState("all");
         setSelectedRpm("all");
         setSelectedNewTeacher("all");
+        setSelectedPortalAccess("all");
     };
 
     const exportTeachersGoogleSheet = async () => {
@@ -102,7 +135,8 @@ export function TeachersTable({ teachers, userRole }: TeacherTableProps) {
         selectedStatus !== "all" ||
         selectedState !== "all" ||
         (isAdmin && selectedRpm !== "all") ||
-        selectedNewTeacher !== "all";
+        selectedNewTeacher !== "all" ||
+        selectedPortalAccess !== "all";
     
     const filteredTeachers = useMemo(() => {
         const searchTerms = normalizeSearchValue(search)
@@ -126,7 +160,7 @@ export function TeachersTable({ teachers, userRole }: TeacherTableProps) {
             const matchesSearch =
                 searchTerms.length === 0 ||
                 searchTerms.every((term) => searchableTeacher.includes(term));
-            
+
             const matchesStatus =
                 selectedStatus === "all" || teacher.status === selectedStatus;
 
@@ -135,18 +169,23 @@ export function TeachersTable({ teachers, userRole }: TeacherTableProps) {
 
             const matchesRpm =
                 !isAdmin || selectedRpm === "all" || teacher.rpm === selectedRpm;
-            
+
             const matchesNewTeacher =
                 selectedNewTeacher === "all" ||
                 (selectedNewTeacher === "yes" && teacher.isNewTeacher) ||
                 (selectedNewTeacher === "no" && !teacher.isNewTeacher);
+
+            const matchesPortalAccess =
+                selectedPortalAccess === "all" ||
+                teacher.portalAccessStatus === selectedPortalAccess;
 
             return (
                 matchesSearch &&
                 matchesStatus &&
                 matchesState &&
                 matchesRpm &&
-                matchesNewTeacher 
+                matchesNewTeacher &&
+                matchesPortalAccess
             );
 
         });
@@ -157,6 +196,7 @@ export function TeachersTable({ teachers, userRole }: TeacherTableProps) {
         selectedState,
         selectedRpm,
         selectedNewTeacher,
+        selectedPortalAccess,
         isAdmin,
     ]);
 
@@ -165,8 +205,8 @@ export function TeachersTable({ teachers, userRole }: TeacherTableProps) {
             <div
                 className={
                     isAdmin
-                        ? "mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(220px,1fr)_150px_150px_180px_160px_90px]"
-                        : "mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(220px,1fr)_150px_150px_160px_90px]"
+                        ? "mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(200px,1fr)_130px_130px_150px_145px_155px_80px]"
+                        : "mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(220px,1fr)_140px_140px_150px_155px_80px]"
                 }
             >
                 <input
@@ -225,6 +265,18 @@ export function TeachersTable({ teachers, userRole }: TeacherTableProps) {
                     <option value="all">All Teachers</option>
                     <option value="yes">New Teachers</option>
                     <option value="no">Returning Teachers</option>
+                </select>
+
+                <select
+                    value={selectedPortalAccess}
+                    onChange={(event) => setSelectedPortalAccess(event.target.value)}
+                    className="h-10 w-full rounded-md border border-zinc-200 bg-white px-4 text-sm outline-none hover:bg-red-50 focus:border-[#c8102e] focus:ring-4 focus:ring-red-100"
+                >
+                    <option value="all">All Portal Access</option>
+                    <option value="not_invited">Not Invited</option>
+                    <option value="invited">Invited</option>
+                    <option value="active">Activated</option>
+                    <option value="disabled">Disabled</option>
                 </select>
 
                 <button
@@ -294,7 +346,7 @@ export function TeachersTable({ teachers, userRole }: TeacherTableProps) {
                             <th className="w-36 px-4 py-3">Phone</th>
                             <th className="w-28 px-4 py-3">Status</th>
                             <th className="w-32 px-4 py-3">New Teacher</th>
-                            <th className="w-40 px-4 py-3">Password</th>
+                            <th className="w-40 px-4 py-3">Portal Access</th>
                             <th className="w-56 px-4 py-3">School</th>
                             <th className="w-28 px-4 py-3">State</th>
                             <th className="w-44 px-4 py-3">District</th>
@@ -371,9 +423,24 @@ export function TeachersTable({ teachers, userRole }: TeacherTableProps) {
                                 </td>
 
                                 <td className="px-4 py-5">
-                                    <span className="whitespace-nowrap rounded-full bg-zinc-100 px-2 py-1 text-xs font-semibold uppercase text-zinc-600">
-                                        {teacher.passwordStatus}
+                                    <span
+                                        className={getPortalAccessClassName(
+                                            teacher.portalAccessStatus,
+                                        )}
+                                    >
+                                        {getPortalAccessLabel(teacher.portalAccessStatus)}
                                     </span>
+
+                                    {teacher.portalAccessStatus === "invited" &&
+                                    teacher.invitedAt ? (
+                                        <p className="mt-2 whitespace-nowrap text-xs text-zinc-500">
+                                            {new Intl.DateTimeFormat("en-US", {
+                                                month: "short",
+                                                day: "numeric",
+                                                year: "numeric",
+                                            }).format(new Date(teacher.invitedAt))}
+                                        </p>
+                                    ) : null}
                                 </td>
 
                                 <td className="px-4 py-5">
@@ -444,8 +511,12 @@ export function TeachersTable({ teachers, userRole }: TeacherTableProps) {
                                 {teacher.isNewTeacher ? "New Teacher" : "Returning"}
                             </span>
 
-                            <span className="rounded-full bg-zinc-100 px-2 py-1 text-xs font-semibold uppercase text-zinc-600">
-                                {teacher.passwordStatus}
+                            <span
+                                className={getPortalAccessClassName(
+                                    teacher.portalAccessStatus,
+                                )}
+                            >
+                                {getPortalAccessLabel(teacher.portalAccessStatus)}
                             </span>
                         </div>
 

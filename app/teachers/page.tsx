@@ -33,6 +33,9 @@ export default async function TeachersPage() {
             status,
             username,
             password_status,
+            portal_access_status,
+            invited_at,
+            activated_at,
             is_new_teacher
         `)
         .order("last_name", { ascending: true });
@@ -81,6 +84,15 @@ export default async function TeachersPage() {
                 status: teacher.status,
                 username: teacher.username ?? "N/A",
                 passwordStatus: teacher.password_status ?? "not invited",
+                portalAccessStatus:
+                    teacher.portal_access_status ??
+                    (teacher.password_status === "invited"
+                        ? "invited"
+                        : teacher.password_status === "active"
+                            ? "active"
+                            : "not_invited"),
+                invitedAt: teacher.invited_at,
+                activatedAt: teacher.activated_at,
                 isNewTeacher: teacher.is_new_teacher ?? false,
                 schoolName: school?.name ?? "N/A",
                 state: school?.state ?? "N/A",

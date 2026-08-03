@@ -25,6 +25,7 @@ export default async function AddSchoolPage({
     const { data: rpms } = await supabase
         .from("profiles")
         .select("id, full_name")
+        .in("role", ["admin", "rpm"])
         .order("full_name", { ascending: true });
 
     return (
