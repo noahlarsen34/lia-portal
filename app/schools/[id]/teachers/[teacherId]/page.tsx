@@ -56,6 +56,15 @@ export default async function TeacherPage({ params, searchParams, }: TeacherPage
         teacher.id,
     )
 
+    const portalAccessStatus = teacher.portal_access_status ?? "not_invited";
+    const isPortalAccountActive =
+        portalAccessStatus === "active" ||
+        teacher.password_status === "active" ||
+        Boolean(teacher.activated_at);
+    const isPendingInvitation =
+        !isPortalAccountActive &&
+        (portalAccessStatus === "invited" || Boolean(teacher.profile_id));
+
     const formatProgramLevel = (programLevel: string | null) => {
         switch (programLevel) {
             case "elementary":
@@ -91,13 +100,15 @@ export default async function TeacherPage({ params, searchParams, }: TeacherPage
                         Back to {school.name}
                     </Link>
 
-                    {invite === "sent" ? (
+                    {invite === "sent" || invite === "resent" ? (
                         <div className='mt-5 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700'>
-                            Invitation sent to {teacher.email}
+                            {invite === "resent"
+                                ? `A new invitation was sent to ${teacher.email}. The old link can be ignored.`
+                                : `Invitation sent to ${teacher.email}`}
                         </div>
                     ) : null}
 
-                    {invite && invite !== "sent" ? (
+                    {invite && invite !== "sent" && invite !== "resent" ? (
                         <div className='mt-5 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700'>
                             {invite === "email-required"
                                 ? 'Add an email address before inviting this teacher.'
@@ -105,6 +116,8 @@ export default async function TeacherPage({ params, searchParams, }: TeacherPage
                                     ? "Only active teachers can be invited."
                                     : invite === "already-linked"
                                         ? "This teacher is already linked to a portal account."
+                                        : invite === "access-disabled"
+                                            ? "Portal access is disabled for this teacher."
                                         : invite === "configuration-error"
                                             ? "The portal application URL is not configured."
                                             : invite === "teacher-not-found"
@@ -181,7 +194,7 @@ export default async function TeacherPage({ params, searchParams, }: TeacherPage
                                     Portal Access
                                 </p>
                                 <p className='mt-1 font-semibold capitalize'>
-                                    {teacher.portal_access_status.replace("_", " ")}
+                                    {portalAccessStatus.replaceAll("_", " ")}
                                 </p>
                             </div>
 
@@ -221,7 +234,7 @@ export default async function TeacherPage({ params, searchParams, }: TeacherPage
                                 Back
                             </Link>
 
-                            {teacher.profile_id ? (
+                            {isPortalAccountActive ? (
                                 <span className='inline-flex h-10 w-full items-center justify-center rounded-md border border-green-200 bg-green-50 px-4 text-sm font-semibold text-green-700 sm:w-auto'>
                                     Portal Account Linked
                                 </span>
@@ -232,7 +245,7 @@ export default async function TeacherPage({ params, searchParams, }: TeacherPage
                                         disabled={!teacher.email || teacher.status !== "active"}
                                         className='inline-flex h-10 w-full items-center justify-center rounded-md border border-[#c8102e] bg-white px-4 text-sm font-semibold text-[#c8102e] transition hover:bg-red-50 disabled:cursor-not-allowed disabled:border-zinc-200 disabled:text-zinc-400 sm:w-auto'
                                     >
-                                        Invite Teacher
+                                        {isPendingInvitation ? "Resend Invitation" : "Invite Teacher"}
                                     </button>
                                 </form>
                             )}

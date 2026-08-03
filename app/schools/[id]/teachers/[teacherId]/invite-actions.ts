@@ -22,7 +22,9 @@ export async function inviteTeacher(
                 email,
                 status,
                 profile_id,
-                portal_access_status 
+                portal_access_status,
+                password_status,
+                activated_at
             `)
         .eq("id", teacherId)
         .eq("school_id", schoolId)
@@ -45,9 +47,20 @@ export async function inviteTeacher(
         redirect(`${returnPath}?invite=email-required`);
     }
 
-    if (teacher.profile_id) {
+    const isActivated =
+        teacher.portal_access_status === "active" ||
+        teacher.password_status === "active" ||
+        Boolean(teacher.activated_at);
+
+    if (isActivated) {
         redirect(`${returnPath}?invite=already-linked`);
     }
+
+    if (teacher.portal_access_status === "disabled") {
+        redirect(`${returnPath}?invite=access-disabled`);
+    }
+
+    const isResend = teacher.portal_access_status === "invited";
 
     const appUrl =
         process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "");
@@ -83,6 +96,16 @@ export async function inviteTeacher(
 
     const authUserId = invitation.user.id;
 
+    if (teacher.profile_id && teacher.profile_id !== authUserId) {
+        console.error("Teacher invitation returned a different auth user", {
+            teacherId,
+            existingProfileId: teacher.profile_id,
+            invitedProfileId: authUserId,
+        });
+
+        redirect(`${returnPath}?invite=link-failed`);
+    }
+
     const { error: profileError } = await admin
         .from("profiles")
         .upsert(
@@ -114,11 +137,10 @@ export async function inviteTeacher(
             portal_access_status: "invited",
             invited_at: new Date().toISOString(),
             invited_by: profile.id,
-
             password_status: "invited",
+            activated_at: null,
         })
-        .eq("id", teacher.id)
-        .is("profile_id", null);
+        .eq("id", teacher.id);
     
     if (linkError) {
         console.error("Teacher record linking failed", {
@@ -130,5 +152,5 @@ export async function inviteTeacher(
         redirect(`${returnPath}?invite=link-failed`);
     }
 
-    redirect(`${returnPath}?invite=sent`);
+    redirect(`${returnPath}?invite=${isResend ? "resent" : "sent"}`);
 }
