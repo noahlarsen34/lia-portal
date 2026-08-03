@@ -6,6 +6,7 @@ import {
     type WordPressContentType,
 } from "@/utils/wordpress";
 import { getImportedCurriculumPage } from "@/utils/imported-curriculum";
+import { canViewCurriculumPage } from "@/utils/teacher-curriculum-access";
 
 type WordPressResourcePageProps = {
     params: Promise<{
@@ -873,7 +874,7 @@ function prepareWordPressHtml(html: string, pageTitle: string) {
 export default async function WordPressResourcesPage({
     params,
 }: WordPressResourcePageProps) {
-    await requireTeacher();
+    const { supabase, profile } = await requireTeacher();
 
     const { type, id } = await params;
 
@@ -905,6 +906,29 @@ export default async function WordPressResourcesPage({
     
     if (!page) {
         notFound();
+    }
+
+    if (profile.role === "teacher") {
+        const { data: teacher, error: teacherError } = await supabase
+            .from("teachers")
+            .select("program_level")
+            .eq("profile_id", profile.id)
+            .maybeSingle();
+        
+        if (teacherError) {
+            throw new Error(
+                `Unable to verify curriculum access: ${teacherError.message}`,
+            );
+        }
+
+        const canAccessPage = canViewCurriculumPage(
+            teacher?.program_level,
+            page.link,
+        );
+
+        if (!canAccessPage) {
+            redirect("/teacher/resources");
+        }
     }
 
     const curriculumBook =

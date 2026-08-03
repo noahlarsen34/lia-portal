@@ -11,6 +11,10 @@ import {
 } from "lucide-react";
 import { requireTeacher } from "@/utils/role-guards";
 import { curriculumTabs } from "@/utils/curriculum-links";
+import {
+    canViewCurriculumSection,
+    type CurriculumSectionKey,
+} from '@/utils/teacher-curriculum-access';
 
 const curriculumIcons: Record<string, LucideIcon> = {
     elementary: BookOpen,
@@ -22,7 +26,35 @@ const curriculumIcons: Record<string, LucideIcon> = {
 };
 
 export default async function TeacherResourcesPage() {
-    await requireTeacher();
+    const { supabase, profile } = await requireTeacher();
+
+    let programLevel: string | null = null;
+
+    if (profile.role === "teacher") {
+        const { data: teacher, error: teacherError } = await supabase
+            .from("teachers")
+            .select("program_level")
+            .eq("profile_id", profile.id)
+            .maybeSingle();
+        
+        if (teacherError) {
+            throw new Error(
+                `Unable to load teacher curriculum access: ${teacherError.message}`,
+            );
+        }
+
+        programLevel = teacher?.program_level ?? null;
+    }
+
+    const visibleCurriculumTabs =
+        profile.role === "admin"
+            ? curriculumTabs
+            : curriculumTabs.filter((section) =>
+                canViewCurriculumSection(
+                    programLevel,
+                    section.key as CurriculumSectionKey,
+                ),
+            );
 
     return (
         <div className="mx-auto max-w-7xl">
@@ -37,7 +69,7 @@ export default async function TeacherResourcesPage() {
             </section>
 
             <section className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                {curriculumTabs.map((section) => {
+                {visibleCurriculumTabs.map((section) => {
                     const Icon = curriculumIcons[section.key] ?? FolderOpen;
                     const href =
                         "href" in section
