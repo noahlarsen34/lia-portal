@@ -77,7 +77,7 @@ export async function inviteTeacher(
     const { data: invitation, error: invitationError } =
         await admin.auth.admin.inviteUserByEmail(email, {
             redirectTo:
-                `${appUrl}/teacher`,
+                `${appUrl}/activate-account`,
             data: {
                 role: "teacher",
                 teacher_id: teacher.id,
