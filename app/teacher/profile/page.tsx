@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireRole } from "@/utils/role-guards";
 import { updateTeacherProfile } from "./actions";
+import { SaveProfileButton } from "./save-profile-button";
 
 type TeacherProfilePageProps = {
     searchParams: Promise<{
@@ -45,8 +46,14 @@ function formatPortalStatus(status: string | null) {
     }
 }
 
-function formatDate(value: string | null) {
-    if(!value) {
+function formatDate(value: string | null | undefined) {
+    if (!value) {
+        return "N/A";
+    }
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
         return "N/A";
     }
 
@@ -54,7 +61,7 @@ function formatDate(value: string | null) {
         month: "short",
         day: "numeric",
         year: "numeric",
-    }).format(new Date(value));
+    }).format(date);
 }
 
 export default async function TeacherProfilePage({
@@ -171,6 +178,36 @@ export default async function TeacherProfilePage({
         );
     }
 
+    const { data: trainingAttempt, error: trainingAttemptError } = await supabase
+        .from("teacher_module_quiz_attempts")
+        .select(`
+            id,
+            score,
+            total_questions,
+            passed,
+            created_at,
+            certificate_number,
+            certificate_issued_at,
+            certificate_emailed_at
+            `)
+        .eq("teacher_profile_id", profile.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+    
+    if (trainingAttemptError) {
+        throw new Error(
+            `Unable to load teacher training progress: ${trainingAttemptError.message}`,
+        );
+    }
+
+    const trainingScore =
+        trainingAttempt && trainingAttempt.total_questions > 0
+            ? Math.round(
+                (trainingAttempt.score / trainingAttempt.total_questions) * 100,
+            )
+            : null;
+
     const uniqueStudentCount = new Set(
         (enrollmentRows ?? [])
             .map((enrollment) => enrollment.student_id)
@@ -189,6 +226,14 @@ export default async function TeacherProfilePage({
     const initials = `${teacher.first_name?.[0] ?? ""}${
         teacher.last_name?.[0] ?? ""
     }`.toUpperCase() || "LT";
+
+    const missingProfileFields = [
+        !teacher.phone?.trim() ? "phone number" : null,
+        !teacher.program_level || teacher.program_level === "unknown"
+            ? "program level"
+            : null,
+        !school?.id ? "school assignment" : null,
+    ].filter((field): field is string => Boolean(field));
 
     const errorMessage =
         error === "missing-name"
@@ -221,10 +266,13 @@ export default async function TeacherProfilePage({
                         </p>
 
                         <div className="mt-3 flex flex-wrap gap-2">
-                            <span className="rounded-full bg-green-50 px-3 py-1 text-xs font-semibold text-green-700">
-                                {teacher.status === "active"
-                                    ? "Active"
-                                    : "Inactive"}
+                            <span className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                teacher.status === "active"
+                                    ? "bg-green-50 text-green-700"
+                                    : "bg-zinc-100 text-zinc-600"
+                            }`}
+                            >
+                                {teacher.status === "active" ? "Active" : "Inactive"}
                             </span>
 
                             <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-[#c4122f]">
@@ -324,12 +372,7 @@ export default async function TeacherProfilePage({
                         </div>
 
                         <div className="flex justify-end border-t border-zinc-100 pt-5">
-                            <button
-                                type="submit"
-                                className="inline-flex h-10 items-center justify-center rounded-md bg-[#c4122f] px-5 text-sm font-semibold text-white hover:bg-[#a70d25]"
-                            >
-                                Save Profile
-                            </button>
+                            <SaveProfileButton />
                         </div>
                     </form>
                 </section>
@@ -363,20 +406,27 @@ export default async function TeacherProfilePage({
                             </div>
 
                             <div>
-                                <dd className="text-zinc-500">Assigned RPM</dd>
-                                <dd className="mt-1 font-semibold text-zinc-900">
-                                    {rpmResult.data?.full_name ?? "Not assigned"}
-                                </dd>
+                            <dt className="text-zinc-500">Assigned RPM</dt>
 
-                                {rpmResult.data?.email ? (
-                                    <a
-                                        href={`mailto:${rpmResult.data.email}`}
-                                        className="mt-1 inline-block break-all text-sm font-medium text-[#c4122f] hover:underline"
-                                    >
-                                        {rpmResult.data.email}
-                                    </a>
-                                ) : null}
-                            </div>
+                            <dd className="mt-1 font-semibold text-zinc-900">
+                                {rpmResult.data?.full_name ?? "Not assigned"}
+                            </dd>
+
+                            {rpmResult.data?.email ? (
+                                <a
+                                    href={`mailto:${rpmResult.data.email}?subject=${encodeURIComponent(
+                                        "LIA Portal Support Request",
+                                    )}`}
+                                    className="mt-3 inline-flex h-9 items-center justify-center rounded-md border border-red-200 bg-white px-3 text-sm font-semibold text-[#c4122f] hover:bg-red-50"
+                                >
+                                    Email My RPM
+                                </a>
+                            ) : (
+                                <p className="mt-2 text-xs text-zinc-500">
+                                    Contact an LIA administrator if you need assistance.
+                                </p>
+                            )}
+                        </div>
 
                             <div>
                                 <dt className="text-zinc-500">Program Level</dt>
@@ -398,6 +448,19 @@ export default async function TeacherProfilePage({
                         </h2>
 
                         <dl className="mt-5 space-y-4 text-sm">
+                            <div>
+                                <dt className="text-zinc-500">Login Email</dt>
+                                <dd className="mt-1 break-all font-semibold text-zinc-900">
+                                    {user.email ?? teacher.email ?? "N/A"}
+                                </dd>
+                            </div>
+
+                            <div>
+                                <dt className="text-zinc-500">Last Sign In</dt>
+                                <dd className="mt-1 font-semibold text-zinc-900">
+                                    {formatDate(user.last_sign_in_at)}
+                                </dd>
+                            </div>
                             <div>
                                 <dt className="text-zinc-500">Portal Access</dt>
                                 <dd className="mt-1 font-semibold text-zinc-900">
@@ -424,6 +487,19 @@ export default async function TeacherProfilePage({
                     </section>
                 </div>
             </div>
+
+            {missingProfileFields.length > 0 ? (
+                <section className="rounded-md border border-amber-200 bg-amber-50 px-5 py-4">
+                    <p className="text-sm font-semibold text-amber-900">
+                        Your profile needs attention
+                    </p>
+
+                    <p className="mt-1 text-sm text-amber-800">
+                        Missing: {missingProfileFields.join(", ")}. Contact your
+                        RPM if you cannot update this information.
+                    </p>
+                </section>
+            ) : null}
 
             <section className="rounded-md border border-red-100 bg-white p-6 shadow-sm">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -524,6 +600,99 @@ export default async function TeacherProfilePage({
                             className="mt-3 inline-flex h-10 items-center justify-center rounded-md bg-[#c4122f] px-4 text-sm font-semibold text-white hover:bg-[#a70d25]"
                         >
                             Create Your First Class
+                        </Link>
+                    </div>
+                )}
+            </section>
+
+            <section className="rounded-md border border-red-100 bg-white p-6 shadow-sm">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                        <h2 className="text-xl font-semibold text-zinc-950">
+                            Professional Growth
+                        </h2>
+
+                        <p className="mt-1 text-sm text-zinc-600">
+                            Track your LIA training progress and certification.
+                        </p>
+                    </div>
+
+                    <Link
+                        href="/teacher/modules"
+                        className="text-sm font-semibold text-[#c4122f] hover:underline"
+                    >
+                        View teacher modules
+                    </Link>
+                </div>
+
+                {trainingAttempt ? (
+                    <div className="mt-6 grid gap-4 sm:grid-cols-3">
+                        <div className="rounded-md border border-zinc-100 bg-zinc-50 p-4">
+                            <p className="text-sm text-zinc-500">Training Status</p>
+
+                            <p
+                                className={`mt-1 text-lg font-semibold ${
+                                    trainingAttempt.passed
+                                        ? "text-green-700"
+                                        : "text-amber-700"
+                                }`}
+                            >
+                                {trainingAttempt.passed
+                                    ? "Training Completed"
+                                    : "Training In Progress"}
+                            </p>
+                        </div>
+
+                        <div className="rounded-md border border-zinc-100 bg-zinc-50 p-4">
+                            <p className="text-sm text-zinc-500">Latest Quiz Score</p>
+
+                            <p className="mt-1 text-2xl font-semibold text-zinc-950">
+                                {trainingScore ?? 0}%
+                            </p>
+
+                            <p className="mt-1 text-xs text-zinc-500">
+                                {trainingAttempt.score} of{" "}
+                                {trainingAttempt.total_questions} correct
+                            </p>
+                        </div>
+
+                        <div className="rounded-md border border-zinc-100 bg-zinc-50 p-4">
+                            <p className="text-sm text-zinc-500">Certificate</p>
+
+                            <p className="mt-1 text-lg font-semibold text-zinc-950">
+                                {trainingAttempt.certificate_emailed_at
+                                    ? "Earned and emailed"
+                                    : trainingAttempt.certificate_issued_at
+                                        ? "Earned — email pending"
+                                        : "Not earned yet"}
+                            </p>
+
+                            {trainingAttempt.certificate_issued_at ? (
+                                <p className="mt-1 text-xs text-zinc-500">
+                                    Issued{" "}
+                                    {formatDate(
+                                        trainingAttempt.certificate_issued_at,
+                                    )}
+                                </p>
+                            ) : null}
+                        </div>
+                    </div>
+                ) : (
+                    <div className="mt-6 rounded-md border border-dashed border-zinc-200 p-6 text-center">
+                        <p className="text-sm font-medium text-zinc-900">
+                            You have not completed the training quiz yet.
+                        </p>
+
+                        <p className="mt-1 text-sm text-zinc-500">
+                            Complete the teacher modules and pass the quiz to earn 
+                            your training certificate.
+                        </p>
+
+                        <Link
+                            href="/teacher/modules"
+                            className="mt-4 inline-flex h-10 items-center justify-center rounded-md bg-[#c4122f] px-4 text-sm font-semibold text-white hover:bg-[#a70d25]"
+                        >
+                            Start Teaching Training
                         </Link>
                     </div>
                 )}
