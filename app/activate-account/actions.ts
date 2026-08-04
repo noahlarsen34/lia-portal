@@ -8,7 +8,10 @@ export async function activateTeacherAccount(formData: FormData) {
     const tokenHash = String(formData.get("token_hash") ?? "").trim();
     const type = String(formData.get("type") ?? "").trim();
 
-    if (!tokenHash || type !== "invite") {
+    const verificationType =
+        type === "invite" || type === "magiclink" ? type : null;
+
+    if (!tokenHash || !verificationType) {
         redirect("/activate-account?error=invalid-invitation");
     }
 
@@ -16,7 +19,7 @@ export async function activateTeacherAccount(formData: FormData) {
     const { data: verification, error: verificationError } =
         await supabase.auth.verifyOtp({
             token_hash: tokenHash,
-            type: "invite",
+            type: verificationType,
         });
 
     if (verificationError || !verification.user) {

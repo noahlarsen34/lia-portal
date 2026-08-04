@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { requireStaff } from "@/utils/role-guards";
 import { createAdminClient } from "@/utils/supabase/admin";
+import { escapeHtml, renderBrandedEmail, sendEmail } from "@/utils/email";
 
 export async function inviteTeacher(
     schoolId: string,
@@ -52,10 +53,6 @@ export async function inviteTeacher(
         teacher.password_status === "active" ||
         Boolean(teacher.activated_at);
 
-    if (isActivated) {
-        redirect(`${returnPath}?invite=already-linked`);
-    }
-
     if (teacher.portal_access_status === "disabled") {
         redirect(`${returnPath}?invite=access-disabled`);
     }
@@ -74,19 +71,27 @@ export async function inviteTeacher(
         teacher.name ||
         "LIA Teacher";
     
+    const linkType = isActivated ? "magiclink" : "invite";
     const { data: invitation, error: invitationError } =
-        await admin.auth.admin.inviteUserByEmail(email, {
-            redirectTo:
-                `${appUrl}/activate-account`,
-            data: {
-                role: "teacher",
-                teacher_id: teacher.id,
-                full_name: fullName,
+        await admin.auth.admin.generateLink({
+            type: linkType,
+            email,
+            options: {
+                redirectTo: `${appUrl}/activate-account`,
+                data: {
+                    role: "teacher",
+                    teacher_id: teacher.id,
+                    full_name: fullName,
+                },
             },
         });
 
-    if (invitationError || !invitation.user) {
-        console.error("Teacher invitation failed", {
+    if (
+        invitationError ||
+        !invitation.user ||
+        !invitation.properties.hashed_token
+    ) {
+        console.error("Teacher access-link generation failed", {
             teacherId,
             message: invitationError?.message,
         });
@@ -130,16 +135,22 @@ export async function inviteTeacher(
         redirect(`${returnPath}?invite=link-failed`);
     }
 
-    const { error: linkError } = await admin
-        .from("teachers")
-        .update({
+    const teacherUpdate = isActivated
+        ? {
+            profile_id: authUserId,
+        }
+        : {
             profile_id: authUserId,
             portal_access_status: "invited",
             invited_at: new Date().toISOString(),
             invited_by: profile.id,
             password_status: "invited",
             activated_at: null,
-        })
+        };
+
+    const { error: linkError } = await admin
+        .from("teachers")
+        .update(teacherUpdate)
         .eq("id", teacher.id);
     
     if (linkError) {
@@ -150,6 +161,65 @@ export async function inviteTeacher(
         });
 
         redirect(`${returnPath}?invite=link-failed`);
+    }
+
+    const accessUrl = new URL("/activate-account", appUrl);
+    accessUrl.searchParams.set(
+        "token_hash",
+        invitation.properties.hashed_token,
+    );
+    accessUrl.searchParams.set("type", linkType);
+
+    const safeName = escapeHtml(fullName);
+    const safeAccessUrl = escapeHtml(accessUrl.toString());
+    const emailResult = await sendEmail({
+        to: email,
+        subject: isActivated
+            ? "Your new LIA Portal access link"
+            : "Activate your LIA Teacher Portal account",
+        html: renderBrandedEmail({
+            preheader: "Open your secure LIA Teacher Portal access link.",
+            eyebrow: "Teacher Portal",
+            title: isActivated
+                ? "Your new portal access link"
+                : "Activate your teacher account",
+            body: `
+                <p style="margin:0; color:#3f3f46; font-size:15px; line-height:1.7;">
+                    Hello ${safeName},
+                </p>
+                <p style="margin:16px 0 0; color:#3f3f46; font-size:15px; line-height:1.7;">
+                    ${isActivated
+                        ? "A new secure access link was requested for your LIA Teacher Portal account."
+                        : "You have been invited to activate your LIA Teacher Portal account."}
+                </p>
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin-top:28px;">
+                    <tr>
+                        <td style="border-radius:6px; background-color:#c4122f;">
+                            <a href="${safeAccessUrl}" style="display:inline-block; padding:13px 22px; color:#ffffff; font-size:15px; font-weight:700; text-decoration:none;">
+                                ${isActivated ? "Open Teacher Portal" : "Activate My Account"}
+                            </a>
+                        </td>
+                    </tr>
+                </table>
+                <p style="margin:22px 0 0; color:#71717a; font-size:13px; line-height:1.6;">
+                    This is a one-time security link. If it expires, an administrator or RPM can send you another one.
+                </p>
+            `,
+        }),
+        idempotencyKey: `teacher-access-${teacher.id}-${Date.now()}`,
+    });
+
+    if (emailResult.error) {
+        console.error("Teacher access email failed", {
+            teacherId,
+            message: emailResult.error,
+        });
+
+        redirect(`${returnPath}?invite=send-failed`);
+    }
+
+    if (isActivated) {
+        redirect(`${returnPath}?invite=access-sent`);
     }
 
     redirect(`${returnPath}?invite=${isResend ? "resent" : "sent"}`);

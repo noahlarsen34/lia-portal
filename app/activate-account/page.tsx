@@ -33,7 +33,8 @@ export default async function ActivateAccountPage({
     searchParams,
 }: ActivateAccountPageProps) {
     const { token_hash: tokenHash, type, error } = await searchParams;
-    const hasValidParameters = Boolean(tokenHash) && type === "invite";
+    const hasValidParameters =
+        Boolean(tokenHash) && (type === "invite" || type === "magiclink");
     const errorMessage = error
         ? errorMessages[error] ?? "The invitation could not be completed."
         : null;
@@ -73,7 +74,7 @@ export default async function ActivateAccountPage({
                             name="token_hash"
                             value={tokenHash}
                         />
-                        <input type="hidden" name="type" value="invite" />
+                        <input type="hidden" name="type" value={type} />
 
                         <button
                             type="submit"

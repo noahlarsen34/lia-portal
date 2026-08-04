@@ -100,15 +100,17 @@ export default async function TeacherPage({ params, searchParams, }: TeacherPage
                         Back to {school.name}
                     </Link>
 
-                    {invite === "sent" || invite === "resent" ? (
+                    {invite === "sent" || invite === "resent" || invite === "access-sent" ? (
                         <div className='mt-5 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700'>
-                            {invite === "resent"
+                            {invite === "access-sent"
+                                ? `A new portal access email was sent to ${teacher.email}.`
+                                : invite === "resent"
                                 ? `A new invitation was sent to ${teacher.email}. The old link can be ignored.`
                                 : `Invitation sent to ${teacher.email}`}
                         </div>
                     ) : null}
 
-                    {invite && invite !== "sent" && invite !== "resent" ? (
+                    {invite && invite !== "sent" && invite !== "resent" && invite !== "access-sent" ? (
                         <div className='mt-5 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700'>
                             {invite === "email-required"
                                 ? 'Add an email address before inviting this teacher.'
@@ -234,21 +236,23 @@ export default async function TeacherPage({ params, searchParams, }: TeacherPage
                                 Back
                             </Link>
 
-                            {isPortalAccountActive ? (
-                                <span className='inline-flex h-10 w-full items-center justify-center rounded-md border border-green-200 bg-green-50 px-4 text-sm font-semibold text-green-700 sm:w-auto'>
-                                    Portal Account Linked
-                                </span>
-                            ) : (
-                                <form action={inviteTeacherAccount}>
-                                    <button
-                                        type='submit'
-                                        disabled={!teacher.email || teacher.status !== "active"}
-                                        className='inline-flex h-10 w-full items-center justify-center rounded-md border border-[#c8102e] bg-white px-4 text-sm font-semibold text-[#c8102e] transition hover:bg-red-50 disabled:cursor-not-allowed disabled:border-zinc-200 disabled:text-zinc-400 sm:w-auto'
-                                    >
-                                        {isPendingInvitation ? "Resend Invitation" : "Invite Teacher"}
-                                    </button>
-                                </form>
-                            )}
+                            <form action={inviteTeacherAccount}>
+                                <button
+                                    type='submit'
+                                    disabled={
+                                        !teacher.email ||
+                                        teacher.status !== "active" ||
+                                        portalAccessStatus === "disabled"
+                                    }
+                                    className='inline-flex h-10 w-full items-center justify-center rounded-md border border-[#c8102e] bg-white px-4 text-sm font-semibold text-[#c8102e] transition hover:bg-red-50 disabled:cursor-not-allowed disabled:border-zinc-200 disabled:text-zinc-400 sm:w-auto'
+                                >
+                                    {isPortalAccountActive
+                                        ? "Send New Access Email"
+                                        : isPendingInvitation
+                                            ? "Resend Invitation"
+                                            : "Invite Teacher"}
+                                </button>
+                            </form>
 
                             <Link
                                 href={`/schools/${school.id}/teachers/${teacher.id}/edit`}
