@@ -42,6 +42,7 @@ function normalizeSearchValue(value: unknown) {
 }
 
 const programLevelOptions = [
+    { value: "all", label: "All Program Levels" },
     { value: "elementary", label: "Elementary" },
     { value: "middle", label: "Middle School" },
     { value: "high", label: "High School" },
