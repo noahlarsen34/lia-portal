@@ -15,6 +15,7 @@ type TeacherRow = {
     phone: string;
     status: string;
     username: string;
+    programLevel: string;
     passwordStatus: string;
     portalAccessStatus: string;
     invitedAt: string | null;
@@ -40,6 +41,16 @@ function normalizeSearchValue(value: unknown) {
         .toLowerCase();
 }
 
+const programLevelOptions = [
+    { value: "elementary", label: "Elementary" },
+    { value: "middle", label: "Middle School" },
+    { value: "high", label: "High School" },
+    { value: "k_8", label: "K-8" },
+    { value: "k_12", label: "K-12" },
+    { value: "other", label: "Other" },
+    { value: "unknown", label: "Unknown" },
+];
+
 export function TeachersTable({ teachers, userRole }: TeacherTableProps) {
     const [search, setSearch] = useState("");
     const [selectedStatus, setSelectedStatus] = useState("all");
@@ -50,6 +61,7 @@ export function TeachersTable({ teachers, userRole }: TeacherTableProps) {
     const [exportUrl, setExportUrl] = useState("");
     const [exportError, setExportError] = useState("");
     const [selectedPortalAccess, setSelectedPortalAccess] = useState("all");
+    const [selectedProgramLevel, setSelectedProgramLevel] = useState("all");
 
     const isAdmin = userRole === "admin";
     const statusOptions = ["active", "inactive"];
@@ -110,6 +122,7 @@ export function TeachersTable({ teachers, userRole }: TeacherTableProps) {
         setSelectedRpm("all");
         setSelectedNewTeacher("all");
         setSelectedPortalAccess("all");
+        setSelectedProgramLevel("all");
     };
 
     const exportTeachersGoogleSheet = async () => {
@@ -136,7 +149,8 @@ export function TeachersTable({ teachers, userRole }: TeacherTableProps) {
         selectedState !== "all" ||
         (isAdmin && selectedRpm !== "all") ||
         selectedNewTeacher !== "all" ||
-        selectedPortalAccess !== "all";
+        selectedPortalAccess !== "all" ||
+        selectedProgramLevel !== "all";
     
     const filteredTeachers = useMemo(() => {
         const searchTerms = normalizeSearchValue(search)
@@ -155,6 +169,7 @@ export function TeachersTable({ teachers, userRole }: TeacherTableProps) {
                 teacher.state,
                 teacher.district,
                 teacher.rpm,
+                teacher.programLevel,
             ].join(" "));
 
             const matchesSearch =
@@ -178,6 +193,10 @@ export function TeachersTable({ teachers, userRole }: TeacherTableProps) {
             const matchesPortalAccess =
                 selectedPortalAccess === "all" ||
                 teacher.portalAccessStatus === selectedPortalAccess;
+            
+            const matchesProgramLevel =
+                selectedProgramLevel === "all" ||
+                teacher.programLevel === selectedProgramLevel;
 
             return (
                 matchesSearch &&
@@ -185,7 +204,8 @@ export function TeachersTable({ teachers, userRole }: TeacherTableProps) {
                 matchesState &&
                 matchesRpm &&
                 matchesNewTeacher &&
-                matchesPortalAccess
+                matchesPortalAccess &&
+                matchesProgramLevel
             );
 
         });
@@ -197,6 +217,7 @@ export function TeachersTable({ teachers, userRole }: TeacherTableProps) {
         selectedRpm,
         selectedNewTeacher,
         selectedPortalAccess,
+        selectedProgramLevel,
         isAdmin,
     ]);
 
@@ -205,8 +226,8 @@ export function TeachersTable({ teachers, userRole }: TeacherTableProps) {
             <div
                 className={
                     isAdmin
-                        ? "mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(200px,1fr)_130px_130px_150px_145px_155px_80px]"
-                        : "mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(220px,1fr)_140px_140px_150px_155px_80px]"
+                        ? "mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-8"
+                        : "mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-7"
                 }
             >
                 <input
@@ -229,6 +250,21 @@ export function TeachersTable({ teachers, userRole }: TeacherTableProps) {
                     ))}
                 </select>
 
+                <select
+                    value={selectedProgramLevel}
+                    onChange={(event) =>
+                        setSelectedProgramLevel(event.target.value)
+                    }
+                    aria-label="Filter by program level"
+                    className="h-10 w-full rounded-md border border-zinc-200 bg-white px-4 text-sm outline-none hover:bg-red-50 focus:border-[#c8102e] focus:ring-4 focus:ring-red-100"
+                >
+                    {programLevelOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                            {option.label}
+                        </option>
+                    ))}
+                </select>
+                
                 <select
                     value={selectedState}
                     onChange={(event) => setSelectedState(event.target.value)}

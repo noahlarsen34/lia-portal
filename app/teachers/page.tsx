@@ -32,6 +32,7 @@ export default async function TeachersPage() {
             phone,
             status,
             username,
+            program_level,
             password_status,
             portal_access_status,
             invited_at,
@@ -83,6 +84,7 @@ export default async function TeachersPage() {
                 phone: teacher.phone ?? "N/A",
                 status: teacher.status,
                 username: teacher.username ?? "N/A",
+                programLevel: teacher.program_level ?? "unknown",
                 passwordStatus: teacher.password_status ?? "not invited",
                 portalAccessStatus:
                     teacher.portal_access_status ??
