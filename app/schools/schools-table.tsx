@@ -1,9 +1,11 @@
 "use client";
 
-import { Download } from 'lucide-react';
+import { ChevronDown, Download, Search, SlidersHorizontal, X } from 'lucide-react';
 import Link from 'next/link';
+import type { ChangeEventHandler, ReactNode } from 'react';
 import { useMemo, useState } from 'react';
 import { exportSchoolsToGoogleSheet } from './export-actions';
+import { getSchoolLifeCycleStatus } from '@/utils/school-status';
 
 type SchoolRow = {
     id: string;
@@ -25,6 +27,47 @@ type SchoolsTableProps = {
     schools: SchoolRow[];
 };
 
+type FilterSelectProps = {
+    label: string;
+    value: string;
+    onChange: ChangeEventHandler<HTMLSelectElement>;
+    children: ReactNode;
+    capitalize?: boolean;
+};
+
+function FilterSelect({
+    label,
+    value,
+    onChange,
+    children,
+    capitalize = false,
+}: FilterSelectProps) {
+    const isActive = value !== "all";
+
+    return (
+        <label className="relative block min-w-0">
+            <span className="sr-only">{label}</span>
+            <select
+                value={value}
+                onChange={onChange}
+                className={`h-11 w-full appearance-none rounded-lg border bg-white pl-3.5 pr-10 text-sm font-medium outline-none shadow-sm transition focus:border-[#c8102e] focus:ring-4 focus:ring-red-100 ${
+                    isActive
+                        ? "border-red-300 bg-red-50 text-[#a70d25]"
+                        : "border-zinc-200 text-zinc-700 hover:border-zinc-300 hover:bg-zinc-50"
+                } ${capitalize ? "capitalize" : ""}`}
+            >
+                {children}
+            </select>
+            <ChevronDown
+                className={`pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 ${
+                    isActive ? "text-[#c8102e]" : "text-zinc-400"
+                }`}
+                aria-hidden
+            />
+        </label>
+    );
+}
+
 export function SchoolsTable({ schools }: SchoolsTableProps) {
     const [search, setSearch] = useState("");
     const [selectedState, setSelectedState] = useState("all");
@@ -36,6 +79,7 @@ export function SchoolsTable({ schools }: SchoolsTableProps) {
     const [isExporting, setIsExporting] = useState(false);
     const [exportUrl, setExportUrl] = useState("");
     const [exportError, setExportError] = useState("");
+    const [selectedSchoolType, setSelectedSchoolType] = useState("all");
 
     const hasAddress = (address: string | null) => {
         return Boolean(address?.trim());
@@ -109,6 +153,7 @@ export function SchoolsTable({ schools }: SchoolsTableProps) {
         setSelectedRpm("all");
         setSelectedSchoolLevel("all");
         setSelectedMouStatus("all");
+        setSelectedSchoolType("all");
     };
 
     const exportSchoolsGoogleSheet = async () => {
@@ -136,12 +181,12 @@ export function SchoolsTable({ schools }: SchoolsTableProps) {
         selectedStatus !== "all" ||
         selectedRpm !== "all" ||
         selectedSchoolLevel !== "all" ||
-        selectedMouStatus !== "all";
+        selectedMouStatus !== "all" ||
+        selectedSchoolType !== "all";
 
-    const filteredSchools = useMemo(() => {
-        const searchText = search.trim().toLowerCase();
+    const searchText = search.trim().toLowerCase();
 
-        return schools.filter((school) => {
+    const filteredSchools = schools.filter((school) => {
             const matchesSearch =
                 !searchText ||
                 school.name.toLowerCase().includes(searchText) ||
@@ -153,10 +198,10 @@ export function SchoolsTable({ schools }: SchoolsTableProps) {
                 school.schoolLevel.toLowerCase().includes(searchText) ||
                 school.status.toLowerCase().includes(searchText) ||
                 school.mouStatus.toLowerCase().includes(searchText);
-            
+
             const matchesState =
                 selectedState === "all" || school.state === selectedState;
-            
+
             const schoolRegion = school.region ?? "N/A";
 
             const matchesRegion =
@@ -171,27 +216,68 @@ export function SchoolsTable({ schools }: SchoolsTableProps) {
             const matchesSchoolLevel =
                 selectedSchoolLevel === "all" || school.schoolLevel === selectedSchoolLevel;
             
-            const matchesMouStatus = 
+            const matchesMouStatus =
                 selectedMouStatus === "all" || school.mouStatus === selectedMouStatus;
 
-            return matchesSearch && matchesState && matchesRegion && matchesStatus && matchesRpm &&  matchesSchoolLevel && matchesMouStatus;
-        })
-    }, [schools, search, selectedState, selectedRegion, selectedStatus, selectedRpm, selectedSchoolLevel, selectedMouStatus]);
+            const schoolLifeCycleStatus = getSchoolLifeCycleStatus(
+                school.year_lia_started,
+            );
+
+            const matchesSchoolType =
+                selectedSchoolType === "all" ||
+                schoolLifeCycleStatus === selectedSchoolType;
+
+            return matchesSearch && matchesState && matchesRegion && matchesStatus && matchesRpm &&  matchesSchoolLevel && matchesMouStatus && matchesSchoolType;
+        });
 
     return (
         <>
-            <div className='mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-8'>
-                <input
-                    value={search}
-                    onChange={(event) => setSearch(event.target.value)}
-                    className='h-10 w-full min-w-0 rounded-md border border-zinc-200 px-3 text-sm outline-none focus:border-[#c8102e] focus:ring-4 focus:ring-red-100'
-                    placeholder='Search schools...'
-                />
+            <div className='mb-6'>
+                <div className='mb-3 flex items-center justify-between gap-4'>
+                    <div className='flex items-center gap-2 text-sm font-semibold text-zinc-700'>
+                        <SlidersHorizontal className='h-4 w-4 text-[#c8102e]' aria-hidden />
+                        Filters
+                        {hasActiveFilters ? (
+                            <span className='rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-[#c8102e]'>
+                                Active
+                            </span>
+                        ) : null}
+                    </div>
 
-                <select
+                    <button
+                        type='button'
+                        onClick={clearFilters}
+                        disabled={!hasActiveFilters}
+                        className='inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm font-medium text-zinc-500 transition hover:bg-red-50 hover:text-[#c8102e] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-zinc-500'
+                    >
+                        <X className='h-3.5 w-3.5' aria-hidden />
+                        Clear all
+                    </button>
+                </div>
+
+                <div className='grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4'>
+                    <label className='relative block min-w-0'>
+                        <span className='sr-only'>Search schools</span>
+                        <Search
+                            className='pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400'
+                            aria-hidden
+                        />
+                        <input
+                            value={search}
+                            onChange={(event) => setSearch(event.target.value)}
+                            className={`h-11 w-full min-w-0 rounded-lg border bg-white pl-10 pr-3 text-sm outline-none shadow-sm transition focus:border-[#c8102e] focus:ring-4 focus:ring-red-100 ${
+                                search.trim()
+                                    ? "border-red-300 bg-red-50 text-[#a70d25]"
+                                    : "border-zinc-200 hover:border-zinc-300"
+                            }`}
+                            placeholder='Search schools...'
+                        />
+                    </label>
+
+                <FilterSelect
+                    label="Filter by state"
                     value={selectedState}
                     onChange={(event) => setSelectedState(event.target.value)}
-                    className='h-10 w-full rounded-md border border-zinc-200 bg-white px-4 text-sm outline-none hover:bg-red-50 focus:border-[#c8102e] focus:ring-4 focus:ring-red-100'
                 >
                     <option value="all">All States</option>
                     {stateOptions.map((state) => (
@@ -199,75 +285,53 @@ export function SchoolsTable({ schools }: SchoolsTableProps) {
                             {state}
                         </option>
                     ))}
-                </select>
-                <select
-                    value={selectedRegion}
-                    onChange={(event) => setSelectedRegion(event.target.value)}
-                    className='h-10 w-full rounded-md border border-zinc-200 bg-white px-4 text-sm outline-none hover:bg-red-50 focus:border-[#c8102e] focus:ring-4 focus:ring-red-100'
-                >
+                </FilterSelect>
+                <FilterSelect label="Filter by region" value={selectedRegion} onChange={(event) => setSelectedRegion(event.target.value)}>
                     <option value="all">All Regions</option>
                     {regionOptions.map((region) => (
                         <option key={region} value={region}>
                             {region}
                         </option>
                     ))}
-                </select>
-                <select 
-                    value={selectedStatus}
-                    onChange={(event) => setSelectedStatus(event.target.value)}
-                    className='h-10 w-full rounded-md border border-zinc-200 bg-white px-4 text-sm capitalize outline-none hover:bg-red-50 focus:border-[#c8102e] focus:ring-4 focus:ring-red-100'
-                >
+                </FilterSelect>
+                <FilterSelect label="Filter by status" value={selectedStatus} onChange={(event) => setSelectedStatus(event.target.value)} capitalize>
                     <option value="all">All Statuses</option>
                     {statusOptions.map((status) => (
                         <option key={status} value={status}>
                             {status}
                         </option>
                     ))}
-                </select>
-                <select 
-                    value={selectedRpm}
-                    onChange={(event) => setSelectedRpm(event.target.value)}
-                    className='h-10 w-full rounded-md border border-zinc-200 bg-white px-4 text-sm outline-none hover:bg-red-50 focus:border-[#c8102e] focus:ring-4 focus:ring-red-100'
-                >
+                </FilterSelect>
+                <FilterSelect label="Filter by RPM" value={selectedRpm} onChange={(event) => setSelectedRpm(event.target.value)}>
                     <option value="all">All RPMs</option>
                     {rpmOptions.map((rpm) => (
                         <option key={rpm} value={rpm}>
                             {rpm}
                         </option>
                     ))}
-                </select>
-                <select
-                    value={selectedSchoolLevel}
-                    onChange={(event) => setSelectedSchoolLevel(event.target.value)}
-                    className='h-10 w-full rounded-md border border-zinc-200 bg-white px-4 text-sm outline-none hover:bg-red-50 focus:border-[#c8102e] focus:ring-4 focus:ring-red-100'
-                >
+                </FilterSelect>
+                <FilterSelect label="Filter by school level" value={selectedSchoolLevel} onChange={(event) => setSelectedSchoolLevel(event.target.value)}>
                     <option value="all">All Levels</option>
                     {schoolLevelOptions.map((level) => (
                         <option key={level.value} value={level.value}>
                             {level.label}
                         </option>
                     ))}
-                </select>
-                <select
-                    value={selectedMouStatus}
-                    onChange={(event) => setSelectedMouStatus(event.target.value)}
-                    className='h-10 w-full rounded-md border border-zinc-200 bg-white px-4 text-sm capitalize outline-none hover:bg-red-50 focus:border-[#c8102e] focus:ring-4 focus:ring-red-100'
-                >
+                </FilterSelect>
+                <FilterSelect label="Filter by MOU status" value={selectedMouStatus} onChange={(event) => setSelectedMouStatus(event.target.value)} capitalize>
                     <option value="all">All MOU</option>
                     {mouStatusOptions.map((mouStatus) => (
                         <option key={mouStatus} value={mouStatus}>
                             {mouStatus}
                         </option>
                     ))}
-                </select>
-                <button 
-                    type='button'
-                    onClick={clearFilters}
-                    disabled={!hasActiveFilters}
-                    className='h-10 w-full rounded-md border border-zinc-200 px-4 text-sm font-medium text-zinc-700 hover:bg-red-50 hover:text-[#c8102e] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-white disabled:hover:text-zinc-700'
-                >
-                    Clear
-                </button>
+                </FilterSelect>
+                <FilterSelect label="Filter by school type" value={selectedSchoolType} onChange={(event) => setSelectedSchoolType(event.target.value)}>
+                    <option value="all">All Schools</option>
+                    <option value="new">New Schools</option>
+                    <option value="returning">Returning</option>
+                </FilterSelect>
+                </div>
             </div>
 
             <div className='mb-6 flex flex-col gap-3 border-t border-zinc-100 pt-4 sm:flex-row sm:items-center sm:justify-between'>
