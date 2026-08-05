@@ -11,6 +11,7 @@ const validQuestionTypes: ApplicationQuestionType[] = [
     "number",
     "multiple_choice",
     "yes_no",
+    "file_upload",
 ];
 
 const lockedQuestionConfiguration = {
@@ -70,7 +71,7 @@ function normalizeQuestionKey(value: unknown) {
         .trim()
         .toLowerCase()
         .replace(/[^a-z0-9_]+/g, "_")
-        .replace(/^_+|_+/g, "")
+        .replace(/^_+|_+$/g, "")
         .slice(0, 80);
 }
 
@@ -173,4 +174,175 @@ function validateQuestions(
 async function getOwnedClass(classId: string) {
     const { supabase, profile } = await requireTeacher();
 
+    const { data: liaClass } = await supabase
+        .from("lia_classes")
+        .select("id, name, teacher_profile_id")
+        .eq("id", classId)
+        .eq("teacher_profile_id", profile.id)
+        .maybeSingle();
+
+    if (!liaClass) {
+        redirect("/teacher/classes");
+    }
+
+    return {
+        supabase,
+        profile,
+        liaClass,
+    };
+}
+
+export async function saveApplicationForm(
+    classId: string,
+    formData: FormData,
+) {
+    const { supabase, profile } = await getOwnedClass(classId);
+
+    const intent =
+        String(formData.get("intent") ?? "") === "publish"
+            ? "publish"
+            : "draft";
+
+    const title =
+        String(formData.get("title") ?? "").trim().slice(0, 150) ||
+        "Student Application";
+
+    const intro =
+        String(formData.get("intro") ?? "").trim().slice(0, 1000) || null;
+
+    let parsedQuestions: unknown;
+
+    try {
+        parsedQuestions = JSON.parse(
+            String(formData.get("questions") ?? "[]"),
+        );
+    } catch {
+        errorRedirect(classId, "invalid-questions");
+    }
+
+    const questions = validateQuestions(classId, parsedQuestions);
+
+    const { data: latestForm, error: latestFormError } = await supabase
+        .from("application_forms")
+        .select("id, version, status")
+        .eq("lia_class_id", classId)
+        .order("version", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+    if (latestFormError) {
+        errorRedirect(classId, "load-failed");
+    }
+
+    let targetFormId: string;
+
+    if (!latestForm || latestForm.status !== "draft") {
+        const nextVersion = (latestForm?.version ?? 0) + 1;
+
+        const { data: newForm, error: createError } = await supabase
+            .from("application_forms")
+            .insert({
+                lia_class_id: classId,
+                title,
+                intro,
+                version: nextVersion,
+                status: "draft",
+                created_by: profile.id,
+            })
+            .select("id")
+            .single();
+
+        if (createError || !newForm) {
+            errorRedirect(classId, "save-failed");
+        }
+
+        targetFormId = newForm.id;
+    } else {
+        targetFormId = latestForm.id;
+
+        const { error: updateError } = await supabase
+            .from("application_forms")
+            .update({
+                title,
+                intro,
+                updated_at: new Date().toISOString(),
+            })
+            .eq("id", targetFormId)
+            .eq("lia_class_id", classId);
+
+        if (updateError) {
+            errorRedirect(classId, "save-failed");
+        }
+
+        const { error: deleteError } = await supabase
+            .from("application_questions")
+            .delete()
+            .eq("application_form_id", targetFormId);
+
+        if (deleteError) {
+            errorRedirect(classId, "save-failed");
+        }
+    }
+
+    const { error: questionsError } = await supabase
+        .from("application_questions")
+        .insert(
+            questions.map((question) => ({
+                application_form_id: targetFormId,
+                ...question,
+            })),
+        );
+
+    if (questionsError) {
+        console.error("Application questions could not be saved", {
+            classId,
+            formId: targetFormId,
+            message: questionsError.message,
+            code: questionsError.code,
+            details: questionsError.details,
+        });
+
+        errorRedirect(classId, "save-failed");
+    }
+
+    if (intent === "publish") {
+        const { error: archiveError } = await supabase
+            .from("application_forms")
+            .update({
+                status: "archived",
+                updated_at: new Date().toISOString(),
+            })
+            .eq("lia_class_id", classId)
+            .eq("status", "published")
+            .neq("id", targetFormId);
+
+        if (archiveError) {
+            errorRedirect(classId, "publish-failed");
+        }
+
+        const { error: publishError } = await supabase
+            .from("application_forms")
+            .update({
+                title,
+                intro,
+                status: "published",
+                updated_at: new Date().toISOString(),
+            })
+            .eq("id", targetFormId)
+            .eq("lia_class_id", classId);
+
+        if (publishError) {
+            errorRedirect(classId, "publish-failed");
+        }
+    }
+
+    revalidatePath(`/teacher/classes/${classId}/application`);
+    revalidatePath(`/teacher/classes/${classId}/applicants`);
+    revalidatePath(`/apply`);
+
+    redirect(
+        `/teacher/classes/${classId}/application?success=${
+            intent === "publish" ? "published" : "saved"
+        }`,
+    );
 }

@@ -1,57 +1,120 @@
-import { submitApplication } from "./actions";
 import Link from "next/link";
+import { createApplicationClient } from "../application-client";
+import {
+    parseQuestionOptions,
+    type ApplicationQuestion,
+    type ApplicationQuestionType,
+} from "@/utils/application-form";
+import { submitApplication } from "./actions";
 import ApplicationForm from "./application-form";
 
 type ApplicationPageProps = {
-    params: Promise<{ applicationToken: string }>;
-    searchParams: Promise<{ error?: string; success?: string; lang?: string;}>;
+    params: Promise<{
+        applicationToken: string;
+    }>;
+    searchParams: Promise<{
+        error?: string;
+        success?: string;
+        lang?: string;
+    }>;
 };
 
-export default async function ApplicationPageProps({
+type QuestionRow = Omit<ApplicationQuestion, "options" | "question_type"> & {
+    options: unknown;
+    question_type: string;
+};
+
+export default async function ApplicationPage({
     params,
     searchParams,
 }: ApplicationPageProps) {
     const { applicationToken } = await params;
     const { error, success, lang } = await searchParams;
     const isSpanish = lang === "es";
+    const supabase = createApplicationClient();
+
+    const { data: liaClass } = await supabase
+        .from("lia_classes")
+        .select("id, name, applications_open")
+        .eq("application_token", applicationToken)
+        .maybeSingle();
+
+    const { data: publishedForm } = liaClass
+        ? await supabase
+              .from("application_forms")
+              .select("id, title, intro, version")
+              .eq("lia_class_id", liaClass.id)
+              .eq("status", "published")
+              .maybeSingle()
+        : { data: null };
+
+    let questions: ApplicationQuestion[] | null = null;
+
+    if (publishedForm) {
+        const { data: questionRows } = await supabase
+            .from("application_questions")
+            .select(`
+                id,
+                question_key,
+                label_en,
+                label_es,
+                question_type,
+                required,
+                options,
+                position,
+                is_locked
+            `)
+            .eq("application_form_id", publishedForm.id)
+            .order("position", { ascending: true });
+
+        questions =
+            (questionRows as QuestionRow[] | null)?.map((question) => ({
+                ...question,
+                question_type:
+                    question.question_type as ApplicationQuestionType,
+                options: parseQuestionOptions(question.options),
+            })) ?? [];
+    }
+
     const submitForClass = submitApplication.bind(null, applicationToken);
 
     const confirmationText = isSpanish
-    ? {
-          received: "Solicitud recibida",
-          thankYou: "Gracias por enviar tu solicitud",
-          emailSent:
-              "Tu solicitud fue enviada y se envió un correo de confirmación a la dirección que proporcionaste.",
-          submitted: "Tu solicitud de LIA fue enviada correctamente.",
-          review:
-              "Tu maestro revisará tu solicitud y se comunicará contigo con una decisión final.",
-          inbox:
-              "Revisa tu correo para encontrar la confirmación de tu solicitud. Puede tardar unos minutos en llegar.",
-          next: "¿Qué sucede después?",
-          steps: [
-              "Tu solicitud aparecerá en la lista de solicitantes de tu maestro.",
-              "Tu maestro revisará tus respuestas.",
-              "Tu maestro aceptará, rechazará o se comunicará contigo.",
-          ],
-      }
-    : {
-          received: "Application received",
-          thankYou: "Thank you for applying",
-          emailSent:
-              "Your application was submitted, and a confirmation email has been sent to the address you provided.",
-          submitted: "Your LIA application has been submitted successfully.",
-          review:
-              "Your teacher will review your application and follow up with a final decision.",
-          inbox:
-              "Check your inbox for your application confirmation. It may take a few minutes to arrive.",
-          next: "What happens next?",
-          steps: [
-              "Your application appears on your teacher's applicant list.",
-              "Your teacher reviews your responses.",
-              "Your teacher accepts, declines, or follows up with you.",
-          ],
-      };
-      
+        ? {
+              received: "Solicitud recibida",
+              thankYou: "Gracias por enviar tu solicitud",
+              emailSent:
+                  "Tu solicitud fue enviada y se envió un correo de confirmación a la dirección que proporcionaste.",
+              submitted: "Tu solicitud de LIA fue enviada correctamente.",
+              review:
+                  "Tu maestro revisará tu solicitud y se comunicará contigo con una decisión final.",
+              inbox:
+                  "Revisa tu correo para encontrar la confirmación de tu solicitud. Puede tardar unos minutos en llegar.",
+              next: "¿Qué sucede después?",
+              steps: [
+                  "Tu solicitud aparecerá en la lista de solicitantes de tu maestro.",
+                  "Tu maestro revisará tus respuestas.",
+                  "Tu maestro aceptará, rechazará o se comunicará contigo.",
+              ],
+          }
+        : {
+              received: "Application received",
+              thankYou: "Thank you for applying",
+              emailSent:
+                  "Your application was submitted, and a confirmation email has been sent to the address you provided.",
+              submitted:
+                  "Your LIA application has been submitted successfully.",
+              review:
+                  "Your teacher will review your application and follow up with a final decision.",
+              inbox:
+                  "Check your inbox for your application confirmation. It may take a few minutes to arrive.",
+              next: "What happens next?",
+              steps: [
+                  "Your application appears on your teacher's applicant list.",
+                  "Your teacher reviews your responses.",
+                  "Your teacher accepts, declines, or follows up with you.",
+              ],
+          };
+
     if (success === "submitted" || success === "email-sent") {
         const confirmationEmailSent = success === "email-sent";
 
@@ -66,9 +129,11 @@ export default async function ApplicationPageProps({
                         <p className="text-sm font-semibold">
                             {confirmationText.received}
                         </p>
+
                         <h1 className="mt-2 text-3xl font-semibold text-zinc-950">
                             {confirmationText.thankYou}
                         </h1>
+
                         <p className="mt-3 text-sm leading-6">
                             {confirmationEmailSent
                                 ? confirmationText.emailSent
@@ -88,13 +153,36 @@ export default async function ApplicationPageProps({
                         <h2 className="text-sm font-semibold text-zinc-950">
                             {confirmationText.next}
                         </h2>
+
                         <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm leading-6 text-zinc-700">
                             {confirmationText.steps.map((step) => (
                                 <li key={step}>{step}</li>
                             ))}
                         </ol>
                     </div>
+                </section>
+            </main>
+        );
+    }
 
+    if (!liaClass || !liaClass.applications_open) {
+        return (
+            <main className="min-h-screen bg-[#f8f4f4] px-4 py-10 text-zinc-950">
+                <section className="mx-auto max-w-2xl rounded-md border border-red-100 bg-white p-6 shadow-sm">
+                    <h1 className="text-2xl font-semibold">
+                        Application unavailable
+                    </h1>
+
+                    <p className="mt-3 text-sm text-zinc-600">
+                        This application is currently closed or unavailable.
+                    </p>
+
+                    <Link
+                        href="/apply"
+                        className="mt-5 inline-block text-sm font-semibold text-[#c4122f]"
+                    >
+                        Choose another class
+                    </Link>
                 </section>
             </main>
         );
@@ -106,8 +194,17 @@ export default async function ApplicationPageProps({
                 <p className="text-sm font-semibold uppercase tracking-wide text-[#c4122f]">
                     Latinos In Action
                 </p>
-                
-                <ApplicationForm action={submitForClass} error={error} />
+
+                <ApplicationForm
+                    action={submitForClass}
+                    error={error}
+                    title={publishedForm?.title ?? "Student Application"}
+                    intro={
+                        publishedForm?.intro ??
+                        "Complete this application if you are interested in joining LIA."
+                    }
+                    questions={questions}
+                />
             </section>
         </main>
     );

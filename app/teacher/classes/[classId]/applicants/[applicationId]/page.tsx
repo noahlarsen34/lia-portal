@@ -8,6 +8,8 @@ import {
 } from "../actions";
 import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
 import { studentTierOptions } from "@/utils/student-tier";
+import { createAdminClient } from "@/utils/supabase/admin";
+import { isApplicationFileAnswer } from "@/utils/application-form";
 
 type ApplicantDetailPageProps = {
     params: Promise<{
@@ -124,6 +126,16 @@ export default async function ApplicantDetailPage({
                 teacher_comments,
                 submitted_at,
                 reviewed_at,
+                application_answers (
+                    id,
+                    question_label,
+                    answer,
+                    application_questions (
+                        question_key,
+                        position,
+                        is_locked
+                    )
+                ),
                 lia_classes (
                     id,
                     name,
@@ -150,6 +162,53 @@ export default async function ApplicantDetailPage({
     if (!application || !liaClass || liaClass.teacher_profile_id !== profile.id) {
         notFound();
     }
+
+    const applicationAnswers = [...(application.application_answers ?? [])]
+        .filter((answer) => {
+            const question = Array.isArray(answer.application_questions)
+                ? answer.application_questions[0]
+                : answer.application_questions;
+
+            return !question?.is_locked;
+        })
+        .sort((first, second) => {
+            const firstQuestion = Array.isArray(first.application_questions)
+                ? first.application_questions[0]
+                : first.application_questions;
+            const secondQuestion = Array.isArray(second.application_questions)
+                ? second.application_questions[0]
+                : second.application_questions;
+
+            return (
+                (firstQuestion?.position ?? 0) -
+                (secondQuestion?.position ?? 0)
+            );
+        });
+
+    const admin = createAdminClient();
+
+    const applicationAnswersWithFiles = await Promise.all(
+        applicationAnswers.map(async (answer) => {
+            if (!isApplicationFileAnswer(answer.answer)) {
+                return {
+                    ...answer,
+                    downloadUrl: null,
+                }
+            }
+
+            const { data, error: signedUrlError } =
+                await admin.storage
+                    .from(answer.answer.bucket)
+                    .createSignedUrl(answer.answer.path, 60 * 10);
+
+            return {
+                ...answer,
+                downloadUrl: signedUrlError
+                    ? null
+                    : data?.signedUrl ?? null,
+            };
+        }),
+    );
 
     const studentName = `${application.first_name} ${application.last_name}`.trim();
     const saveReview = updateApplicationReview.bind(null, classId, application.id);
@@ -350,19 +409,66 @@ export default async function ApplicantDetailPage({
 
             <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1fr)_22rem]">
                 <section className="space-y-5">
-                    {answerSections.map((section) => (
-                        <article
-                            key={section.title}
-                            className="rounded-md border border-red-100 bg-white p-5 shadow-sm sm:p-6"
-                        >
-                            <h2 className="text-lg font-semibold text-zinc-950">
-                                {section.title}
-                            </h2>
-                            <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-6 text-zinc-700 [overflow-wrap:anywhere]">
-                                {formatAnswer(section.value)}
-                            </p>
-                        </article>
-                    ))}
+                    {applicationAnswersWithFiles.length > 0
+                        ? applicationAnswersWithFiles.map((answer) => (
+                              <article
+                                  key={answer.id}
+                                  className="rounded-md border border-red-100 bg-white p-5 shadow-sm sm:p-6"
+                              >
+                                  <h2 className="text-lg font-semibold text-zinc-950">
+                                      {answer.question_label}
+                                  </h2>
+                                  {isApplicationFileAnswer(answer.answer) ? (
+                                      <div className="mt-3">
+                                          <p className="text-sm text-zinc-600">
+                                              {answer.answer.originalName}
+                                          </p>
+
+                                          <p className="mt-1 text-xs text-zinc-500">
+                                              {(answer.answer.size / 1024 / 1024).toFixed(2)} MB
+                                          </p>
+
+                                          {answer.downloadUrl ? (
+                                              <a
+                                                  href={answer.downloadUrl}
+                                                  target="_blank"
+                                                  rel="noreferrer"
+                                                  className="mt-3 inline-flex h-10 items-center justify-center rounded-md bg-[#c4122f] px-4 text-sm font-semibold text-white hover:bg-[#a70d25]"
+                                              >
+                                                  View Recommendation
+                                              </a>
+                                          ) : (
+                                              <p className="mt-3 text-sm font-medium text-red-600">
+                                                  The file link could not be created.
+                                              </p>
+                                          )}
+                                      </div>
+                                  ) : (
+                                      <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-6 text-zinc-700 [overflow-wrap:anywhere]">
+                                          {formatAnswer(
+                                              typeof answer.answer === "string"
+                                                  ? answer.answer
+                                                  : answer.answer === null
+                                                    ? null
+                                                    : JSON.stringify(answer.answer),
+                                          )}
+                                      </p>
+                                  )}
+                              </article>
+                          ))
+                        : answerSections.map((section) => (
+                              <article
+                                  key={section.title}
+                                  className="rounded-md border border-red-100 bg-white p-5 shadow-sm sm:p-6"
+                              >
+                                  <h2 className="text-lg font-semibold text-zinc-950">
+                                      {section.title}
+                                  </h2>
+                                  <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-6 text-zinc-700 [overflow-wrap:anywhere]">
+                                      {formatAnswer(section.value)}
+                                  </p>
+                              </article>
+                          ))}
                 </section>
 
                 <aside className="space-y-5">

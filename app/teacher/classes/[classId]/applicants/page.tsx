@@ -134,12 +134,23 @@ export default async function ApplicantsPage({
                         </p>
                     </div>
 
-                    <Link
-                        href={applicationUrl}
-                        className="inline-flex h-10 items-center justify-center rounded-md bg-[#c4122f] px-4 text-sm font-semibold text-white hover:bg-[#a70d25]"
-                    >
-                        Open Application
-                    </Link>
+                    <div className="flex flex-wrap gap-2">
+                        <Link
+                            href={`/teacher/classes/${liaClass.id}/application`}
+                            className="inline-flex h-10 items-center justify-center rounded-md border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-700 hover:bg-red-50 hover:text-[#c4122f]"
+                        >
+                            Customize Application
+                        </Link>
+
+                        <Link
+                            href={applicationUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex h-10 items-center justify-center rounded-md bg-[#c4122f] px-4 text-sm font-semibold text-white hover:bg-[#a70d25]"
+                        >
+                            Open Application
+                        </Link>
+                    </div>
                 </div>
 
                 <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto]">

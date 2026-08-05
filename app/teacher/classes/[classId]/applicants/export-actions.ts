@@ -2,6 +2,7 @@
 
 import { google } from "googleapis";
 import { requireTeacher } from "@/utils/role-guards";
+import { isApplicationFileAnswer } from "@/utils/application-form";
 
 const validStatuses = [
     "all",
@@ -69,7 +70,16 @@ export async function exportApplicantsToGoogleSheet(
                 recommendation_complete,
                 completed_interview,
                 interview_again,
-                submitted_at 
+                submitted_at,
+                application_answers (
+                    question_label,
+                    answer,
+                    application_questions (
+                        question_key,
+                        position,
+                        is_locked
+                    )
+                )
             `)
         .eq("lia_class_id", liaClass.id)
         .is("archived_at", null)
@@ -165,6 +175,31 @@ export async function exportApplicantsToGoogleSheet(
         },
     });
 
+    const dynamicQuestionLabels = Array.from(
+        applications.reduce((labels, application) => {
+            for (const answer of application.application_answers ?? []) {
+                const question = Array.isArray(answer.application_questions)
+                    ? answer.application_questions[0]
+                    : answer.application_questions;
+
+                if (!question || question.is_locked) {
+                    continue;
+                }
+
+                const currentPosition = labels.get(answer.question_label);
+                const position = question.position ?? Number.MAX_SAFE_INTEGER;
+
+                if (currentPosition === undefined || position < currentPosition) {
+                    labels.set(answer.question_label, position);
+                }
+            }
+
+            return labels;
+        }, new Map<string, number>()),
+    )
+        .sort((first, second) => first[1] - second[1])
+        .map(([label]) => label);
+
     const headers = [
         "#",
         "First Name",
@@ -180,24 +215,43 @@ export async function exportApplicantsToGoogleSheet(
         "Interview Complete",
         "Interview Again",
         "Submitted",
+        ...dynamicQuestionLabels,
     ];
 
-    const rows = applications.map((application, index) => [
-        index + 1,
-        application.first_name,
-        application.last_name,
-        `${application.first_name} ${application.last_name}`.trim(),
-        application.email || "N/A",
-        application.grade_level || "N/A",
-        application.advisory_teacher || "N/A",
-        application.color_team || "N/A",
-        application.status,
-        yesOrNo(application.application_complete),
-        yesOrNo(application.recommendation_complete),
-        yesOrNo(application.completed_interview),
-        yesOrNo(application.interview_again),
-        formatDate(application.submitted_at),
-    ]);
+    const rows = applications.map((application, index) => {
+        const answersByLabel = new Map(
+            (application.application_answers ?? []).map((answer) => [
+                answer.question_label,
+                typeof answer.answer === "string"
+                    ? answer.answer
+                    : isApplicationFileAnswer(answer.answer)
+                        ? `Uploaded file: ${answer.answer.originalName}`
+                        : answer.answer === null
+                            ? ""
+                            : JSON.stringify(answer.answer)
+            ]),
+        );
+
+        return [
+            index + 1,
+            application.first_name,
+            application.last_name,
+            `${application.first_name} ${application.last_name}`.trim(),
+            application.email || "N/A",
+            application.grade_level || "N/A",
+            application.advisory_teacher || "N/A",
+            application.color_team || "N/A",
+            application.status,
+            yesOrNo(application.application_complete),
+            yesOrNo(application.recommendation_complete),
+            yesOrNo(application.completed_interview),
+            yesOrNo(application.interview_again),
+            formatDate(application.submitted_at),
+            ...dynamicQuestionLabels.map(
+                (label) => answersByLabel.get(label) || "N/A",
+            ),
+        ];
+    });
 
     await sheets.spreadsheets.values.update({
         spreadsheetId,

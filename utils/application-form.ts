@@ -3,7 +3,49 @@ export type ApplicationQuestionType =
     | "long_text"
     | "number"
     | "multiple_choice"
-    | "yes_no";
+    | "yes_no"
+    | "file_upload";
+
+export const APPLICATION_RECOMMENDATION_BUCKET =
+    "application-recommendations";
+
+export const MAX_APPLICATION_FILE_SIZE = 10 * 1024 * 1024;
+
+export const ALLOWED_APPLICATION_FILE_TYPES = [
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "image/jpeg",
+    "image/png",
+] as const;
+
+export type ApplicationFileAnswer = {
+    kind: "file";
+    bucket: string;
+    path: string;
+    originalName: string;
+    contentType: string;
+    size: number;
+};
+
+export function isApplicationFileAnswer(
+    value: unknown,
+): value is ApplicationFileAnswer {
+    if (!value || typeof value !== "object" || Array.isArray(value)) {
+        return false;
+    }
+
+    const answer = value as Record<string, unknown>;
+
+    return (
+        answer.kind === "file" &&
+        typeof answer.bucket === "string" &&
+        typeof answer.path === "string" &&
+        typeof answer.originalName === "string" &&
+        typeof answer.contentType === "string" &&
+        typeof answer.size === "number"
+    );
+}
 
 export type ApplicationQuestion = {
     id: string;
