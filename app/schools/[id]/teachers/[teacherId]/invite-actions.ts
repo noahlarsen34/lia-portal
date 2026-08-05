@@ -101,14 +101,26 @@ export async function inviteTeacher(
 
     const authUserId = invitation.user.id;
 
-    if (teacher.profile_id && teacher.profile_id !== authUserId) {
+    const hasProfileMismatch =
+        Boolean(teacher.profile_id) && teacher.profile_id !== authUserId;
+
+    if (hasProfileMismatch && isActivated) {
         console.error("Teacher invitation returned a different auth user", {
             teacherId,
             existingProfileId: teacher.profile_id,
             invitedProfileId: authUserId,
+            reason: "activated-account-mismatch",
         });
 
         redirect(`${returnPath}?invite=link-failed`);
+    }
+
+    if (hasProfileMismatch) {
+        console.warn("Relinking unactivated teacher to current auth user", {
+            teacherId,
+            previousProfileId: teacher.profile_id,
+            invitedProfileId: authUserId,
+        });
     }
 
     const { error: profileError } = await admin
