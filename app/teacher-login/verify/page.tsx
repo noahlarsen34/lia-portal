@@ -3,6 +3,7 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { verifyTeacherCode } from "../actions";
+import { EmailDeliveryStatus } from "./email-delivery-status";
 
 type VerifyTeacherCodePageProps = {
     searchParams: Promise<{
@@ -81,6 +82,8 @@ export default async function VerifyTeacherCodePage({
                         {errorMessage}
                     </div>
                 ) : null}
+
+                <EmailDeliveryStatus />
 
                 <form
                     action={verifyTeacherCode}
