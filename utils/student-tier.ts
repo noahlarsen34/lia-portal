@@ -4,17 +4,14 @@ export const studentTierOptions = [
     {
         value: "tier_1",
         label: "Tier 1",
-        description: "Top 30% / high achiever",
     },
     {
         value: "tier_2",
         label: "Tier 2",
-        description: "Middle 40% / could do better",
     },
     {
         value: "tier_3",
         label: "Tier 3",
-        description: "Bottom 30% / needs support",
     },
 ] as const;
 

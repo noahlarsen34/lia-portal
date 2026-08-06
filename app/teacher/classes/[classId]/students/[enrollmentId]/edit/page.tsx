@@ -227,7 +227,7 @@ export default async function EditStudentPage({
                             <option value="">No tier selected</option>
                             {studentTierOptions.map((tier) => (
                                 <option key={tier.value} value={tier.value}>
-                                    {tier.label} - {tier.description}
+                                    {tier.label}
                                 </option>
                             ))}
                         </select>

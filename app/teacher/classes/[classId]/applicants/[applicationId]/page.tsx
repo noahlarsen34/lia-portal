@@ -378,7 +378,7 @@ export default async function ApplicantDetailPage({
                                 <option value="">Choose tier</option>
                                 {studentTierOptions.map((tier) => (
                                     <option key={tier.value} value={tier.value}>
-                                        {tier.label} - {tier.description}
+                                        {tier.label}
                                     </option>
                                 ))}
                             </select>
