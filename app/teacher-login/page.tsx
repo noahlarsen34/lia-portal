@@ -1,13 +1,18 @@
 import Image from "next/image";
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import { getHomePathForRole } from "@/utils/role-guards";
-import { requestTeacherCode } from "./actions";
+import {
+    requestTeacherCode,
+    resendTeacherActivation,
+} from "./actions";
 
 type TeacherLoginPageProps = {
     searchParams: Promise<{
         error?: string;
+        notice?: string;
     }>;
 };
 
@@ -21,16 +26,39 @@ const errorMessages: Record<string, string> ={
         "The login code could not be requested from our email service. Please wait a moment and try again. If this continues, contact LIA support.",
     "code-rate-limited":
         "Too many login codes were requested. Wait a few minutes before trying again.",
+    "activation-rate-limited":
+        "An activation email was recently requested. Wait at least one minute before requesting another one.",
+    "activation-send-failed":
+        "The activation email could not be sent. Please try again or contact LIA support.",
 };
+
+function maskEmail(email: string) {
+    const [localPart, domain] = email.split("@");
+
+    if (!localPart || !domain) {
+        return email;
+    }
+
+    return `${localPart.slice(0, 2)}***@${domain}`;
+}
 
 export default async function TeacherLoginPage({
     searchParams,
 }: TeacherLoginPageProps) {
-    const { error } = await searchParams;
+    const { error, notice } = await searchParams;
     const errorMessage = error
         ? errorMessages[error] ??
             "Something went wrong. Please try again."
         : null;
+    const cookieStore = await cookies();
+    const pendingEmail = cookieStore.get(
+        "lia_pending_teacher_email",
+    )?.value;
+    const canResendActivation =
+        Boolean(pendingEmail) &&
+        (error === "activation-required" ||
+            error === "activation-rate-limited" ||
+            error === "activation-send-failed");
     
     const supabase = await createClient();
 
@@ -80,6 +108,44 @@ export default async function TeacherLoginPage({
                 {errorMessage ? (
                     <div className="mb-5 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                         {errorMessage}
+                    </div>
+                ) : null}
+
+                {notice === "activation-sent" ? (
+                    <div className="mb-5 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+                        A new activation email was requested. Open it and select
+                        <span className="font-semibold"> Activate My Account</span>
+                        , then confirm activation on the portal page.
+                    </div>
+                ) : null}
+
+                {notice === "already-activated" ? (
+                    <div className="mb-5 rounded-md border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
+                        This account is already activated. Request a login code below.
+                    </div>
+                ) : null}
+
+                {canResendActivation && pendingEmail ? (
+                    <div className="mb-5 rounded-md border border-zinc-200 bg-zinc-50 p-4">
+                        <p className="text-sm font-semibold text-zinc-900">
+                            Activation status: Not completed
+                        </p>
+                        <p className="mt-1 text-sm text-zinc-600">
+                            Destination: {maskEmail(pendingEmail)}
+                        </p>
+                        <p className="mt-3 text-xs leading-5 text-zinc-500">
+                            Opening the invitation alone does not activate the account.
+                            Select Activate My Account in the email and confirm it on
+                            the portal page.
+                        </p>
+                        <form action={resendTeacherActivation} className="mt-4">
+                            <button
+                                type="submit"
+                                className="inline-flex h-10 w-full items-center justify-center rounded-md border border-[#c8102e] bg-white px-4 text-sm font-semibold text-[#c8102e] transition hover:bg-red-50"
+                            >
+                                Resend Activation Email
+                            </button>
+                        </form>
                     </div>
                 ) : null}
 

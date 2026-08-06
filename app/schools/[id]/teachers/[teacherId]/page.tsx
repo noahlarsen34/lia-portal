@@ -81,7 +81,7 @@ export default async function TeacherPage({ params, searchParams, }: TeacherPage
     const { data: teacher } = await supabase
         .from("teachers")
         .select(
-            "id, first_name, last_name, name, email, phone, status, username, program_level, notes, password_status, is_new_teacher, profile_id, portal_access_status, invited_at, activated_at"
+            "id, first_name, last_name, name, email, phone, status, username, program_level, notes, password_status, is_new_teacher, profile_id, portal_access_status, invited_at, activated_at, last_portal_login_at"
         )
         .eq("id", teacherId)
         .eq("school_id", id)
@@ -95,7 +95,7 @@ export default async function TeacherPage({ params, searchParams, }: TeacherPage
         await supabase
             .from("email_deliveries")
             .select(
-                "id, subject, email_kind, status, status_message, bounce_type, bounce_subtype, requested_at, event_at",
+                "id, subject, email_kind, status, status_message, bounce_type, bounce_subtype, requested_at, event_at, reference_code",
             )
             .eq("teacher_id", teacher.id)
             .order("requested_at", { ascending: false })
@@ -270,6 +270,19 @@ export default async function TeacherPage({ params, searchParams, }: TeacherPage
                             </div>
 
                             <div>
+                                <p className="text-sm uppercase text-zinc-500">
+                                    Last Successful Login
+                                </p>
+                                <p className="mt-1 font-semibold">
+                                    {teacher.last_portal_login_at
+                                        ? formatDeliveryDate(
+                                              teacher.last_portal_login_at,
+                                          )
+                                        : "Not yet"}
+                                </p>
+                            </div>
+
+                            <div>
                                 <p className='text-sm uppercase text-zinc-500'>
                                     First Year With LIA
                                 </p>
@@ -308,6 +321,11 @@ export default async function TeacherPage({ params, searchParams, }: TeacherPage
                                                             delivery.requested_at,
                                                     )}
                                                 </p>
+                                                {delivery.reference_code ? (
+                                                    <p className="mt-1 text-xs font-semibold text-zinc-600">
+                                                        Reference: {delivery.reference_code}
+                                                    </p>
+                                                ) : null}
                                             </div>
 
                                             <span

@@ -51,6 +51,7 @@ export async function activateTeacherAccount(formData: FormData) {
             portal_access_status: "active",
             password_status: "active",
             activated_at: teacher.activated_at ?? new Date().toISOString(),
+            last_portal_login_at: new Date().toISOString(),
         })
         .eq("id", teacher.id)
         .eq("profile_id", user.id);

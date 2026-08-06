@@ -5,6 +5,10 @@ import { requireStaff } from "@/utils/role-guards";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { escapeHtml, renderBrandedEmail, sendEmail } from "@/utils/email";
 
+function createReferenceCode() {
+    return `LIA-${crypto.randomUUID().replaceAll("-", "").slice(0, 8).toUpperCase()}`;
+}
+
 export async function inviteTeacher(
     schoolId: string,
     teacherId: string,
@@ -237,6 +241,7 @@ export async function inviteTeacher(
             status: "failed",
             status_message: emailResult.error,
             event_at: new Date().toISOString(),
+            reference_code: createReferenceCode(),
         });
 
         redirect(`${returnPath}?invite=send-failed`);
@@ -254,6 +259,7 @@ export async function inviteTeacher(
             email_kind: isActivated ? "access_link" : "invitation",
             status: "sent",
             event_at: new Date().toISOString(),
+            reference_code: createReferenceCode(),
         });
 
     if (deliveryLogError) {

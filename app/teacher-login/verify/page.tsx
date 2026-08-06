@@ -8,6 +8,7 @@ import { EmailDeliveryStatus } from "./email-delivery-status";
 type VerifyTeacherCodePageProps = {
     searchParams: Promise<{
         error?: string;
+        resent?: string;
     }>;
 };
 
@@ -28,7 +29,7 @@ function maskEmail(email: string) {
 export default async function VerifyTeacherCodePage({
     searchParams,
 }: VerifyTeacherCodePageProps) {
-    const { error } = await searchParams;
+    const { error, resent } = await searchParams;
     const cookieStore = await cookies();
 
     const email = cookieStore.get(
@@ -42,9 +43,12 @@ export default async function VerifyTeacherCodePage({
     const errorMessage =
         error === "invalid-code"
             ? "That code is invalid or has expired. Please check the code and try again."
+            : error === "code-cooldown"
+                ? "A code was requested recently. Wait for the countdown before requesting another one."
             : error
                 ? "The code could not be verified."
                 : null;
+    const maskedEmail = maskEmail(email);
     
     return (
         <main className="flex min-h-screen items-center justify-center bg-[#f8f4f4] px-6 py-10 text-zinc-950">
@@ -71,7 +75,7 @@ export default async function VerifyTeacherCodePage({
                     <p className="mt-2 text-center text-sm leading-6 text-zinc-600">
                         We requested a six-digit code for {" "}
                         <span className="font-semibold text-zinc-800">
-                            {maskEmail(email)}
+                            {maskedEmail}
                         </span>
                         . Delivery may take a few minutes on school email systems.
                     </p>
@@ -83,7 +87,17 @@ export default async function VerifyTeacherCodePage({
                     </div>
                 ) : null}
 
-                <EmailDeliveryStatus />
+                {resent === "true" ? (
+                    <div className="mb-5 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+                        A new code was requested. Use the newest code you receive;
+                        older codes may no longer work.
+                    </div>
+                ) : null}
+
+                <EmailDeliveryStatus
+                    maskedEmail={maskedEmail}
+                    recipientEmail={email}
+                />
 
                 <form
                     action={verifyTeacherCode}

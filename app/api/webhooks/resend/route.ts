@@ -14,6 +14,10 @@ const trackedEvents = new Set([
     "email.complained",
 ]);
 
+function createReferenceCode() {
+    return `LIA-${crypto.randomUUID().replaceAll("-", "").slice(0, 8).toUpperCase()}`;
+}
+
 function getDeliveryStatus(eventType: string) {
     switch (eventType) {
         case "email.sent":
@@ -171,7 +175,10 @@ export async function POST(request: Request) {
 
     const result = deliveryId
         ? await admin.from("email_deliveries").update(delivery).eq("id", deliveryId)
-        : await admin.from("email_deliveries").insert(delivery);
+        : await admin.from("email_deliveries").insert({
+              ...delivery,
+              reference_code: createReferenceCode(),
+          });
 
     if (result.error) {
         console.error("Could not store Resend delivery event", {

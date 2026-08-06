@@ -57,7 +57,7 @@ export async function GET() {
 
     const { data: delivery, error } = await admin
         .from("email_deliveries")
-        .select("status, updated_at")
+        .select("status, updated_at, requested_at, reference_code")
         .ilike("recipient", email)
         .eq("email_kind", "login_code")
         .gte("requested_at", requestWindowStart)
@@ -82,8 +82,9 @@ export async function GET() {
                 ? getPublicStatus(delivery.status)
                 : ("pending" satisfies PublicDeliveryStatus),
             updatedAt: delivery?.updated_at ?? null,
+            requestedAt: delivery?.requested_at ?? null,
+            referenceCode: delivery?.reference_code ?? null,
         },
         { headers: { "Cache-Control": "no-store" } },
     );
 }
-

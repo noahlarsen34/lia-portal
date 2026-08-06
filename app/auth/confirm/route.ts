@@ -80,6 +80,7 @@ export async function GET(request: NextRequest) {
             activated_at: teacher.activated_at ?? activatedAt,
 
             password_status: "active",
+            last_portal_login_at: new Date().toISOString(),
         })
         .eq("id", teacher.id)
         .eq("profile_id", user.id);
