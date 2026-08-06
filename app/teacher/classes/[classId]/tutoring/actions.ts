@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireTeacher } from "@/utils/role-guards";
+import { createAdminClient } from "@/utils/supabase/admin";
 
 function getString(formData: FormData, key: string) {
     const value = formData.get(key);
@@ -146,8 +147,22 @@ export async function updateTutoringLog(
     redirect(`/teacher/classes/${classId}/tutoring`);
 }
 
-export async function deleteTutoringLog(classId: string, logId: string) {
+export async function deleteTutoringLog(
+    classId: string,
+    logId: string,
+) {
     const { supabase } = await verifyTeacherOwnsClass(classId);
+
+    const { data: existingLog } = await supabase
+        .from("tutoring_logs")
+        .select("id, proof_file_path")
+        .eq("id", logId)
+        .eq("lia_class_id", classId)
+        .maybeSingle();
+
+    if (!existingLog) {
+        throw new Error("Could not find this tutoring log.");
+    }
 
     const { data: deletedLog, error } = await supabase
         .from("tutoring_logs")
@@ -156,9 +171,25 @@ export async function deleteTutoringLog(classId: string, logId: string) {
         .eq("lia_class_id", classId)
         .select("id")
         .maybeSingle();
-    
+
     if (error || !deletedLog) {
         throw new Error("Could not delete this tutoring log.");
+    }
+
+    if (existingLog.proof_file_path) {
+        const admin = createAdminClient();
+
+        const { error: storageError } = await admin.storage
+            .from("tutoring-log-proof")
+            .remove([existingLog.proof_file_path]);
+
+        if (storageError) {
+            console.error("Could not delete tutoring proof file", {
+                logId,
+                filePath: existingLog.proof_file_path,
+                message: storageError.message,
+            });
+        }
     }
 
     revalidatePath(`/teacher/classes/${classId}/tutoring`);

@@ -29,27 +29,71 @@ export async function requestTeacherCode(formData: FormData) {
         .ilike("email", email)
         .maybeSingle();
     
-    const canSignIn =
-        teacher?.profile_id &&
-        teacher.status === "active" &&
-        teacher.portal_access_status === "active";
-    
-    if (canSignIn) {
-        const supabase = await createClient();
+    if (!teacher || teacher.status !== "active") {
+        redirect("/teacher-login?error=access-unavailable");
+    }
 
-        const { error } = await supabase.auth.signInWithOtp({
-            email,
-            options: {
-                shouldCreateUser: false,
-            },
+    if (
+        teacher.portal_access_status !== "active" ||
+        !teacher.profile_id
+    ) {
+        redirect("/teacher-login?error=activation-required");
+    }
+
+    const { data: deliveryRequest, error: deliveryRequestError } =
+        await admin
+            .from("email_deliveries")
+            .insert({
+                teacher_id: teacher.id,
+                recipient: email,
+                subject: "Your LIA Portal Login Code",
+                email_kind: "login_code",
+                status: "requested",
+            })
+            .select("id")
+            .single();
+
+    if (deliveryRequestError) {
+        console.error("Could not record teacher OTP request", {
+            teacherId: teacher.id,
+            message: deliveryRequestError.message,
+        });
+    }
+
+    const supabase = await createClient();
+    const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+            shouldCreateUser: false,
+        },
+    });
+
+    if (error) {
+        console.error("Teacher OTP request failed", {
+            teacherId: teacher.id,
+            message: error.message,
+            code: error.code,
+            status: error.status,
         });
 
-        if (error) {
-            console.error("Teacher OTP request failed", {
-                teacherId: teacher.id,
-                message: error.message,
-            });
+        if (deliveryRequest?.id) {
+            await admin
+                .from("email_deliveries")
+                .update({
+                    status: "failed",
+                    status_message: error.message,
+                    event_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                })
+                .eq("id", deliveryRequest.id);
         }
+
+        const errorCode =
+            error.code === "over_email_send_rate_limit"
+                ? "code-rate-limited"
+                : "code-send-failed";
+
+        redirect(`/teacher-login?error=${errorCode}`);
     }
 
     const cookieStore = await cookies();

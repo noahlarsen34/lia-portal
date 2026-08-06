@@ -1,7 +1,7 @@
 import Link from 'next/link';
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { DashboardSidebar } from '@/components/dashboard-sidebar';
-import { createClient } from '@/utils/supabase/server';
+import { requireStaff } from '@/utils/role-guards';
 import { inviteTeacher } from './invite-actions';
 
 type TeacherPageProps = {
@@ -14,18 +14,63 @@ type TeacherPageProps = {
     }>;
 };
 
+function formatDeliveryStatus(status: string) {
+    switch (status) {
+        case "requested":
+            return "Requested";
+        case "sent":
+            return "Sent to provider";
+        case "delivered":
+            return "Delivered";
+        case "delayed":
+            return "Delayed";
+        case "bounced":
+            return "Bounced";
+        case "failed":
+            return "Failed";
+        case "suppressed":
+            return "Suppressed";
+        case "complained":
+            return "Marked as spam";
+        default:
+            return status;
+    }
+}
+
+function getDeliveryStatusClassName(status: string) {
+    switch (status) {
+        case "delivered":
+            return "bg-green-50 text-green-700";
+        case "requested":
+        case "sent":
+            return "bg-blue-50 text-blue-700";
+        case "delayed":
+            return "bg-amber-50 text-amber-700";
+        case "bounced":
+        case "failed":
+        case "suppressed":
+        case "complained":
+            return "bg-red-50 text-red-700";
+        default:
+            return "bg-zinc-100 text-zinc-700";
+    }
+}
+
+function formatDeliveryDate(value: string | null) {
+    if (!value) {
+        return "Unknown time";
+    }
+
+    return new Intl.DateTimeFormat("en-US", {
+        dateStyle: "medium",
+        timeStyle: "short",
+    }).format(new Date(value));
+}
+
 export default async function TeacherPage({ params, searchParams, }: TeacherPageProps) {
     const { id, teacherId } = await params;
     const { invite } = await searchParams;
-    const supabase = await createClient();
-
-    const {
-        data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-        redirect('/login');
-    }
+    const { supabase } = await requireStaff();
 
     const { data: school } = await supabase
         .from("schools")
@@ -44,6 +89,23 @@ export default async function TeacherPage({ params, searchParams, }: TeacherPage
     
     if (!school || !teacher) {
         notFound();
+    }
+
+    const { data: emailDeliveries, error: emailDeliveriesError } =
+        await supabase
+            .from("email_deliveries")
+            .select(
+                "id, subject, email_kind, status, status_message, bounce_type, bounce_subtype, requested_at, event_at",
+            )
+            .eq("teacher_id", teacher.id)
+            .order("requested_at", { ascending: false })
+            .limit(10);
+
+    if (emailDeliveriesError) {
+        console.error("Could not load teacher email delivery history", {
+            teacherId: teacher.id,
+            message: emailDeliveriesError.message,
+        });
     }
 
     const displayName = 
@@ -103,10 +165,10 @@ export default async function TeacherPage({ params, searchParams, }: TeacherPage
                     {invite === "sent" || invite === "resent" || invite === "access-sent" ? (
                         <div className='mt-5 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700'>
                             {invite === "access-sent"
-                                ? `A new portal access email was sent to ${teacher.email}.`
+                                ? `A new portal access email was submitted for ${teacher.email}. Check Email Delivery below for its final status.`
                                 : invite === "resent"
-                                ? `A new invitation was sent to ${teacher.email}. The old link can be ignored.`
-                                : `Invitation sent to ${teacher.email}`}
+                                ? `A new invitation was submitted for ${teacher.email}. The old link can be ignored. Check Email Delivery below for its final status.`
+                                : `An invitation was submitted for ${teacher.email}. Check Email Delivery below for its final status.`}
                         </div>
                     ) : null}
 
@@ -214,6 +276,74 @@ export default async function TeacherPage({ params, searchParams, }: TeacherPage
                                 <p className='mt-1 font-semibold'>
                                     {teacher.is_new_teacher ? "Yes": "No"}
                                 </p>
+                            </div>
+                        </div>
+
+                        <div className='mt-8 border-t border-zinc-100 pt-6'>
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                                <div>
+                                    <p className="text-sm uppercase text-zinc-500">
+                                        Email Delivery
+                                    </p>
+                                    <p className="mt-1 text-sm text-zinc-600">
+                                        Latest invitation, access-link, and login-code activity.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="mt-4 space-y-3">
+                                {(emailDeliveries ?? []).map((delivery) => (
+                                    <article
+                                        key={delivery.id}
+                                        className="rounded-md border border-zinc-200 bg-zinc-50 p-4"
+                                    >
+                                        <div className="flex flex-wrap items-start justify-between gap-3">
+                                            <div className="min-w-0">
+                                                <p className="break-words text-sm font-semibold text-zinc-900">
+                                                    {delivery.subject}
+                                                </p>
+                                                <p className="mt-1 text-xs text-zinc-500">
+                                                    {formatDeliveryDate(
+                                                        delivery.event_at ??
+                                                            delivery.requested_at,
+                                                    )}
+                                                </p>
+                                            </div>
+
+                                            <span
+                                                className={`whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ${getDeliveryStatusClassName(delivery.status)}`}
+                                            >
+                                                {formatDeliveryStatus(delivery.status)}
+                                            </span>
+                                        </div>
+
+                                        {delivery.status_message ? (
+                                            <div className="mt-3 rounded-md border border-red-100 bg-white px-3 py-2 text-xs leading-5 text-red-700">
+                                                <p className="font-semibold">
+                                                    {delivery.bounce_type ||
+                                                    delivery.bounce_subtype
+                                                        ? [
+                                                              delivery.bounce_type,
+                                                              delivery.bounce_subtype,
+                                                          ]
+                                                              .filter(Boolean)
+                                                              .join(" · ")
+                                                        : "Delivery details"}
+                                                </p>
+                                                <p className="mt-1 break-words [overflow-wrap:anywhere]">
+                                                    {delivery.status_message}
+                                                </p>
+                                            </div>
+                                        ) : null}
+                                    </article>
+                                ))}
+
+                                {(emailDeliveries ?? []).length === 0 ? (
+                                    <div className="rounded-md border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-600">
+                                        No tracked email activity yet. Activity will appear
+                                        after the Resend webhook is configured.
+                                    </div>
+                                ) : null}
                             </div>
                         </div>
 

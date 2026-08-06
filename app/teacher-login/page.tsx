@@ -14,7 +14,13 @@ type TeacherLoginPageProps = {
 const errorMessages: Record<string, string> ={
     "email-required": "Enter your registered teacher email.",
     "access-unavailable":
-        "Portal access is not available for this teacher account.",
+        "We could not request a code for this email. Confirm that it matches your teacher record or contact LIA support.",
+    "activation-required":
+        "This teacher account has not finished activation. Open your latest LIA invitation and select Activate My Account before requesting a login code.",
+    "code-send-failed":
+        "The login code could not be requested from our email service. Please wait a moment and try again. If this continues, contact LIA support.",
+    "code-rate-limited":
+        "Too many login codes were requested. Wait a few minutes before trying again.",
 };
 
 export default async function TeacherLoginPage({

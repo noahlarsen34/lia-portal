@@ -68,11 +68,11 @@ export default async function VerifyTeacherCodePage({
                     </h1>
 
                     <p className="mt-2 text-center text-sm leading-6 text-zinc-600">
-                        We sent a six-digit code to {" "}
+                        We requested a six-digit code for {" "}
                         <span className="font-semibold text-zinc-800">
                             {maskEmail(email)}
                         </span>
-                        .
+                        . Delivery may take a few minutes on school email systems.
                     </p>
                 </div>
 
@@ -124,8 +124,10 @@ export default async function VerifyTeacherCodePage({
                 </div>
 
                 <p className="mt-5 text-center text-xs leading-5 text-zinc-500">
-                    The code expires after a short period and can only
-                    be used once.
+                    Check spam and quarantine folders. If no code arrives,
+                    ask your district email administrator to allow messages
+                    from no-reply@mail.lia-portal.org. The code expires after
+                    a short period and can only be used once.
                 </p>
             </section>
         </main>

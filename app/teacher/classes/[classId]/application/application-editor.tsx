@@ -346,10 +346,7 @@ export function ApplicationEditor({
                                     value={question.options.join("\n")}
                                     onChange={(event) =>
                                         updateQuestion(question.id, {
-                                            options: event.target.value
-                                                .split("\n")
-                                                .map((option) => option.trim())
-                                                .filter(Boolean),
+                                            options: event.target.value.split("\n"),
                                         })
                                     }
                                     rows={5}

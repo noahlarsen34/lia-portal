@@ -410,9 +410,9 @@ export default function ApplicationForm({
                         return (
                             <fieldset
                                 key={question.id}
-                                className="rounded-md border border-zinc-200 p-4"
+                                className="block"
                             >
-                                <legend className="px-1 text-sm font-semibold">
+                                <legend className="text-sm font-semibold text-zinc-900">
                                     {label}
 
                                     {question.required ? (
@@ -422,26 +422,30 @@ export default function ApplicationForm({
                                     ) : null}
                                 </legend>
 
-                                <div className="mt-2 flex gap-6">
-                                    <label className="flex items-center gap-2 text-sm">
+                                <div className="mt-2 grid gap-3 sm:grid-cols-2">
+                                    <label className="cursor-pointer">
                                         <input
                                             type="radio"
                                             name={name}
                                             value="yes"
                                             required={question.required}
-                                            className="accent-[#c4122f]"
+                                            className="peer sr-only"
                                         />
-                                        {text.yes}
+                                        <span className="flex h-12 items-center gap-3 rounded-md border border-zinc-300 bg-white px-4 text-sm font-medium text-zinc-700 transition hover:border-red-300 hover:bg-red-50 peer-checked:border-[#c4122f] peer-checked:bg-red-50 peer-checked:text-[#a70d25] peer-focus-visible:ring-4 peer-focus-visible:ring-red-100">
+                                            {text.yes}
+                                        </span>
                                     </label>
 
-                                    <label className="flex items-center gap-2 text-sm">
+                                    <label className="cursor-pointer">
                                         <input
                                             type="radio"
                                             name={name}
                                             value="no"
-                                            className="accent-[#c4122f]"
+                                            className="peer sr-only"
                                         />
-                                        {text.no}
+                                        <span className="flex h-12 items-center gap-3 rounded-md border border-zinc-300 bg-white px-4 text-sm font-medium text-zinc-700 transition hover:border-red-300 hover:bg-red-50 peer-checked:border-[#c4122f] peer-checked:bg-red-50 peer-checked:text-[#a70d25] peer-focus-visible:ring-4 peer-focus-visible:ring-red-100">
+                                            {text.no}
+                                        </span>
                                     </label>
                                 </div>
                             </fieldset>

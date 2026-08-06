@@ -103,7 +103,15 @@ export default async function StudentTutoringFormPage({
                             ? "Departure time must be after arrival time."
                             : query.error === "missing-student"
                                 ? "Please choose your name from the roster."
-                                : "Something went wrong. Please try again."}
+                                : query.error === "missing-proof"
+                                    ? "Please upload proof of this tutoring or service session."
+                                    : query.error === "invalid-proof-type"
+                                        ? "Please upload a JPG, PNG, WebP, HEIC, PDF, DOC, or DOCX file."
+                                        : query.error === "proof-too-large"
+                                            ? "The proof file must be 8 MB or smaller."
+                                            : query.error === "proof-upload-failed"
+                                                ? "The proof file could not be uploaded. Please try again."
+                                                : "Something went wrong. Please try again."}
                     </div>
                 )}
 
@@ -296,6 +304,33 @@ export default async function StudentTutoringFormPage({
                                     />
                                 </label>
                             </div>
+                        </div>
+
+                        <div className="border-t border-zinc-200 pt-5">
+                            <label className="block">
+                                <span className="text-sm font-semibold text-zinc-800">
+                                    Proof of Tutoring or Service
+                                    <span className="ml-1 text-[#c4122f]">*</span>
+                                </span>
+
+                                <span className="mt-1 block text-sm leading-5 text-zinc-600">
+                                    Upload a photo, PDF, or Word document, that verifies this
+                                    tutoring or service session.
+                                </span>
+
+                                <input
+                                    type="file"
+                                    name="proofFile"
+                                    required
+                                    accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.pdf,.doc,.docx"
+                                    className={`${fieldClasses} file:mr-4 file:rounded-md file:border-0 file:bg-red-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-[#c4122f] hover:file:bg-red-100`}
+                                />
+
+                                <span className="mt-2 block text-xs text-zinc-500">
+                                    Accepted formats: JPG, PNG, WebP, HEIC, PDF, DOC, or DOCX.
+                                    Maximum file size: 8 MB.
+                                </span>
+                            </label>
                         </div>
 
                         <button

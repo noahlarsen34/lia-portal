@@ -227,7 +227,41 @@ export async function inviteTeacher(
             message: emailResult.error,
         });
 
+        await admin.from("email_deliveries").insert({
+            teacher_id: teacher.id,
+            recipient: email,
+            subject: isActivated
+                ? "Your new LIA Portal access link"
+                : "Activate your LIA Teacher Portal account",
+            email_kind: isActivated ? "access_link" : "invitation",
+            status: "failed",
+            status_message: emailResult.error,
+            event_at: new Date().toISOString(),
+        });
+
         redirect(`${returnPath}?invite=send-failed`);
+    }
+
+    const { error: deliveryLogError } = await admin
+        .from("email_deliveries")
+        .insert({
+            resend_email_id: emailResult.id,
+            teacher_id: teacher.id,
+            recipient: email,
+            subject: isActivated
+                ? "Your new LIA Portal access link"
+                : "Activate your LIA Teacher Portal account",
+            email_kind: isActivated ? "access_link" : "invitation",
+            status: "sent",
+            event_at: new Date().toISOString(),
+        });
+
+    if (deliveryLogError) {
+        console.error("Could not record teacher access email", {
+            teacherId,
+            emailId: emailResult.id,
+            message: deliveryLogError.message,
+        });
     }
 
     if (isActivated) {

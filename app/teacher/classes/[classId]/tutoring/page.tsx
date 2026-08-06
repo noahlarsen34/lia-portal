@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { headers } from "next/headers";
-import { Check, Download, Pencil, X } from "lucide-react";
+import { Check, Download, ExternalLink, Pencil, X } from "lucide-react";
 import { requireTeacher } from "@/utils/role-guards";
 import {
     approveTutoringLog,
@@ -12,6 +12,7 @@ import QRCode from "qrcode";
 import DeleteLogButton from "./delete-log-button";
 import { TutoringExportButton } from "./tutoring-export-button";
 import { toLeadershipOptionValue } from "@/utils/class-leadership-options";
+import { createAdminClient } from "@/utils/supabase/admin";
 
 type TutoringPageProps = {
     params: Promise<{
@@ -485,6 +486,32 @@ export default async function ClassTutoringPage({
             message: logsError.message,
         });
     }
+
+    const admin = createAdminClient();
+
+    const proofUrlEntries = await Promise.all(
+        (logs ?? []).map(async (log) => {
+            if (!log.proof_file_path) {
+                return [log.id, null] as const;
+            }
+
+            const { data, error } = await admin.storage
+                .from("tutoring-log-proof")
+                .createSignedUrl(log.proof_file_path, 60 * 10);
+
+            if (error) {
+                console.error("Could not create tutoring proof URL", {
+                    logId: log.id,
+                    filePath: log.proof_file_path,
+                    message: error.message,
+                });
+            }
+
+            return [log.id, data?.signedUrl ?? null] as const;
+        }),
+    );
+
+    const proofUrls = new Map(proofUrlEntries);
     
     const countedLogs =
         logs?.filter((log) => log.status !== "rejected") ?? [];
@@ -745,6 +772,9 @@ export default async function ClassTutoringPage({
                                 <th className="px-4 py-3">Mentee Grade</th>
                                 <th className="px-4 py-3">EL Proficiency</th>
                                 <th className="px-4 py-3">Teacher</th>
+                                <th className="w-[120px] px-4 py-3 text-center">
+                                    Proof
+                                </th>
                                 <th className="px-4 py-3">Status</th>
                                 <th className="px-4 py-3">Actions</th>
                             </tr>
@@ -789,6 +819,27 @@ export default async function ClassTutoringPage({
                                     <td className="px-4 py-3">
                                         {log.cooperating_elementary_teacher ?? "N/A"}
                                     </td>
+
+                                    <td className="w-[120px] px-4 py-3 text-center align-middle">
+                                        {proofUrls.get(log.id) ? (
+                                            <a
+                                                href={proofUrls.get(log.id) ?? undefined}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                aria-label={`View proof for ${log.student_name_snapshot}`}
+                                                className="inline-flex h-9 whitespace-nowrap items-center justify-center gap-1.5 rounded-md border border-red-200 bg-white px-3 text-xs font-semibold text-[#c4122f] shadow-sm transition hover:border-red-300 hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c4122f] focus-visible:ring-offset-2"
+                                            >
+                                                View
+                                                <ExternalLink
+                                                    aria-hidden="true"
+                                                    className="size-3.5"
+                                                />
+                                            </a>
+                                        ) : (
+                                            <span className="text-sm text-zinc-400">—</span>
+                                        )}
+                                    </td>
+
                                     <td className="px-4 py-3">
                                         {formatStatus(log.status)}
                                     </td>
@@ -845,7 +896,7 @@ export default async function ClassTutoringPage({
                             {(logs ?? []).length === 0 && (
                                 <tr>
                                     <td
-                                        colSpan={14}
+                                        colSpan={15}
                                         className="px-4 py-8 text-center text-zinc-500"
                                     >
                                         No tutoring or service logs yet.
