@@ -23,10 +23,16 @@ export default async function DashboardPage() {
     .select("*", {count: "exact", head: true})
     .eq("status", "inactive");
   
-  const { count: mouSignedSchools } = await supabase
-    .from("schools")
-    .select("*", {count: "exact", head: true})
-    .eq("mou_status", "signed");
+  const {
+    data: totalCurrentStudents,
+    error: currentStudentsError,
+  } = await supabase.rpc("get_current_student_count");
+
+  if (currentStudentsError) {
+    console.error("Could not load current student count", {
+      message: currentStudentsError.message,
+    });
+  }
 
   const { data: allSchoolStateRows } = await supabase
     .from("schools")
@@ -50,9 +56,9 @@ export default async function DashboardPage() {
       detail: "Needs review",
     },
     {
-      label: "MOU Signed",
-      value: mouSignedSchools ?? 0,
-      detail: "Signed schools",
+      label: "Current Students",
+      value: Number(totalCurrentStudents ?? 0).toLocaleString("en-US"),
+      detail: "Active enrollment",
     },
   ];
 
@@ -115,6 +121,34 @@ export default async function DashboardPage() {
       value: schoolsByRpm.filter((rpm) => rpm.name !== "Unassigned").length,
       detail: "Active",
     });
+  }
+
+  const { data: assignedSchools } = 
+    profile.role === "rpm"
+      ? await supabase
+        .from("schools")
+        .select("id")
+        .eq("assigned_rpm_id", profile.id)
+      : { data: null }
+  
+  const assignedSchoolIds = (assignedSchools ?? []).map(
+    (school) => school.id,
+  );
+
+  let totalActiveClasses = 0;
+
+  if (isAdmin || assignedSchoolIds.length > 0) {
+    let classCountQuery = supabase
+      .from("lia_classes")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "active");
+    
+    if (!isAdmin) {
+      classCountQuery = classCountQuery.in(
+        "school_id",
+        assignedSchoolIds,
+      );
+    }
   }
   
   const maxRpmCount = Math.max(...schoolsByRpm.map((rpm) => rpm.count), 1)

@@ -153,6 +153,7 @@ export function EmailDeliveryStatus({
         ? new Intl.DateTimeFormat("en-US", {
               dateStyle: "medium",
               timeStyle: "short",
+              timeZone: "America/Denver",
           }).format(new Date(requestedAt))
         : "Pending";
     const supportDetails = [
