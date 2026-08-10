@@ -7,13 +7,14 @@ type StaffClassesPageProps = {
     searchParams: Promise<{
         search?: string;
         status?: string;
+        rpm?: string;
     }>;
 };
 
 export default async function StaffClassesPage({
     searchParams,
 }: StaffClassesPageProps) {
-    const { search, status } = await searchParams;
+    const { search, status, rpm } = await searchParams;
     const { supabase, profile } = await requireStaff();
 
     const isAdmin = profile.role === "admin";
@@ -22,14 +23,65 @@ export default async function StaffClassesPage({
         status === "inactive" || status === "all"
             ? status
             : "active";
+        
+    const { data: rpmAssignmentRows, error: rpmAssignmentsError } = isAdmin
+        ? await supabase
+              .from("schools")
+              .select("assigned_rpm_id")
+              .not("assigned_rpm_id", "is", null)
+        : { data: [], error: null };
 
-    const { data: assignedSchools, error: assignedSchoolsError } =
-        isAdmin
-            ? { data: null, error: null }
-            : await supabase
-                  .from("schools")
-                  .select("id")
-                  .eq("assigned_rpm_id", profile.id);
+    if (rpmAssignmentsError) {
+        throw new Error(
+            `Unable to load RPM assignments: ${rpmAssignmentsError.message}`,
+        );
+    }
+
+    const assignedRpmProfileIds = Array.from(
+        new Set(
+            (rpmAssignmentRows ?? [])
+                .map((school) => school.assigned_rpm_id)
+                .filter((rpmId): rpmId is string => Boolean(rpmId)),
+        ),
+    );
+
+    const { data: rpmProfiles, error: rpmProfilesError } =
+        isAdmin && assignedRpmProfileIds.length > 0
+            ? await supabase
+                  .from("profiles")
+                  .select("id, full_name, email")
+                  .in("id", assignedRpmProfileIds)
+                  .order("full_name")
+            : { data: [], error: null };
+
+    if (rpmProfilesError) {
+        throw new Error(
+            `Unable to load RPM options: ${rpmProfilesError.message}`,
+        );
+    }
+
+    const validRpmIds = new Set(
+        (rpmProfiles ?? []).map((rpmProfile) => rpmProfile.id),
+    );
+
+    const selectedRpm =
+        isAdmin && rpm && validRpmIds.has(rpm)
+            ? rpm
+            : "all";
+
+    const assignedRpmId = isAdmin
+        ? selectedRpm === "all"
+            ? null
+            : selectedRpm
+        : profile.id;
+
+    const { data: assignedSchools, error: assignedSchoolsError } = 
+        assignedRpmId
+            ? await supabase
+                .from("schools")
+                .select("id")
+                .eq("assigned_rpm_id", assignedRpmId)
+            : { data: null, error: null };
 
     if (assignedSchoolsError) {
         throw new Error(
@@ -53,7 +105,9 @@ export default async function StaffClassesPage({
         updated_at: string;
     }> = [];
 
-    if (isAdmin || assignedSchoolIds.length > 0) {
+    const viewingAllRpms = isAdmin && selectedRpm === "all";
+
+    if (viewingAllRpms || assignedSchoolIds.length > 0) {
         let classesQuery = supabase
             .from("lia_classes")
             .select(
@@ -72,7 +126,7 @@ export default async function StaffClassesPage({
             .order("status")
             .order("name");
 
-        if (!isAdmin) {
+        if (!viewingAllRpms) {
             classesQuery = classesQuery.in(
                 "school_id",
                 assignedSchoolIds,
@@ -186,12 +240,17 @@ export default async function StaffClassesPage({
 
                     <form
                         method="get"
-                        className="mt-6 grid gap-4 rounded-lg border border-zinc-200 bg-white p-4 shadow-sm md:grid-cols-[minmax(0,1fr)_220px_220px_auto]"
+                        className= {
+                            isAdmin
+                                ? "mt-6 grid gap-4 rounded-lg border border-zinc-200 bg-white p-4 shadow-sm lg:grid-cols-[minmax(240px,1fr)_180px_220px_220px_auto]"
+                                : "mt-6 grid gap-4 rounded-lg border border-zinc-200 bg-white p-4 shadow-sm md:grid-cols-[minmax(0,1fr)_220px_220px_auto]"
+                        }
                     >
                         <ClassSearchInput
-                            key={`${normalizedSearch}-${selectedStatus}`}
+                            key={`${normalizedSearch}-${selectedStatus}-${selectedRpm}`}
                             initialSearch={normalizedSearch}
                             selectedStatus={selectedStatus}
+                            selectedRpm={selectedRpm}
                         />
 
                         <label className="block">
@@ -224,6 +283,33 @@ export default async function StaffClassesPage({
                                 <option value="2026-2027">2026-2027</option>
                             </select>
                         </label>
+
+                        {isAdmin ? (
+                            <label className="block">
+                                <span className="text-sm font-semibold text-zinc-700">
+                                    Assigned RPM
+                                </span>
+
+                                <select
+                                    name="rpm"
+                                    defaultValue={selectedRpm}
+                                    className="mt-2 h-11 w-full rounded-md border border-zinc-300 bg-white px-3 text-sm outline-none focus:border-[#c8102e] focus:ring-4 focus:ring-red-100"
+                                >
+                                    <option value="all">All RPMs</option>
+
+                                    {(rpmProfiles ?? []).map((rpmProfile) => (
+                                        <option
+                                            key={rpmProfile.id}
+                                            value={rpmProfile.id}
+                                        >
+                                            {rpmProfile.full_name ||
+                                                rpmProfile.email ||
+                                                "Unnamed RPM"}
+                                        </option>
+                                    ))}
+                                </select>
+                            </label>
+                        ) : null}
 
                         <div className="flex items-end gap-2">
                             <button
@@ -284,7 +370,7 @@ export default async function StaffClassesPage({
                                         );
 
                                         return (
-                                            <tr key={liaClass.id}>
+                                            <tr key={liaClass.id} className="transition-colors hover:bg-zinc-50">
                                                 <td className="px-5 py-4">
                                                     <Link
                                                         href={`/classes/${liaClass.id}`}

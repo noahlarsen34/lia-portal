@@ -6,11 +6,13 @@ import { useRouter } from "next/navigation";
 type ClassSearchInputProps = {
     initialSearch: string;
     selectedStatus: string;
+    selectedRpm: string;
 };
 
 export function ClassSearchInput({
     initialSearch,
     selectedStatus,
+    selectedRpm,
 }: ClassSearchInputProps) {
     const router = useRouter();
     const [search, setSearch] = useState(initialSearch);
@@ -34,6 +36,10 @@ export function ClassSearchInput({
                 params.set("status", selectedStatus);
             }
 
+            if (selectedRpm !== "all") {
+                params.set("rpm", selectedRpm);
+            }
+
             const queryString = params.toString();
             const destination = queryString
                 ? `/classes?${queryString}`
@@ -45,7 +51,7 @@ export function ClassSearchInput({
         }, 300);
 
         return () => clearTimeout(timeoutId);
-    }, [initialSearch, router, search, selectedStatus]);
+    }, [initialSearch, router, search, selectedStatus, selectedRpm]);
 
     return (
         <label className="block">

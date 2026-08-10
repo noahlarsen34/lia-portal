@@ -1,6 +1,5 @@
 "use client";
 
-import { normalize } from "path";
 import { useMemo, useState } from "react";
 
 export type RosterStudent = {
@@ -21,7 +20,7 @@ type ClassRosterProps = {
     students: RosterStudent[];
 };
 
-function noramlize(value: string) {
+function normalize(value: string) {
     return value.trim().toLowerCase();
 }
 

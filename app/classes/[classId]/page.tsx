@@ -7,7 +7,6 @@ import {
     ClassRoster,
     type RosterStudent,
 } from "./class-roster";
-import { Schoolbell } from "next/font/google";
 
 type StaffClassDetialsPageProps = {
     params: Promise<{
@@ -175,7 +174,7 @@ export default async function StaffClassDetailsPage({
                 committee: formatRosterValue(
                     enrollment.committee,
                 ),
-                leaderShipRole: formatRosterRole(
+                leadershipRole: formatRosterRole(
                     enrollment.officer_role,
                     enrollment.committee,
                 ),
