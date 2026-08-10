@@ -1,4 +1,3 @@
-import { createClient } from "@/utils/supabase/server";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { requireStaff } from '@/utils/role-guards';
 import Link from 'next/link';
@@ -34,6 +33,49 @@ export default async function DashboardPage() {
     });
   }
 
+  const { data: assignedSchools } =
+    profile.role === "rpm"
+      ? await supabase
+          .from("schools")
+          .select("id")
+          .eq("assigned_rpm_id", profile.id)
+      : { data: null };
+
+  const assignedSchoolIds = (assignedSchools ?? []).map(
+    (school) => school.id,
+  );
+
+  let totalActiveClasses = 0;
+
+  if (isAdmin || assignedSchoolIds.length > 0) {
+    let classCountQuery = supabase
+      .from("lia_classes")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "active");
+
+    if (!isAdmin) {
+      classCountQuery = classCountQuery.in(
+        "school_id",
+        assignedSchoolIds,
+      );
+    }
+
+    const {
+      count: scopedClassCount,
+      error: classCountError,
+    } = await classCountQuery;
+
+    if (classCountError) {
+      console.error("Could not load dashboard class count", {
+        userId: profile.id,
+        role: profile.role,
+        message: classCountError.message,
+      });
+    }
+
+    totalActiveClasses = scopedClassCount ?? 0;
+  }
+
   const { data: allSchoolStateRows } = await supabase
     .from("schools")
     .select("state")
@@ -44,21 +86,31 @@ export default async function DashboardPage() {
       label: "Total Schools",
       value: totalSchools ?? 0,
       detail: "All time",
+      href: null,
     },
     {
       label: "Active Schools",
       value: activeSchools ?? 0,
       detail: "Currently Active",
+      href: null,
     },
     {
       label: "Inactive Schools",
       value: inactiveSchools ?? 0,
       detail: "Needs review",
+      href: null,
     },
     {
       label: "Current Students",
       value: Number(totalCurrentStudents ?? 0).toLocaleString("en-US"),
       detail: "Active enrollment",
+      href: null,
+    },
+    {
+      label: "Total Classes",
+      value: totalActiveClasses.toLocaleString("en-US"),
+      detail: "Currently active",
+      href: "/classes",
     },
   ];
 
@@ -115,42 +167,6 @@ export default async function DashboardPage() {
     }))
     .sort((a,b) => b.count - a.count);
 
-  if (isAdmin) {
-    dashboardStats.push({
-      label: "Assigned RPMs",
-      value: schoolsByRpm.filter((rpm) => rpm.name !== "Unassigned").length,
-      detail: "Active",
-    });
-  }
-
-  const { data: assignedSchools } = 
-    profile.role === "rpm"
-      ? await supabase
-        .from("schools")
-        .select("id")
-        .eq("assigned_rpm_id", profile.id)
-      : { data: null }
-  
-  const assignedSchoolIds = (assignedSchools ?? []).map(
-    (school) => school.id,
-  );
-
-  let totalActiveClasses = 0;
-
-  if (isAdmin || assignedSchoolIds.length > 0) {
-    let classCountQuery = supabase
-      .from("lia_classes")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "active");
-    
-    if (!isAdmin) {
-      classCountQuery = classCountQuery.in(
-        "school_id",
-        assignedSchoolIds,
-      );
-    }
-  }
-  
   const maxRpmCount = Math.max(...schoolsByRpm.map((rpm) => rpm.count), 1)
   
   const dashboardSchools =
@@ -246,16 +262,37 @@ export default async function DashboardPage() {
         </header>
 
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-          {dashboardStats.map((stat) =>(
-            <div
-              key={stat.label}
-              className="rounded-lg border border-red-100 bg-white p-5 shadow-sm"
-            >
-              <p className="text-sm font-semibold text-zinc-700">{stat.label}</p>
-              <p className="mt-3 text-3xl font-bold">{stat.value}</p>
-              <p className="mt-1 text-sm text-zinc-500">{stat.detail}</p>
-            </div>
-          ))}
+          {dashboardStats.map((stat) =>
+            stat.href ? (
+              <Link
+                key={stat.label}
+                href={stat.href}
+                className="group rounded-lg border border-red-100 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-red-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c8102e] focus-visible:ring-offset-2"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm font-semibold text-zinc-700">
+                    {stat.label}
+                  </p>
+                  <span className="text-lg text-zinc-400 transition group-hover:translate-x-1 group-hover:text-[#c8102e]">
+                    →
+                  </span>
+                </div>
+                <p className="mt-3 text-3xl font-bold">{stat.value}</p>
+                <p className="mt-1 text-sm text-zinc-500">{stat.detail}</p>
+              </Link>
+            ) : (
+              <div
+                key={stat.label}
+                className="rounded-lg border border-red-100 bg-white p-5 shadow-sm"
+              >
+                <p className="text-sm font-semibold text-zinc-700">
+                  {stat.label}
+                </p>
+                <p className="mt-3 text-3xl font-bold">{stat.value}</p>
+                <p className="mt-1 text-sm text-zinc-500">{stat.detail}</p>
+              </div>
+            ),
+          )}
         </section>
 
         <section className="mt-5 grid gap-5 xl:grid-cols-3">
