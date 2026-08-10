@@ -22,6 +22,34 @@ export async function updateTeacher(
     const passwordStatus = String(formData.get("password_status") ?? "").trim();
     const isNewTeacher = formData.get("is_new_teacher") === "on";
 
+    const requestedAssignedRpmId = String(
+        formData.get("assigned_rpm_id") ?? "",
+    ).trim();
+
+    let assignedRpmId: string | null = null;
+
+    if (requestedAssignedRpmId) {
+        const { data: rpmProfile, error: rpmError} = await supabase
+            .from("profiles")
+            .select("id, full_name")
+            .eq("id", requestedAssignedRpmId)
+            .in("full_name", [
+                "Arthur Lanza",
+                "Brayan Zuniga",
+                "Deborah Carias",
+                "Julie Arocha",
+            ])
+            .maybeSingle();
+        
+        if (rpmError || !rpmProfile) {
+            redirect(
+                `/schools/${schoolId}/teachers/${teacherId}/edit?error=invalid-rpm`,
+            );
+        }
+
+        assignedRpmId = rpmProfile.id;
+    }
+
     if (!firstName || !lastName || !email || !status) {
         redirect(
             `/schools/${schoolId}/teachers/${teacherId}/edit?error=missing-fields`
@@ -42,6 +70,7 @@ export async function updateTeacher(
             notes: notes || null,
             password_status: passwordStatus || "not invited",
             is_new_teacher: isNewTeacher,
+            assigned_rpm_id: assignedRpmId,
         })
         .eq("id", teacherId)
         .eq("school_id", schoolId);

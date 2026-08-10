@@ -32,12 +32,41 @@ export async function createTeacher(schoolId: string, formData: FormData) {
     const status = String(formData.get("status") ?? "active").trim();
     const isNewTeacher = formData.get("is_new_teacher") === "on";
 
+    const requestedAssignedRpmId = String(
+        formData.get("assigned_rpm_id") ?? "",
+    ).trim();
+
+    let assignedRpmId: string | null = null;
+
+    if (requestedAssignedRpmId) {
+        const { data: rpmProfile, error: rpmError} = await supabase
+            .from("profiles")
+            .select("id, full_name")
+            .eq("id", requestedAssignedRpmId)
+            .in("full_name", [
+                "Arthur Lanza",
+                "Brayan Zuniga",
+                "Deborah Carias",
+                "Julie Arocha",
+            ])
+            .maybeSingle();
+        
+        if (rpmError || !rpmProfile) {
+            redirect(
+                `/schools/${schoolId}/teachers/new?error=invalid-rpm`,
+            )
+        }
+
+        assignedRpmId = rpmProfile.id;
+    }
+
     if (!firstName || !lastName || !email) {
         redirect(`/schools/${schoolId}/teachers/new?error=missing-fields`);
     }
 
     const { error } = await supabase.from("teachers").insert({
         school_id: schoolId,
+        assigned_rpm_id: assignedRpmId,
         first_name: firstName,
         last_name: lastName,
         name,

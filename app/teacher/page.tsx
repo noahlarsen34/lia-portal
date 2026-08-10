@@ -116,7 +116,7 @@ export default async function TeacherDashBoardPage() {
 
     const { data: teacher, error: teacherError } = await supabase
         .from("teachers")
-        .select("school_id")
+        .select("school_id, assigned_rpm_id")
         .eq("profile_id", profile.id)
         .maybeSingle();
 
@@ -124,9 +124,10 @@ export default async function TeacherDashBoardPage() {
         throw new Error(`Unable to load teacher assignment: ${teacherError.message}`);
     }
 
-    let assignedRpmId: string | null = null;
+    let assignedRpmId: string | null = 
+        teacher?.assigned_rpm_id ?? null;
 
-    if (teacher?.school_id) {
+    if (!assignedRpmId && teacher?.school_id) {
         const { data: school, error: schoolError } = await supabase
             .from("schools")
             .select("assigned_rpm_id")

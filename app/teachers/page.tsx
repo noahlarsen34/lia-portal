@@ -25,6 +25,7 @@ export default async function TeachersPage() {
         .select(`
             id,
             school_id,
+            assigned_rpm_id,
             first_name,
             last_name,
             name,
@@ -69,6 +70,11 @@ export default async function TeachersPage() {
         teachers?.map((teacher) => {
             const school = schoolsById.get(teacher.school_id);
 
+            const effectiveRpmId =
+                teacher.assigned_rpm_id ??
+                school?.assigned_rpm_id ??
+                null;
+
             const displayName =
                 `${teacher.first_name ?? ""} ${teacher.last_name ?? ""}`.trim() ||
                 teacher.name ||
@@ -101,9 +107,10 @@ export default async function TeachersPage() {
                 district: school?.district_id
                     ? districtsById.get(school.district_id) ?? "N/A"
                     : "N/A",
-                rpm: school?.assigned_rpm_id
-                    ? profilesById.get(school.assigned_rpm_id) ?? "Unassigned"
+                rpm: effectiveRpmId
+                    ? profilesById.get(effectiveRpmId) ?? "Unassigned"
                     : "Unassigned",
+                rpmIsOverride: Boolean(teacher.assigned_rpm_id),
             };
         }) ?? [];
     

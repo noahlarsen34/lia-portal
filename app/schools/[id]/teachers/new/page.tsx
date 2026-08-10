@@ -40,6 +40,25 @@ export default async function AddTeacherPage({
         redirect('/schools');
     }
 
+    const rpmNames =[
+        "Arthur Lanza",
+        "Brayan Zuniga",
+        "Deborah Carias",
+        "Julie Arocha",
+    ];
+
+    const { data: rpmProfiles, error: rpmProfilesError } = await supabase
+        .from("profiles")
+        .select("id, full_name, email")
+        .in("full_name", rpmNames)
+        .order("full_name");
+    
+    if (rpmProfilesError) {
+        console.error("Could not load RPM options.", {
+            message: rpmProfilesError.message,
+        });
+    }
+
     const createTeacherForSchool = createTeacher.bind(null, school.id);
 
     return (
@@ -70,7 +89,9 @@ export default async function AddTeacherPage({
                             <div className='mb-5 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700'>
                                 {error === "missing-fields"
                                     ? "First name, last name, and email are required."
-                                    : "Something went wrong. Please try again."
+                                    : error === "invalid-rpm"
+                                        ? "The selected RPM is not valid."
+                                        : "Something went wrong. Please try again."
                                 }
                             </div>
                         ) : null}
@@ -169,6 +190,38 @@ export default async function AddTeacherPage({
                                 </select>
                             </label>
                         </div>
+
+                        <label className='block min-w-0'>
+                            <span className='text-sm font-medium text-zinc-800'>
+                                Assigned RPM
+                            </span>
+
+                            <select
+                                name='assigned_rpm_id'
+                                defaultValue=""
+                                className='mt-2 h-11 w-full rounded-md border border-zinc-300 bg-white px-3 text-sm outline-none focus:border-[#c8102e] focus:ring-4 focus:ring-red-100'
+                            >
+                                <option value="">
+                                    Use school&apos;s assigned RPM
+                                </option>
+
+                                {(rpmProfiles ?? []).map((rpmProfile) => (
+                                    <option
+                                        key={rpmProfile.id}
+                                        value={rpmProfile.id}
+                                    >
+                                        {rpmProfile.full_name ||
+                                            rpmProfile.email ||
+                                            "Unnamed RPM"}
+                                    </option>
+                                ))}
+                            </select>
+
+                            <p className='mt-2 text-xs text-zinc-500'>
+                                Only select an RPM here when this teacher should be
+                                supported by someone other than the school&apos;s RPM.
+                            </p>
+                        </label>
 
                         <label className='block min-w-0'>
                             <span className='text-sm font-medium text-zinc-800'>

@@ -44,7 +44,7 @@ export default async function EditTeacherPage({
     const { data: teacher } = await supabase
         .from("teachers")
         .select(
-            "id, name, first_name, last_name, email, phone, status, username, program_level, notes, password_status, is_new_teacher",
+            "id, name, first_name, last_name, email, phone, status, username, program_level, notes, password_status, is_new_teacher, assigned_rpm_id",
         )
         .eq("id", teacherId)
         .eq("school_id",school.id)
@@ -52,6 +52,26 @@ export default async function EditTeacherPage({
     
     if (!teacher) {
         redirect(`/schools/${school.id}`);
+    }
+
+    const rpmNames = [
+        "Arthur Lanza",
+        "Brayan Zuniga",
+        "Deborah Carias",
+        "Julie Arocha",
+    ];
+
+    const { data: rpmProfiles, error: rpmProfilesError } = await supabase
+        .from("profiles")
+        .select("id, full_name, email")
+        .in("full_name", rpmNames)
+        .order("full_name");
+    
+    if (rpmProfilesError) {
+        console.error("Could not load RPM options.", {
+            teacherId: teacher.id,
+            message: rpmProfilesError.message,
+        });
     }
 
     const updateTeacherForSchool = updateTeacher.bind(
@@ -93,7 +113,9 @@ export default async function EditTeacherPage({
                             <div className='mb-5 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700'>
                                 {error === "missing-fields"
                                     ? "First name, last name, email, and status are required."
-                                    : "Something went wrong. Please try again."
+                                    : error === "invalid-rpm"
+                                        ? "The selected RPM is not valid."
+                                        : "Something went wrong. Please try again."
                                 }
                             </div>
                         ) : null}
@@ -212,6 +234,38 @@ export default async function EditTeacherPage({
                                     <option value="k_12">K-12</option>
                                     <option value="other">Other</option>
                                 </select>
+                            </label>
+
+                            <label className='block min-w-0'>
+                                <span className='text-sm font-medium text-zinc-800'>
+                                    Assigned RPM
+                                </span>
+
+                                <select
+                                    name='assigned_rpm_id'
+                                    defaultValue={teacher.assigned_rpm_id ?? ""}
+                                    className='mt-2 h-11 w-full rounded-md border border-zinc-300 bg-white px-3 text-sm outline-none focus:border-[#c8102e] focus:ring-4 focus:ring-red-100'
+                                >
+                                    <option value="">
+                                        Use school&apos;s assigned RPM
+                                    </option>
+
+                                    {(rpmProfiles ?? []).map((rpmProfile) => (
+                                        <option
+                                            key={rpmProfile.id}
+                                            value={rpmProfile.id}
+                                        >
+                                            {rpmProfile.full_name ||
+                                                rpmProfile.email ||
+                                                "Unnamed RPM"}
+                                        </option>
+                                    ))}
+                                </select>
+
+                                <p className='mt-2 text-xs text-zinc-500'>
+                                    Leave this on "Use school&apos;s assigned RPM" unless
+                                    this teacher needs a different LIA contact.
+                                </p>
                             </label>
 
                             <label className='block min-w-0'>
