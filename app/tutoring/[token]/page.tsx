@@ -1,4 +1,4 @@
-import { createClient } from "@/utils/supabase/server";
+import { createAdminClient } from "@/utils/supabase/admin";
 import { submitTutoringLog } from './actions';
 
 type StudentTutoringFormPageProps = {
@@ -20,7 +20,11 @@ export default async function StudentTutoringFormPage({
 }: StudentTutoringFormPageProps) {
     const { token } = await params;
     const query = await searchParams;
-    const supabase = await createClient();
+    // This route is intentionally public. Use the server-only admin client for
+    // the token lookup so an unsigned-in student scanning the QR code can load
+    // the same form as a signed-in teacher. Only the limited fields rendered by
+    // this page are returned to the browser.
+    const supabase = createAdminClient();
 
     const { data: liaClass } = await supabase
         .from("lia_classes")

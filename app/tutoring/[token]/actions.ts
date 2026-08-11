@@ -1,7 +1,6 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
 
 const TUTORING_PROOF_BUCKET = "tutoring-log-proof";
@@ -57,9 +56,12 @@ export async function submitTutoringLog(
     token: string,
     formData: FormData,
 ) {
-    const supabase = await createClient();
+    // Submissions come from unsigned-in students, so all token and enrollment
+    // checks must use the server-only client. The UUID token and the enrollment
+    // class match below remain the authorization boundary.
+    const admin = createAdminClient();
 
-    const { data: liaClass } = await supabase
+    const { data: liaClass } = await admin
         .from("lia_classes")
         .select("id")
         .eq("application_token", token)
@@ -110,7 +112,7 @@ export async function submitTutoringLog(
         redirect(`/tutoring/${token}?error=invalid-proof-type`);
     }
 
-    const { data: enrollment } = await supabase
+    const { data: enrollment } = await admin
         .from("lia_class_students")
         .select(
             `
@@ -147,8 +149,6 @@ export async function submitTutoringLog(
         logId,
         `${crypto.randomUUID()}-${safeFileName}`,
     ].join("/");
-
-    const admin = createAdminClient();
 
     const { error: uploadError } = await admin.storage
         .from(TUTORING_PROOF_BUCKET)
