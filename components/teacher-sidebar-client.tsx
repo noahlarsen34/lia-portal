@@ -39,7 +39,7 @@ const teacherLinks: TeacherLink[] = [
     },
     { href: "/teacher/modules", label: "Teacher Modules", icon: BookOpen },
     { href: "/teacher/announcements", label: "Announcements", icon: Megaphone },
-    { href: "/teacher/resources", label: "Curriculum", icon: FolderOpen },
+    { href: "/teacher/resources", label: "Resources", icon: FolderOpen },
     { href: "/teacher/profile", label: "Profile", icon: CircleUserRound },
 ];
 

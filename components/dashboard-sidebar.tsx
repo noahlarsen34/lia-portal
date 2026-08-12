@@ -11,6 +11,7 @@ const sharedLinks: DashboardLink[] = [
 ];
 
 const adminLinks: DashboardLink[] = [
+    { href: "/events", label: "Events" },
     { href: '/districts', label: "Districts" },
     { href: "/activity-log", label: "Activity Log" },
     { href: "/contacts", label: "Contacts" },

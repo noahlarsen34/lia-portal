@@ -2,6 +2,7 @@ import Link from "next/link";
 import {
     BookOpen,
     Building2,
+    ExternalLink,
     FileText,
     FolderOpen,
     GraduationCap,
@@ -60,13 +61,61 @@ export default async function TeacherResourcesPage() {
         <div className="mx-auto max-w-7xl">
             <section className="rounded-md border border-red-100 bg-white p-5 shadow-sm sm:p-6">
                 <p className="text-sm font-semibold uppercase tracking-wide text-[#c4122f]">
-                    Curriculum
+                    Teacher Resources
                 </p>
-                <h1 className="mt-2 text-3xl font-semibold">LIA Curriculum</h1>
+
+                <h1 className="mt-2 text-3xl font-semibold">
+                    Resources and Curriculum
+                </h1>
+
                 <p className="mt-1 text-sm text-zinc-600">
-                    Open LIA curriculum resources from the existing curriculum site.
+                    Access Educator Institute materials, LIA curriculum, videos,
+                    documents, and other teacher resources.
                 </p>
             </section>
+
+            <a
+                href="https://drive.google.com/drive/folders/1S8rQZDsxet7PphIUIlZWwdDWT5Yhv6qy?usp=sharing"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group mt-5 block rounded-md border border-red-200 bg-white p-5 shadow-sm transition hover:border-[#c4122f] hover:shadow-md sm:p-6"
+            >
+                <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex min-w-0 items-start gap-4">
+                        <span className="flex size-12 shrink-0 items-center justify-center rounded-md bg-red-50 text-[#c4122f] ring-1 ring-red-100">
+                            <FolderOpen
+                                className="h-6 w-6"
+                                aria-hidden="true"
+                            />
+                        </span>
+
+                        <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                                <h2 className="text-xl font-semibold text-zinc-950">
+                                    Educator Institutes
+                                </h2>
+
+                                <span className="rounded-full bg-red-50 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-[#c4122f]">
+                                    Featured
+                                </span>
+                            </div>
+
+                            <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-600">
+                                Access presentations, materials, and resources
+                                from all LIA Educator Institutes.
+                            </p>
+                        </div>
+                    </div>
+
+                    <span className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-md bg-[#c4122f] px-4 text-sm font-semibold text-white transition group-hover:bg-[#a70d25]">
+                        Open Google Drive
+                        <ExternalLink
+                            className="h-4 w-4"
+                            aria-hidden="true"
+                        />
+                    </span>
+                </div>
+            </a>
 
             <section className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 {visibleCurriculumTabs.map((section) => {

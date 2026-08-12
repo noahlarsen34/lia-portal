@@ -3,7 +3,6 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/utils/role-guards";
-import { start } from "repl";
 
 function redirectWithError(error: string): never {
     redirect(`/events/new?error=${error}`);
@@ -169,5 +168,5 @@ export async function createEvent(formData: FormData) {
     revalidatePath("/events");
     revalidatePath("/teacher/events");
 
-    redirect(`/events?crated=${status}`);
+    redirect(`/events?created=${status}`);
 }

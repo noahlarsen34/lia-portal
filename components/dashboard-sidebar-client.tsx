@@ -16,6 +16,7 @@ import {
   Users,
   X,
   Megaphone,
+  CalendarDays,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { signOut } from "@/app/login/actions";
@@ -34,6 +35,7 @@ type DashboardSidebarClientProps = {
 const iconsByHref = {
   "/dashboard": Home,
   "/schools": School,
+  "/events": CalendarDays,
   "/districts": Map,
   "/activity-log": ClipboardList,
   "/contacts": UserRound,
@@ -53,20 +55,20 @@ function DashboardNav({
   const pathname = usePathname();
 
   return (
-    <nav className="flex flex-1 flex-col gap-2">
+    <nav className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overscroll-contain pr-1 [scrollbar-color:rgba(255,255,255,0.35)_transparent] [scrollbar-width:thin]">
       {links.map((link) => {
         const Icon = iconsByHref[link.href as keyof typeof iconsByHref];
         const isCurrent =
           link.href !== "#" &&
           (pathname === link.href || pathname.startsWith(`${link.href}/`));
         const className = isCurrent
-          ? "flex items-center gap-3 rounded-md bg-white px-3 py-3.5 font-semibold text-[#b90f24] shadow-sm"
-          : "flex items-center gap-3 rounded-md px-3 py-3.5 font-semibold text-white/90 transition hover:bg-white/10";
+          ? "flex min-h-12 items-center gap-3 rounded-md bg-white px-3 py-3 text-base font-semibold text-[#b90f24] shadow-sm"
+          : "flex min-h-12 items-center gap-3 rounded-md px-3 py-3 text-base font-semibold text-white/90 transition hover:bg-white/10";
 
         return link.href === "#" ? (
           <span
             key={link.label}
-            className="flex items-center gap-3 rounded-md px-3 py-3.5 font-semibold text-white/60"
+            className="flex min-h-12 items-center gap-3 rounded-md px-3 py-3 text-base font-semibold text-white/60"
           >
             {Icon ? <Icon className="h-5 w-5 shrink-0" aria-hidden="true" /> : null}
             {link.label}
@@ -95,7 +97,7 @@ function UserCard({
   roleLabel: string;
 }) {
   return (
-    <div className="rounded-md border border-white/20 bg-white/10 p-3 text-sm">
+    <div className="rounded-md border border-white/20 bg-white/10 px-3 py-2.5 text-sm">
       <div className="break-words font-semibold [overflow-wrap:anywhere]">
         {displayName}
       </div>
@@ -106,10 +108,10 @@ function UserCard({
 
 function LogoutButton() {
   return (
-    <form action={signOut} className="border-t border-white/20 pt-3">
+    <form action={signOut} className="shrink-0 border-t border-white/20 pt-2">
       <button
         type="submit"
-        className="flex w-full items-center gap-3 rounded-md px-3 py-3.5 text-left font-semibold text-white/90 transition hover:bg-white/10"
+        className="flex min-h-10 w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm font-semibold text-white/90 transition hover:bg-white/10"
       >
         <LogOut className="h-5 w-5 shrink-0" aria-hidden="true" />
         <span>Log Out</span>
@@ -168,22 +170,22 @@ export function DashboardSidebarClient({
       <aside className="fixed left-0 top-0 z-30 hidden h-screen w-52 flex-col bg-[#b90f24] text-white lg:flex">
         <Link
           href="/dashboard"
-          className="block border-r border-red-100 bg-[#f8f4f4] px-4 py-5"
+          className="flex h-28 shrink-0 items-center justify-center border-r border-red-100 bg-[#f8f4f4] px-4 py-3"
         >
             <Image
               src="/lia-logo.png"
               alt="Latinos in Action logo"
               width={170}
               height={70}
-              className="h-auto w-full"
+              className="max-h-24 w-full object-contain"
               priority
             />
         </Link>
 
-        <div className="flex min-h-0 flex-1 flex-col px-4 py-5">
+        <div className="flex min-h-0 flex-1 flex-col gap-2 px-4 py-3">
           <DashboardNav links={links} />
           <LogoutButton />
-          <div className="mt-3">
+          <div className="shrink-0">
             <UserCard displayName={displayName} roleLabel={roleLabel} />
           </div>
         </div>
@@ -228,10 +230,10 @@ export function DashboardSidebarClient({
           </button>
         </div>
 
-        <div className="flex min-h-0 flex-1 flex-col px-5 py-5">
+        <div className="flex min-h-0 flex-1 flex-col gap-3 px-5 py-4">
           <DashboardNav links={links} onNavigate={() => setIsOpen(false)} />
           <LogoutButton />
-          <div className="mt-3">
+          <div className="shrink-0">
             <UserCard displayName={displayName} roleLabel={roleLabel} />
           </div>
         </div>
