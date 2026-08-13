@@ -6,16 +6,20 @@ import {
     Pencil,
     Unlock,
     Lock,
+    ArchiveRestore,
 } from "lucide-react";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { requireAdmin } from "@/utils/role-guards";
 import { setEventStatus } from "./actions";
+import { ArchiveEventButton } from "./archive-event-button";
 
 type EventPageProps = {
     searchParams: Promise<{
         created?: string;
         updated?: string;
         statusUpdated?: string;
+        archived?: string;
+        view?: string;
         error?: string;
     }>;
 };
@@ -56,14 +60,20 @@ export default async function EventsPage({
         created,
         updated,
         statusUpdated,
+        archived,
+        view,
         error: actionError, 
     } = await searchParams;
     const { supabase } = await requireAdmin();
 
-    const { data: events, error } = await supabase
+    const selectedView =
+        view === "archived" || view === "all"
+            ? view
+            : "current";
+    
+    let eventsQuery = supabase
         .from("lia_events")
-        .select(
-            `
+        .select(`
                 id,
                 name,
                 description,
@@ -77,11 +87,18 @@ export default async function EventsPage({
                 status,
                 all_schools,
                 created_at  
-            `,
-        )
+            `)
         .order("event_date", { ascending: true })
         .order("start_time", { ascending: true });
-    
+
+    if (selectedView === "archived") {
+        eventsQuery = eventsQuery.eq("status", "archived");
+    } else if (selectedView === "current") {
+        eventsQuery = eventsQuery.neq("status", "archived")
+    }
+
+    const { data: events, error } = await eventsQuery;
+
     if (error) {
         throw new Error(
             `Unable to load events: ${error.message}`,
@@ -140,6 +157,12 @@ export default async function EventsPage({
                         </div>
                     ) : null}
 
+                    {archived === "true" ? (
+                        <div className="mt-6 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+                            The event was archived successfully.
+                        </div>
+                    ) : null}
+
                     {actionError ? (
                         <div className="mt-6 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                             {actionError === "not-found"
@@ -148,7 +171,42 @@ export default async function EventsPage({
                         </div>
                     ) : null}
 
-                    <section className="mt-6 overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm">
+                    <div className="mt-6 flex flex-wrap gap-2">
+                        <Link
+                            href="/events"
+                            className={
+                                selectedView === "current"
+                                    ? "rounded-md bg-[#c8102e] px-4 py-2 text-sm font-semibold text-white"
+                                    : "rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-50"
+                            }
+                        >
+                            Current Events
+                        </Link>
+
+                        <Link
+                            href="/events?view=archived"
+                            className={
+                                selectedView === "archived"
+                                    ? "rounded-md bg-[#c8102e] px-4 py-2 text-sm font-semibold text-white"
+                                    : "rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-50"
+                            }
+                        >
+                            Archived
+                        </Link>
+
+                        <Link
+                            href="/events/?view=all"
+                            className={
+                                selectedView === "all"
+                                    ? "rounded-md bg-[#c8102e] px-4 py-2 text-sm font-semibold text-white"
+                                    : "rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-50" 
+                            }
+                        >
+                            All Events
+                        </Link>
+                    </div>
+
+                    <section className="mt-3 overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm">
                         <div className="border-b border-zinc-200 px-5 py-4">
                             <p className="text-sm text-zinc-600">
                                 <span className="font-semibold text-zinc-900">
@@ -176,6 +234,18 @@ export default async function EventsPage({
                                     event.id,
                                     "closed",
                                 );
+
+                                const archiveEvent = setEventStatus.bind(
+                                    null,
+                                    event.id,
+                                    "archived",
+                                )
+
+                                const restoreEvent = setEventStatus.bind(
+                                    null,
+                                    event.id,
+                                    "closed",
+                                )
 
                                 return (
                                     <article
@@ -229,36 +299,56 @@ export default async function EventsPage({
                                                 </span>
 
                                                 <div className="flex flex-wrap justify-end gap-2">
-                                                    <Link
-                                                        href={`/events/${event.id}/edit`}
-                                                        className="inline-flex h-9 items-center gap-2 rounded-md border border-zinc-300 bg-white px-3 text-xs font-semibold text-zinc-700 hover:bg-zinc-50"
-                                                    >
-                                                        <Pencil className="h-4 w-4" />
-                                                        Edit
-                                                    </Link>
-
-                                                    {event.status === "open" ? (
-                                                        <form action={closeEvent}>
-                                                            <button
-                                                                type="submit"
-                                                                className="inline-flex h-9 items-center gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 text-xs font-semibold text-amber-700 hover:bg-amber-100"
-                                                            >
-                                                                <Lock className="h-4 w-4" />
-                                                                Close
-                                                            </button>
-                                                        </form>
-                                                    ) : (
-                                                        <form action={openEvent}>
+                                                    {event.status === "archived" ? (
+                                                        <form action={restoreEvent}>
                                                             <button
                                                                 type="submit"
                                                                 className="inline-flex h-9 items-center gap-2 rounded-md border border-green-300 bg-green-50 px-3 text-xs font-semibold text-green-700 hover:bg-green-100"
                                                             >
-                                                                <Unlock className="h-4 w-4" />
-                                                                {event.status === "draft"
-                                                                    ? "Publish"
-                                                                    : "Reopen"}
+                                                                <ArchiveRestore className="h-4 w-4" />
+                                                                Restore as Closed
                                                             </button>
                                                         </form>
+                                                    ) : (
+                                                        <>
+                                                            <Link
+                                                                href={`/events/${event.id}/edit`}
+                                                                className="inline-flex h-9 items-center gap-2 rounded-md border border-zinc-300 bg-white px-3 text-xs font-semibold text-zinc-700 hover:bg-zinc-50"
+                                                            >
+                                                                <Pencil className="h-4 w-4" />
+                                                                Edit
+                                                            </Link>
+
+                                                            {event.status === "open" ? (
+                                                                <form action={closeEvent}>
+                                                                    <button
+                                                                        type="submit"
+                                                                        className="inline-flex h-9 items-center gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 text-xs font-semibold text-amber-700 hover:bg-amber-100"
+                                                                    >
+                                                                        <Lock className="h-4 w-4" />
+                                                                        Close
+                                                                    </button>
+                                                                </form>
+                                                                
+                                                            ) : (
+                                                                <form action={openEvent}>
+                                                                    <button
+                                                                        type="submit"
+                                                                        className="inline-flex h-9 items-center gap-2 rounded-md border border-green-300 bg-green-50 px-3 text-xs font-semibold text-green-700 hover:bg-green-100"
+                                                                    >
+                                                                        <Unlock className="h-4 w-4" />
+                                                                        {event.status === "draft"
+                                                                            ? "Publish"
+                                                                            : "Reopen"}
+                                                                    </button>
+                                                                </form>
+                                                            )}
+
+                                                            <ArchiveEventButton
+                                                                eventName={event.name}
+                                                                action={archiveEvent}
+                                                            />
+                                                        </>
                                                     )}
                                                 </div>
                                             </div>

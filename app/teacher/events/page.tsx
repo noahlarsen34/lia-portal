@@ -1,7 +1,7 @@
 import {
-    Calendar,
     CalendarDays,
     Clock,
+    ExternalLink,
     MapPin,
     Users,
 } from "lucide-react";
@@ -234,7 +234,7 @@ export default async function TeacherEventsPage() {
                     </span>
                 </div>
 
-                <div className="divide-y divide-zinc-200">
+                <div className="space-y-4 bg-zinc-50/60 p-4 sm:p-6">
                     {(events ?? []).map((event) => {
                         const startTime = formatTime(
                             event.start_time,
@@ -253,10 +253,10 @@ export default async function TeacherEventsPage() {
                         return (
                             <article
                                 key={event.id}
-                                className="px-6 py-6 transition-colors hover:bg-zinc-50/70 sm:px-8"
+                                className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-red-200 hover:shadow-md"
                             >
-                                <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-                                    <div className="min-w-0 flex-1">
+                                <div className="grid lg:grid-cols-[minmax(0,1fr)_18rem]">
+                                    <div className="min-w-0 p-5 sm:p-6">
                                         <div className="flex flex-wrap items-center gap-2">
                                             <span
                                                 className={`rounded-full px-3 py-1 text-xs font-semibold ${registrationStatus.className}`}
@@ -271,68 +271,75 @@ export default async function TeacherEventsPage() {
                                             </span>
                                         </div>
 
-                                        <h3 className="mt-3 text-2xl font-bold text-zinc-950">
+                                        <h3 className="mt-4 text-2xl font-bold tracking-tight text-zinc-950">
                                             {event.name}
                                         </h3>
 
                                         {event.description ? (
-                                            <p className="mt-2 max-w-3xl whitespace-pre-wrap leading-7 text-zinc-600">
+                                            <p className="mt-2 max-w-3xl whitespace-pre-wrap text-sm leading-6 text-zinc-600">
                                                 {event.description}
                                             </p>
                                         ) : null}
 
-                                        <div className="mt-5 grid gap-3 text-sm text-zinc-700 sm:grid-cols-2">
-                                            <div className="flex items-start gap-2">
-                                                <CalendarDays className="mt-0.5 h-4 w-4 shrink-0 text-[#c8102e]" />
+                                        <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                                            <div className="flex items-start gap-3 rounded-lg bg-zinc-50 p-3">
+                                                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-red-50 text-[#c8102e]">
+                                                    <CalendarDays className="h-4 w-4" />
+                                                </span>
 
-                                                <span>
+                                                <div className="min-w-0">
+                                                    <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                                                        Date
+                                                    </p>
+                                                    <p className="mt-1 text-sm font-medium text-zinc-900">
                                                     {formatEventDate(
                                                         event.event_date,
                                                     )}
-                                                </span>
+                                                    </p>
+                                                </div>
                                             </div>
 
-                                            <div className="flex items-start gap-2">
-                                                <Clock className="mt-0.5 h-4 w-4 shrink-0 text-[#c8102e]" />
-
-                                                <span>
-                                                    {startTime || "Time TBD"}
-                                                    {endTime
-                                                        ? `- ${endTime}`
-                                                        : ""}
+                                            <div className="flex items-start gap-3 rounded-lg bg-zinc-50 p-3">
+                                                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-red-50 text-[#c8102e]">
+                                                    <Clock className="h-4 w-4" />
                                                 </span>
+
+                                                <div>
+                                                    <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                                                        Time
+                                                    </p>
+                                                    <p className="mt-1 text-sm font-medium text-zinc-900">
+                                                        {startTime || "Time TBD"}
+                                                        {endTime
+                                                            ? ` – ${endTime}`
+                                                            : ""}
+                                                    </p>
+                                                </div>
                                             </div>
 
-                                            <div className="flex items-start gap-2">
-                                                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#c8102e]" />
-                                                
-                                                <span>
-                                                    <span className="block font-medium text-zinc-900">
+                                            <div className="flex items-start gap-3 rounded-lg bg-zinc-50 p-3 sm:col-span-2">
+                                                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-red-50 text-[#c8102e]">
+                                                    <MapPin className="h-4 w-4" />
+                                                </span>
+
+                                                <div className="min-w-0">
+                                                    <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                                                        Location
+                                                    </p>
+                                                    <p className="mt-1 text-sm font-medium text-zinc-900">
                                                         {event.location_name}
-                                                    </span>
+                                                    </p>
 
                                                     {event.address ? (
-                                                        <span className="mt-1 block text-zinc-500">
+                                                        <p className="mt-0.5 text-sm text-zinc-500">
                                                             {event.address}
-                                                        </span>
+                                                        </p>
                                                     ) : null}
-                                                </span>
-                                            </div>
-
-                                            <div className="flex items-start gap-2">
-                                                <Users className="mt-0.5 h-4 w-4 shrink-0 text-[#c8102e]" />
-
-                                                <span>
-                                                    {event.capacity
-                                                        ? `Capacity: ${event.capacity.toLocaleString(
-                                                            "en-US",
-                                                        )}`
-                                                        : "No capacity limit"}
-                                                </span>
+                                                </div>
                                             </div>
                                         </div>
 
-                                        <div className="mt-5 flex flex-wrap items-center gap-3">
+                                        <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-3 border-t border-zinc-100 pt-5">
                                             <a
                                                 href={getDirectionsUrl(
                                                     event.location_name,
@@ -340,8 +347,9 @@ export default async function TeacherEventsPage() {
                                                 )}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                className="inline-flex h-10 items-center justify-center rounded-md border border-zinc-300 bg-white px-4 text-sm font-semibold text-zinc-700 hover:bg-zinc-50"
+                                                className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-zinc-300 bg-white px-4 text-sm font-semibold text-zinc-700 hover:border-zinc-400 hover:bg-zinc-50"
                                             >
+                                                <ExternalLink className="h-4 w-4" />
                                                 Get Directions
                                             </a>
 
@@ -358,23 +366,42 @@ export default async function TeacherEventsPage() {
                                         </div>
                                     </div>
 
-                                    <div className="rounded-md border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-600 lg:w-64">
-                                        <p className="font-semibold text-zinc-900">
+                                    <aside className="border-t border-zinc-200 bg-zinc-50/80 p-5 sm:p-6 lg:border-l lg:border-t-0">
+                                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white text-[#c8102e] shadow-sm ring-1 ring-zinc-200">
+                                            <Users className="h-5 w-5" />
+                                        </div>
+
+                                        <p className="mt-4 font-semibold text-zinc-950">
                                             Student Registration
                                         </p>
 
-                                        <p className="mt-1 leading-6">
+                                        <p className="mt-2 text-sm leading-6 text-zinc-600">
                                             Registration options will be
                                             added after the student workflow is finalized.
                                         </p>
-                                    </div>
+
+                                        <div className="mt-5 rounded-lg border border-zinc-200 bg-white p-3">
+                                            <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                                                Capacity
+                                            </p>
+                                            <p className="mt-1 text-sm font-semibold text-zinc-900">
+                                                {event.capacity
+                                                    ? `${event.capacity.toLocaleString("en-US")} students`
+                                                    : "No capacity limit"}
+                                            </p>
+                                        </div>
+
+                                        <p className="mt-5 text-xs font-medium text-zinc-400">
+                                            Full event details coming soon
+                                        </p>
+                                    </aside>
                                 </div>
                             </article>
                         )
                     })}
 
                     {(events ?? []).length === 0 ? (
-                        <div className="px-6 py-12 text-center sm:px-8">
+                        <div className="rounded-xl border border-dashed border-zinc-300 bg-white px-6 py-12 text-center sm:px-8">
                             <CalendarDays className="mx-auto h-10 w-10 text-zinc-300" />
 
                             <h3 className="mt-3 font-semibold text-zinc-900">
