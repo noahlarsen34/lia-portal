@@ -20,8 +20,6 @@ function getErrorMessage(error: string | undefined) {
             return "Event name, date, and location are required.";
         case "name-too-long":
             return "The event name must be 200 characters or fewer.";
-        case "descriptoin-too-long":
-            return "The event description is too long.";
         case "invalid-time":
             return "The event end time must be after its start time.";
         case "invalid-deadline":
@@ -36,6 +34,20 @@ function getErrorMessage(error: string | undefined) {
             return "The eligible schools could not be updated.";
         case "update-failed":
             return "The event could not be updated. Please try again.";
+        case "description-too-long":
+            return "The event description is too long.";
+        case "event-content-too-long":
+            return "Requirements, agenda, and additional instructions must each be 15,000 characters or fewer.";
+        case "invalid-contact-email":
+            return "Enter a valid event contact email address.";
+        case "invalid-resource-url":
+            return "The resource link must begin with http:// or https://.";
+        case "invalid-banner-type":
+            return "The banner must be a JPG, PNG, or WebP image.";
+        case "banner-too-large":
+            return "The banner image must be 5 MB or smaller.";
+        case "banner-upload-failed":
+            return "The banner image could not be uploaded. Please try again.";
         default:
             return null;
     }
@@ -69,7 +81,16 @@ export default async function EditEventPage({
                     registration_deadline,
                     capacity,
                     all_schools,
-                    status 
+                    status,
+                    banner_image_url,
+                    requirements,
+                    agenda,
+                    additional_instructions,
+                    contact_name,
+                    contact_email,
+                    contact_phone,
+                    resource_label,
+                    resource_url
                 `,
             )
             .eq("id", eventId)
@@ -165,6 +186,7 @@ export default async function EditEventPage({
 
                     <form   
                         action={updateCurrentEvent}
+                        encType="multipart/form-data"
                         className="mt-6 space-y-6"
                     >
                         <section className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
@@ -318,6 +340,183 @@ export default async function EditEventPage({
                                                 event.capacity ?? ""
                                             }
                                             placeholder="No limit"
+                                            className="mt-2 w-full rounded-md border border-zinc-300 px-3 py-3 text-sm outline-none focus:border-[#c8102e] focus:ring-4 focus:ring-red-100"
+                                        />
+                                    </label>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+                            <div>
+                                <h2 className="text-xl font-semibold">
+                                    Event Page Content
+                                </h2>
+
+                                <p className="mt-1 text-sm text-zinc-500">
+                                    Customize the teacher-facing event detail page.
+                                </p>
+                            </div>
+
+                            <div className="mt-5 space-y-5">
+                                {event.banner_image_url ? (
+                                    <div>
+                                        <p className="text-sm font-semibold text-zinc-700">
+                                            Current Banner
+                                        </p>
+
+                                        <img
+                                            src={event.banner_image_url}
+                                            alt={`${event.name} banner`}
+                                            className="mt-2 aspect-[3/1] w-full rounded-lg border border-zinc-200 object-cover"
+                                        />
+
+                                        <label className="mt-3 flex items-center gap-2 text-sm font-medium text-red-700">
+                                            <input
+                                                name="remove_banner"
+                                                type="checkbox"
+                                                className="h-4 w-4 rounded border-zinc-300 accent-[#c8102e]"
+                                            />
+                                            Remove current banner
+                                        </label>
+                                    </div>
+                                ) : null}
+
+                                <label className="block">
+                                    <span className="text-sm font-semibold text-zinc-700">
+                                        {event.banner_image_url
+                                            ? "Replace Banner"
+                                            : "Event Banner"}
+                                    </span>
+
+                                    <input
+                                        name="banner_image"
+                                        type="file"
+                                        accept="image/jpeg,image/png,image/webp"
+                                        className="mt-2 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm file:mr-4 file:rounded-md file:border-0 file:bg-red-50 file:px-4 file:py-2 file:font-semibold file:text-[#c8102e] hover:file:bg-red-100"
+                                    />
+
+                                    <span className="mt-2 block text-xs text-zinc-500">
+                                        JPG, PNG, or WebP. Maximum size: 5 MB.
+                                    </span>
+                                </label>
+
+                                <label className="block">
+                                    <span className="text-sm font-semibold text-zinc-700">
+                                        Requirements
+                                    </span>
+
+                                    <textarea
+                                        name="requirements"
+                                        rows={6}
+                                        maxLength={15000}
+                                        defaultValue={event.requirements ?? ""}
+                                        placeholder="Enter one requirement per line."
+                                        className="mt-2 w-full rounded-md border border-zinc-300 px-3 py-3 text-sm outline-none focus:border-[#c8102e] focus:ring-4 focus:ring-red-100"
+                                    />
+                                </label>
+
+                                <label className="block">
+                                    <span className="text-sm font-semibold text-zinc-700">
+                                        Schedule or Agenda
+                                    </span>
+
+                                    <textarea
+                                        name="agenda"
+                                        rows={7}
+                                        maxLength={15000}
+                                        defaultValue={event.agenda ?? ""}
+                                        placeholder={"Example:\n8:00 AM - Check-in\n9:00 AM - Opening session"}
+                                        className="mt-2 w-full rounded-md border border-zinc-300 px-3 py-3 text-sm outline-none focus:border-[#c8102e] focus:ring-4 focus:ring-red-100"
+                                    />
+                                </label>
+
+                                <label className="block">
+                                    <span className="text-sm font-semibold text-zinc-700">
+                                        Additional Instructions
+                                    </span>
+
+                                    <textarea
+                                        name="additional_instructions"
+                                        rows={5}
+                                        maxLength={15000}
+                                        defaultValue={
+                                            event.additional_instructions ?? ""
+                                        }
+                                        placeholder="Transportation, dress, arrival, meal, or preparation instructions."
+                                        className="mt-2 w-full rounded-md border border-zinc-300 px-3 py-3 text-sm outline-none focus:border-[#c8102e] focus:ring-4 focus:ring-red-100"
+                                    />
+                                </label>
+
+                                <div className="grid gap-5 sm:grid-cols-2">
+                                    <label className="block">
+                                        <span className="text-sm font-semibold text-zinc-700">
+                                            Contact Name
+                                        </span>
+
+                                        <input
+                                            name="contact_name"
+                                            maxLength={200}
+                                            defaultValue={event.contact_name ?? ""}
+                                            className="mt-2 w-full rounded-md border border-zinc-300 px-3 py-3 text-sm outline-none focus:border-[#c8102e] focus:ring-4 focus:ring-red-100"
+                                        />
+                                    </label>
+
+                                    <label className="block">
+                                        <span className="text-sm font-semibold text-zinc-700">
+                                            Contact Email
+                                        </span>
+
+                                        <input
+                                            name="contact_email"
+                                            type="email"
+                                            maxLength={320}
+                                            defaultValue={event.contact_email ?? ""}
+                                            className="mt-2 w-full rounded-md border border-zinc-300 px-3 py-3 text-sm outline-none focus:border-[#c8102e] focus:ring-4 focus:ring-red-100"
+                                        />
+                                    </label>
+
+                                    <label className="block">
+                                        <span className="text-sm font-semibold text-zinc-700">
+                                            Contact Phone
+                                        </span>
+
+                                        <input
+                                            name="contact_phone"
+                                            type="tel"
+                                            maxLength={50}
+                                            defaultValue={event.contact_phone ?? ""}
+                                            className="mt-2 w-full rounded-md border border-zinc-300 px-3 py-3 text-sm outline-none focus:border-[#c8102e] focus:ring-4 focus:ring-red-100"
+                                        />
+                                    </label>
+                                </div>
+
+                                <div className="grid gap-5 sm:grid-cols-2">
+                                    <label className="block">
+                                        <span className="text-sm font-semibold text-zinc-700">
+                                            Resource Button Label
+                                        </span>
+
+                                        <input
+                                            name="resource_label"
+                                            maxLength={100}
+                                            defaultValue={event.resource_label ?? ""}
+                                            placeholder="Download event packet."
+                                            className="mt-2 w-full rounded-md border border-zinc-300 px-3 py-3 text-sm outline-none focus:border-[#c8102e] focus:ring-4 focus:ring-red-100"
+                                        />
+                                    </label>
+
+                                    <label className="block">
+                                        <span className="text-sm font-semibold text-zinc-700">
+                                            Resource Link
+                                        </span>
+
+                                        <input
+                                            name="resource_url"
+                                            type="url"
+                                            maxLength={200}
+                                            defaultValue={event.resource_url ?? ""}
+                                            placeholder="https://..."
                                             className="mt-2 w-full rounded-md border border-zinc-300 px-3 py-3 text-sm outline-none focus:border-[#c8102e] focus:ring-4 focus:ring-red-100"
                                         />
                                     </label>

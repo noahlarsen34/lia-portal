@@ -4,9 +4,11 @@ import {
     ExternalLink,
     MapPin,
     Users,
+    ArrowRight,
 } from "lucide-react";
 import { requireTeacher } from "@/utils/role-guards";
 import { createAdminClient } from "@/utils/supabase/admin";
+import Link from "next/link";
 
 function getMountainDate() {
     const parts = new Intl.DateTimeFormat("en-US", {
@@ -272,7 +274,12 @@ export default async function TeacherEventsPage() {
                                         </div>
 
                                         <h3 className="mt-4 text-2xl font-bold tracking-tight text-zinc-950">
-                                            {event.name}
+                                            <Link
+                                                href={`/teacher/events/${event.id}`}
+                                                className="transition-colors hover:text-[#c8102e]"
+                                            >
+                                                {event.name}
+                                            </Link>
                                         </h3>
 
                                         {event.description ? (
@@ -391,9 +398,13 @@ export default async function TeacherEventsPage() {
                                             </p>
                                         </div>
 
-                                        <p className="mt-5 text-xs font-medium text-zinc-400">
-                                            Full event details coming soon
-                                        </p>
+                                        <Link
+                                            href={`/teacher/events/${event.id}`}
+                                            className="mt-5 inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-[#c8102e] px-4 text-sm font-semibold text-white transition hover:bg-[#a70d25]"
+                                        >
+                                            View Event
+                                            <ArrowRight className="h-4 w-4" />
+                                        </Link>
                                     </aside>
                                 </div>
                             </article>

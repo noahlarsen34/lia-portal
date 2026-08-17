@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/utils/role-guards";
+import { uploadEventBanner } from "@/utils/events/upload-event-banner";
 
 function redirectWithError(
     eventId: string,
@@ -20,7 +21,7 @@ export async function updateEvent(
     const { data: existingEvent, error: lookUpError } =
         await supabase
             .from("lia_events")
-            .select("id, status")
+            .select("id, status, banner_image_url")
             .eq("id", eventId)
             .maybeSingle();
     
@@ -53,6 +54,49 @@ export async function updateEvent(
     const capacityValue = String(
         formData.get("capacity") ?? "",
     ).trim();
+    const requirements = String(
+    formData.get("requirements") ?? "",
+    ).trim();
+
+    const agenda = String(
+        formData.get("agenda") ?? "",
+    ).trim();
+
+    const additionalInstructions = String(
+        formData.get("additional_instructions") ?? "",
+    ).trim();
+
+    const contactName = String(
+        formData.get("contact_name") ?? "",
+    ).trim();
+
+    const contactEmail = String(
+        formData.get("contact_email") ?? "",
+    ).trim();
+
+    const contactPhone = String(
+        formData.get("contact_phone") ?? "",
+    ).trim();
+
+    const resourceLabel = String(
+        formData.get("resource_label") ?? "",
+    ).trim();
+
+    const resourceUrl = String(
+        formData.get("resource_url") ?? "",
+    ).trim();
+
+    const removeBanner =
+        formData.get("remove_banner") === "on";
+
+    const bannerValue =
+        formData.get("banner_image");
+
+    const bannerFile =
+        bannerValue instanceof File &&
+        bannerValue.size > 0
+            ? bannerValue
+            : null;
 
     const allSchools =
         formData.get("all_schools") === "on";
@@ -119,6 +163,59 @@ export async function updateEvent(
         }
     }
 
+    if (
+    requirements.length > 15000 ||
+    agenda.length > 15000 ||
+    additionalInstructions.length > 15000
+    ) {
+        redirectWithError(
+            eventId,
+            "event-content-too-long",
+        );
+    }
+
+    if (
+        contactEmail &&
+        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)
+    ) {
+        redirectWithError(
+            eventId,
+            "invalid-contact-email",
+        );
+    }
+
+    if (
+        resourceUrl &&
+        !/^https?:\/\//i.test(resourceUrl)
+    ) {
+        redirectWithError(
+            eventId,
+            "invalid-resource-url",
+        );
+    }
+
+    let bannerImageUrl =
+        removeBanner
+            ? null
+            : existingEvent.banner_image_url;
+    
+    if (bannerFile) {
+        const bannerUpload =
+            await uploadEventBanner(
+                eventId,
+                bannerFile,
+            );
+        
+        if (bannerUpload.error) {
+            redirectWithError(
+                eventId,
+                bannerUpload.error,
+            );
+        }
+
+        bannerImageUrl = bannerUpload.url;
+    }
+
     const { error: updateError } = await supabase
         .from("lia_events")
         .update({
@@ -133,6 +230,16 @@ export async function updateEvent(
                 registrationDeadline || null,
             capacity,
             all_schools: allSchools,
+            banner_image_url: bannerImageUrl,
+            requirements: requirements || null,
+            agenda: agenda || null,
+            additional_instructions:
+                additionalInstructions || null,
+            contact_name: contactName || null,
+            contact_email: contactEmail || null,
+            contact_phone: contactPhone || null,
+            resource_label: resourceLabel || null,
+            resource_url: resourceUrl || null,
             updated_at: new Date().toISOString(),
         })
         .eq("id", eventId);
@@ -216,6 +323,7 @@ export async function updateEvent(
     revalidatePath("/events")
     revalidatePath(`/events/${eventId}/edit`);
     revalidatePath("/teacher/events");
+    revalidatePath(`/teacher/events/${eventId}`);
 
     redirect("/events?updated=true");
 }

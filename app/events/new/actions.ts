@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/utils/role-guards";
+import { uploadEventBanner } from "@/utils/events/upload-event-banner";
 
 function redirectWithError(error: string): never {
     redirect(`/events/new?error=${error}`);
@@ -36,6 +37,36 @@ export async function createEvent(formData: FormData) {
     const capacityValue = String(
         formData.get("capacity") ?? "",
     ).trim();
+    const requirements = String(
+        formData.get("requirements") ?? "",
+    ).trim();
+    const agenda = String(
+        formData.get("agenda") ?? "",
+    ).trim();
+    const additionalInstructions = String(
+        formData.get("additional_instructions") ?? "",
+    ).trim();
+    const contactName = String(
+        formData.get("contact_name") ?? "",
+    ).trim();
+    const contactEmail = String(
+        formData.get("contact_email") ?? "",
+    ).trim();
+    const contactPhone = String(
+        formData.get("contact_phone") ?? "",
+    ).trim();
+    const resourceLabel = String(
+        formData.get("resource_label") ?? "",
+    ).trim();
+    const resourceUrl = String(
+        formData.get("resource_url") ?? "",
+    ).trim();
+    const bannerValue = formData.get("banner_image");
+    const bannerFile =
+        bannerValue instanceof File &&
+        bannerValue.size > 0
+            ? bannerValue
+            : null;
     const intent = String(
         formData.get("intent") ?? "draft",
     ).trim();
@@ -107,6 +138,28 @@ export async function createEvent(formData: FormData) {
         }
     }
 
+    if (
+        requirements.length > 15000 ||
+        agenda.length > 15000 ||
+        additionalInstructions.length > 15000
+    ) {
+        redirectWithError("event-content-too-long");
+    }
+
+    if (
+        contactEmail &&
+        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)
+    ) {
+        redirectWithError("invalid-contact-email");
+    }
+
+    if (
+        resourceUrl &&
+        !/^https?:\/\//i.test(resourceUrl)
+    ) {
+        redirectWithError("invalid-resource-url");
+    }
+
     const status = intent === "open" ? "open" : "draft";
 
     const { data: event, error: eventError } = await supabase
@@ -125,6 +178,15 @@ export async function createEvent(formData: FormData) {
             status,
             all_schools: allSchools,
             created_by: profile.id,
+            requirements: requirements || null,
+            agenda: agenda || null,
+            additional_instructions:
+                additionalInstructions || null,
+            contact_name: contactName || null,
+            contact_email: contactEmail || null,
+            contact_phone: contactPhone || null,
+            resource_label: resourceLabel || null,
+            resource_url: resourceUrl || null,
         })
         .select("id")
         .single();
@@ -136,6 +198,50 @@ export async function createEvent(formData: FormData) {
         });
 
         redirectWithError("create-failed");
+    }
+
+    if (bannerFile) {
+        const bannerUpload =
+            await uploadEventBanner(
+                event.id,
+                bannerFile,
+            );
+        
+        if (bannerUpload.error) {
+            await supabase
+                .from("lia_events")
+                .delete()
+                .eq("id", event.id);
+            
+            redirectWithError(bannerUpload.error);
+        }
+
+        const { error: bannerUpdateError} =
+            await supabase
+                .from("lia_events")
+                .update({
+                    banner_image_url:
+                        bannerUpload.url,
+                })
+                .eq("id", event.id);
+        
+        if (bannerUpdateError) {
+            console.error(
+                "Unable to save event banner URL",
+                {
+                    eventId: event.id,
+                    message:
+                        bannerUpdateError.message,
+                },
+            );
+
+            await supabase
+                .from("lia_events")
+                .delete()
+                .eq("id", event.id);
+            
+            redirectWithError("banner-upload-failed");
+        }
     }
 
     if (!allSchools) {
