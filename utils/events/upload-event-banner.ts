@@ -2,7 +2,7 @@ import "server-only";
 
 import { createAdminClient } from "../supabase/admin";
 
-const EVENT_BANNER_BUCKET = "event-baners";
+const EVENT_BANNER_BUCKET = "event-banners";
 const MAX_BANNER_SIZE = 5 * 1024 * 1024;
 
 const allowedTypes = new Set([
