@@ -148,12 +148,23 @@ export default async function EditEventPage({
 
             <section className="min-h-screen px-4 py-6 sm:px-6 lg:ml-52 lg:px-8">
                 <div className="mx-auto max-w-4xl">
-                    <Link
-                        href="/events"
-                        className="text-sm font-semibold text-[#c8102e] hover:text-[#a70d25]"
-                    >
-                        Back to events
-                    </Link>
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                        <Link
+                            href="/events"
+                            className="text-sm font-semibold text-[#c8102e] hover:text-[#a70d25]"
+                        >
+                            Back to events
+                        </Link>
+
+                        <Link
+                            href={`/teacher/events/${event.id}?preview=1`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex h-10 items-center justify-center rounded-md border border-[#c8102e] bg-white px-4 text-sm font-semibold text-[#c8102e] hover:bg-red-50"
+                        >
+                            Preview Teacher Page
+                        </Link>
+                    </div>
 
                     <header className="mt-5">
                         <p className="text-sm font-semibold uppercase tracking-wide text-[#c8102e]">

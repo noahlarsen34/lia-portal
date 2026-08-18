@@ -3,7 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/utils/role-guards";
-import { uploadEventBanner } from "@/utils/events/upload-event-banner";
+import {
+    deleteEventBanner,
+    uploadEventBanner,
+} from "@/utils/events/upload-event-banner";
 
 function redirectWithError(
     eventId: string,
@@ -198,6 +201,8 @@ export async function updateEvent(
         removeBanner
             ? null
             : existingEvent.banner_image_url;
+
+    let newlyUploadedBannerUrl: string | null = null;
     
     if (bannerFile) {
         const bannerUpload =
@@ -214,6 +219,7 @@ export async function updateEvent(
         }
 
         bannerImageUrl = bannerUpload.url;
+        newlyUploadedBannerUrl = bannerUpload.url;
     }
 
     const { error: updateError } = await supabase
@@ -245,12 +251,27 @@ export async function updateEvent(
         .eq("id", eventId);
     
     if (updateError) {
+        if (newlyUploadedBannerUrl) {
+            await deleteEventBanner(
+                newlyUploadedBannerUrl,
+            );
+        }
+
         console.error("Event update failed", {
             eventId,
             message: updateError.message,
         });
 
         redirectWithError(eventId, "update-failed");
+    }
+
+    if (
+        existingEvent.banner_image_url &&
+        existingEvent.banner_image_url !== bannerImageUrl
+    ) {
+        await deleteEventBanner(
+            existingEvent.banner_image_url,
+        );
     }
 
     if (allSchools) {

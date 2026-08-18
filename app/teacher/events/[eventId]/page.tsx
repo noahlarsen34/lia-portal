@@ -3,11 +3,17 @@ import { notFound } from "next/navigation";
 import {
     ArrowLeft,
     CalendarDays,
+    ClipboardList,
     Clock,
+    Download,
     ExternalLink,
+    Info,
+    Mail,
     MapPin,
+    Phone,
     ShieldCheck,
     TicketCheck,
+    UserRound,
     Users,
 } from "lucide-react";
 import { requireTeacher } from "@/utils/role-guards";
@@ -17,6 +23,9 @@ import { EventCountdown } from "./event-countdown";
 type TeacherEventPageProps = {
     params: Promise<{
         eventId: string;
+    }>;
+    searchParams: Promise<{
+        preview?: string;
     }>;
 };
 
@@ -143,16 +152,20 @@ function getRegistrationStatus(
 
 export default async function TeacherEventPage({
     params,
+    searchParams,
 }: TeacherEventPageProps) {
     const { eventId } = await params;
+    const { preview } = await searchParams;
     const { profile } = await requireTeacher();
     const admin = createAdminClient();
 
-    const { data: event, error : eventError } =
-        await admin
-            .from("lia_events")
-            .select(
-                `
+    const isAdminPreview =
+        profile.role === "admin" && preview === "1";
+
+    let eventQuery = admin
+        .from("lia_events")
+        .select(
+            `
                     id,
                     name,
                     description,
@@ -164,12 +177,26 @@ export default async function TeacherEventPage({
                     registration_deadline,
                     capacity,
                     all_schools,
-                    status 
+                    status,
+                    banner_image_url,
+                    requirements,
+                    agenda,
+                    additional_instructions,
+                    contact_name,
+                    contact_email,
+                    contact_phone,
+                    resource_label,
+                    resource_url
                 `,
-            ) 
-            .eq("id", eventId)
-            .eq("status", "open")
-            .maybeSingle();
+        )
+        .eq("id", eventId);
+
+    if (!isAdminPreview) {
+        eventQuery = eventQuery.eq("status", "open");
+    }
+
+    const { data: event, error: eventError } =
+        await eventQuery.maybeSingle();
     
     if (eventError) {
         throw new Error(
@@ -239,6 +266,22 @@ export default async function TeacherEventPage({
 
     return (
         <div className="mx-auto max-w-6xl pb-12">
+            {isAdminPreview ? (
+                <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                    <p>
+                        <span className="font-semibold">Admin preview:</span>{" "}
+                        teachers can only see this event when it is open and available to their school.
+                    </p>
+
+                    <Link
+                        href={`/events/${eventId}/edit`}
+                        className="font-semibold text-amber-900 underline underline-offset-2"
+                    >
+                        Return to editor
+                    </Link>
+                </div>
+            ) : null}
+
             <Link
                 href="/teacher/events"
                 className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-[#c8102e] hover:text-[#a70d25]"
@@ -247,11 +290,34 @@ export default async function TeacherEventPage({
                 Back to events
             </Link>
 
-            <header className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#9f0c25] via-[#c8102e] to-[#e23550] px-6 py-10 text-white shadow-lg sm:px-10 sm:py-14">
-                <div className="absolute -right-20 -top-20 h-72 w-72 rounded-full bg-white/10" />
-                <div className="absolute -bottom-28 right-28 h-64 w-64 rounded-full bg-black/10" />
+            <header
+                className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#9f0c25] via-[#c8102e] to-[#e23550] px-6 py-10 text-white shadow-lg sm:px-10 sm:py-14 lg:min-h-[29rem]"
+            >
+                {event.banner_image_url ? (
+                    <>
+                        <div
+                            aria-hidden="true"
+                            className="absolute inset-0 bg-cover bg-center lg:left-[43%]"
+                            style={{
+                                backgroundImage: `url(${JSON.stringify(
+                                    event.banner_image_url,
+                                )})`,
+                            }}
+                        />
 
-                <div className="relative max-w-4xl">
+                        <div
+                            aria-hidden="true"
+                            className="absolute inset-0 bg-[linear-gradient(90deg,rgba(111,6,26,0.96)_0%,rgba(159,12,37,0.90)_42%,rgba(159,12,37,0.48)_68%,rgba(111,6,26,0.12)_100%)] lg:bg-[linear-gradient(90deg,#9f0c25_0%,rgba(159,12,37,0.98)_40%,rgba(159,12,37,0.62)_51%,rgba(159,12,37,0.08)_72%,transparent_100%)]"
+                        />
+                    </>
+                ) : (
+                    <>
+                        <div className="absolute -right-20 -top-20 h-72 w-72 rounded-full bg-white/10" />
+                        <div className="absolute -bottom-28 right-28 h-64 w-64 rounded-full bg-black/10" />
+                    </>
+                )}
+
+                <div className="relative max-w-4xl lg:max-w-[48%]">
                     <div className="flex flex-wrap gap-2">
                         <span
                             className={`rounded-full border px-3 py-1 text-xs font-semibold ${registrationStatus.className}`}
@@ -345,11 +411,11 @@ export default async function TeacherEventPage({
                         </h2>
 
                         {event.description ? (
-                            <p className="mt-4 whitespace-pre-wrap text-base leading-8 text-zinc-600">
+                            <p className="mt-4 whitespace-pre-wrap pl-px text-base leading-8 text-zinc-600">
                                 {event.description}
                             </p>
                         ) : (
-                            <p className="mt-4 text-base leading-8 text-zinc-500">
+                            <p className="mt-4 pl-px text-base leading-8 text-zinc-500">
                                 Additional information about this event will be added soon.
                             </p>
                         )}
@@ -402,6 +468,24 @@ export default async function TeacherEventPage({
                                 </div>
                             </div>
                         </div>
+
+                        {event.agenda ? (
+                            <div className="mt-6 border-t border-zinc-200 pt-6">
+                                <div className="flex items-center gap-3">
+                                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-red-50 text-[#c8102e]">
+                                        <ClipboardList className="h-5 w-5" />
+                                    </span>
+
+                                    <h3 className="text-lg font-bold text-zinc-950">
+                                        Event Agenda
+                                    </h3>
+                                </div>
+
+                                <p className="mt-4 whitespace-pre-wrap text-base leading-8 text-zinc-600">
+                                    {event.agenda}
+                                </p>
+                            </div>
+                        ) : null}
                     </section>
 
                     <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-8">
@@ -413,12 +497,32 @@ export default async function TeacherEventPage({
                             Event Requirements
                         </h2>
 
-                        <p className="mt-3 leading-7 text-zinc-600">
-                            Event requirements, preparation
-                            instructions, and required forms will
-                            be available here when provided by LIA staff.
-                        </p>
+                        {event.requirements ? (
+                            <p className="mt-3 whitespace-pre-wrap leading-8 text-zinc-600">
+                                {event.requirements}
+                            </p>
+                        ) : (
+                            <p className="mt-3 leading-7 text-zinc-500">
+                                No additional event requirements have been provided.
+                            </p>
+                        )}
                     </section>
+
+                    {event.additional_instructions ? (
+                        <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm sm:p-8">
+                            <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-red-50 text-[#c8102e]">
+                                <Info className="h-5 w-5" />
+                            </div>
+
+                            <h2 className="mt-4 text-2xl font-bold text-zinc-950">
+                                Additional Instructions
+                            </h2>
+
+                            <p className="mt-3 whitespace-pre-wrap leading-8 text-zinc-600">
+                                {event.additional_instructions}
+                            </p>
+                        </section>
+                    ) : null}
                 </div>
 
                 <aside className="space-y-6">
@@ -448,7 +552,7 @@ export default async function TeacherEventPage({
                             )}
                             target="_blank"
                             rel="noreferrer"
-                            className="mt-5 inline-flex h-10 w-full items-center justify-center gap-2 rounded-md border border-zinc-300 bg-whtie px-4 text-sm font-semibold text-zinc-700 hover:border-zinc-400 hover:bg-zinc-50"
+                            className="mt-5 inline-flex h-10 w-full items-center justify-center gap-2 rounded-md border border-zinc-300 bg-white px-4 text-sm font-semibold text-zinc-700 hover:border-zinc-400 hover:bg-zinc-50"
                         >
                             <ExternalLink className="h-4 w-4" />
                             Get Directions
@@ -506,6 +610,72 @@ export default async function TeacherEventPage({
                             </p>
                         )}
                     </section>
+
+                    {event.contact_name ||
+                    event.contact_email ||
+                    event.contact_phone ? (
+                        <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+                            <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-red-50 text-[#c8102e]">
+                                <UserRound className="h-5 w-5" />
+                            </div>
+
+                            <h2 className="mt-4 text-xl font-bold text-zinc-950">
+                                Event Contact
+                            </h2>
+
+                            {event.contact_name ? (
+                                <p className="mt-3 font-semibold text-zinc-950">
+                                    {event.contact_name}
+                                </p>
+                            ) : null}
+
+                            {event.contact_email ? (
+                                <a
+                                    href={`mailto:${event.contact_email}`}
+                                    className="mt-3 flex items-start gap-2 break-all text-sm text-zinc-600 hover:text-[#c8102e]"
+                                >
+                                    <Mail className="mt-0.5 h-4 w-4 shrink-0" />
+                                    {event.contact_email}
+                                </a>
+                            ) : null}
+
+                            {event.contact_phone ? (
+                                <a
+                                    href={`tel:${event.contact_phone}`}
+                                    className="mt-3 flex items-center gap-2 text-sm text-zinc-600 hover:text-[#c8102e]"
+                                >
+                                    <Phone className="h-4 w-4 shrink-0" />
+                                    {event.contact_phone}
+                                </a>
+                            ) : null}
+                        </section>
+                    ) : null}
+
+                    {event.resource_url ? (
+                        <section className="rounded-xl border border-red-100 bg-red-50 p-6 shadow-sm">
+                            <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-white text-[#c8102e] shadow-sm">
+                                <Download className="h-5 w-5" />
+                            </div>
+
+                            <h2 className="mt-4 text-xl font-bold text-zinc-950">
+                                Event Resource
+                            </h2>
+
+                            <p className="mt-2 text-sm leading-6 text-zinc-600">
+                                Open the materials provided by LIA staff for this event.
+                            </p>
+
+                            <a
+                                href={event.resource_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="mt-5 inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-[#c8102e] px-4 text-sm font-semibold text-white hover:bg-[#a70d25]"
+                            >
+                                <ExternalLink className="h-4 w-4" />
+                                {event.resource_label || "Open Event Resource"}
+                            </a>
+                        </section>
+                    ) : null}
                 </aside>
             </div>
         </div>

@@ -82,3 +82,48 @@ export async function uploadEventBanner(
         error: null,
     };
 }
+
+export async function deleteEventBanner(
+    publicUrl: string | null,
+) {
+    if (!publicUrl) {
+        return;
+    }
+
+    const marker = `/storage/v1/object/public/${EVENT_BANNER_BUCKET}/`;
+
+    let filePath: string | null = null;
+
+    try {
+        const pathname = new URL(publicUrl).pathname;
+        const markerIndex = pathname.indexOf(marker);
+
+        if (markerIndex >= 0) {
+            filePath = decodeURIComponent(
+                pathname.slice(markerIndex + marker.length),
+            );
+        }
+    } catch {
+        console.error("Invalid event banner URL", {
+            publicUrl,
+        });
+    }
+
+    if (!filePath) {
+        return;
+    }
+
+    const admin = createAdminClient();
+
+    const { error } = await admin.storage
+        .from(EVENT_BANNER_BUCKET)
+        .remove([filePath]);
+
+    if (error) {
+        console.error("Event banner cleanup failed", {
+            publicUrl,
+            filePath,
+            message: error.message,
+        });
+    }
+}
