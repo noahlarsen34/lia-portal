@@ -19,6 +19,7 @@ import {
 import { requireTeacher } from "@/utils/role-guards";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { EventCountdown } from "./event-countdown";
+import { EventRegistrationShare } from "./event-registration-share";
 
 type TeacherEventPageProps = {
     params: Promise<{
@@ -186,7 +187,8 @@ export default async function TeacherEventPage({
                     contact_email,
                     contact_phone,
                     resource_label,
-                    resource_url
+                    resource_url,
+                    registration_token
                 `,
         )
         .eq("id", eventId);
@@ -206,6 +208,24 @@ export default async function TeacherEventPage({
 
     if (!event) {
         notFound();
+    }
+
+    const { data: currentTeacher, error: currentTeacherError } =
+        profile.role === "teacher"
+            ? await admin
+                .from("teachers")
+                .select("id, school_id")
+                .eq("profile_id", profile.id)
+                .maybeSingle()
+            : {
+                data: null,
+                error: null,
+            };
+    
+    if (currentTeacherError) {
+        throw new Error(
+            `Unable to load teacher record: ${currentTeacherError.message}`,
+        );
     }
 
     if (
@@ -250,6 +270,131 @@ export default async function TeacherEventPage({
         }
     }
 
+    let registrations: Array<{
+        id: string;
+        first_name: string;
+        last_name: string;
+        student_email: string;
+        grade_level: string | null;
+        competition_category: string;
+        entry_title: string;
+        status: string;
+        ticket_number: string;
+        submitted_at: string;
+        schools: 
+            | {
+                name: string;
+            }
+            | Array<{
+                name: string;
+            }>
+            | null;
+        lia_classes:
+            | {
+                name: string;
+                period: string | null;
+            }
+            | Array<{
+                name: string;
+                period: string | null;
+            }>
+            | null;
+    }> = [];
+
+    if (profile.role === "teacher" && currentTeacher?.id) {
+        const {
+            data: teacherRegistrations,
+            error: registrationsError,
+        } = await admin
+            .from("event_registrations")
+            .select(
+                `
+                    id,
+                    first_name,
+                    last_name,
+                    student_email,
+                    grade_level,
+                    competition_category,
+                    entry_title,
+                    status,
+                    ticket_number,
+                    submitted_at,
+                    schools (
+                        name
+                    ),
+                    lia_classes (
+                        name,
+                        period
+                    )  
+                `,
+            )
+            .eq("event_id", event.id)
+            .eq("teacher_id", currentTeacher.id)
+            .neq("status", "withdrawn")
+            .order("last_name")
+            .order("first_name");
+        
+        if (registrationsError) {
+            throw new Error(
+                `Unable to load event registrations: ${registrationsError.message}`,
+            );
+        }
+
+        registrations =
+            (teacherRegistrations ?? []) as typeof registrations;
+    } else if (isAdminPreview) {
+        const {
+            data: eventRegistrations,
+            error: registrationsError,
+        } = await admin
+            .from("event_registrations")
+            .select(
+                `
+                    id,
+                    first_name,
+                    last_name,
+                    student_email,
+                    grade_level,
+                    competition_category,
+                    entry_title,
+                    status,
+                    ticket_number,
+                    submitted_at,
+                    schools (
+                        name
+                    ),
+                    lia_classes (
+                        name,
+                        period
+                    ) 
+                `,
+            )
+            .eq("event_id", event.id)
+            .neq("status", "withdrawn")
+            .order("last_name")
+            .order('first_name');
+        
+        if (registrationsError) {
+            throw new Error(
+                `Unabel to load event registrations: ${registrationsError.message}`,
+            );
+        }
+
+        registrations =
+            (eventRegistrations ?? []) as typeof registrations;
+    }
+
+    const registrationPath =
+        `/event-registration/${event.registration_token}`;
+
+    const registrationIsOpen =
+        event.status === "open" &&
+        event.event_date >= getMountainDate() &&
+        (!event.registration_deadline ||
+            event.registration_deadline >=
+                getMountainDate());
+    
+    
     const startTime = formatTime(event.start_time);
     const endTime = formatTime(event.end_time);
 
@@ -379,22 +524,12 @@ export default async function TeacherEventPage({
                     </div>
 
                     <div className="rounded-xl border border-white/10 bg-white/5 p-5">
-                        <p className="font-semibold">
-                            Student registration
-                        </p>
-
-                        <p className="mt-2 text-sm leading-6 text-white/60">
-                            Registration tools and attendance totals will appear here
-                            when the student workflow is ready.
-                        </p>
-
-                        <button
-                            type="button"
-                            disabled
-                            className="mt-5 inline-flex h-11 w-full cursor-not-allowed items-center justify-center rounded-md bg-white/10 px-4 text-sm font-semibold text-white/45"
-                        >
-                            Registration Coming Soon
-                        </button>
+                            <EventRegistrationShare
+                                eventName={event.name}
+                                registrationPath={registrationPath}
+                                registrationOpen={registrationIsOpen}
+                                registrationCount={registrations.length}
+                            />
                     </div>
                 </div>
             </section>
@@ -678,6 +813,187 @@ export default async function TeacherEventPage({
                     ) : null}
                 </aside>
             </div>
+
+            <section className="mt-8 overflow-hidden rounded-xl border border-zinc-200 bg-zinc-200 bg-white shadow-sm">
+                <div className="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-200 px-6 py-5 sm:px-8">
+                    <div>
+                        <p className="text-sm font-semibold uppercase tracking-wide text-[#c8102e]">
+                            Event registration
+                        </p>
+
+                        <h2 className="mt-1 text-2xl font-bold text-zinc-950">
+                            Registered Students
+                        </h2>
+
+                        <p className="mt-1 text-sm text-zinc-500">
+                            Students who selected you as their LIA teacher.
+                        </p>
+                    </div>
+
+                    <div className="rounded-full bg-red-50 px-4 py-2 text-sm font-semibold text-[#c8102e]">
+                        {registrations.length.toLocaleString("en-US")}{" "}
+                        {registrations.length === 1
+                            ? "student"
+                            : "students"}
+                    </div>
+                </div>
+
+                {registrations.length === 0 ? (
+                    <div className="px-6 py-14 text-center sm:px-8">
+                        <Users className="mx-auto h-10 w-10 text-zinc-300" />
+
+                        <h3 className="mt-4 font-semibold text-zinc-900">
+                            No students have registerd yet
+                        </h3>
+
+                        <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-inc-500">
+                            Share the registration link or QR code above 
+                            with your students. Their registrations will
+                            appear here automatically.
+                        </p>
+                    </div>
+                ) : (
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-zinc-200">
+                            <thead className="bg-zinc-50">
+                                <tr>
+                                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                                        Student
+                                    </th>
+
+                                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                                        Grade
+                                    </th>
+
+                                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                                        Class
+                                    </th>
+
+                                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                                        Competition
+                                    </th>
+
+                                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                                        Status
+                                    </th>
+
+                                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                                        Ticket
+                                    </th>
+                                </tr>
+                            </thead>
+
+                            <tbody className="divide-y divide-zinc-100 bg-white">
+                                {registrations.map((registration) => {
+                                    const school = Array.isArray(
+                                        registration.schools,
+                                    )
+                                        ? registration.schools[0]
+                                        : registration.schools;
+                                    
+                                    const liaClass = Array.isArray(
+                                        registration.lia_classes,
+                                    )
+                                        ? registration.lia_classes[0]
+                                        : registration.lia_classes;
+                                    
+                                    return (
+                                        <tr
+                                            key={registration.id}
+                                            className="hover:bg-zinc-50/70"
+                                        >
+                                            <td className="px-6 py-4">
+                                                <p className="font-semibold text-zinc-950">
+                                                    {registration.first_name}{" "}
+                                                    {registration.last_name}
+                                                </p>
+
+                                                <p className="mt-1 text-sm text-zinc-500">
+                                                    {registration.student_email}
+                                                </p>
+
+                                                {school?.name ? (
+                                                    <p className="mt-1 text-xs text-zinc-400">
+                                                        {school.name}
+                                                    </p>
+                                                ) : null}
+                                            </td>
+
+                                            <td className="whitespace-nowrap px-6 py-4 text-sm text-zinc-700">
+                                                {registration.grade_level ||
+                                                    "N/A"}
+                                            </td>
+
+                                            <td className="px-6 py-4 text-sm text-zinc-700">
+                                                {liaClass ? (
+                                                    <>
+                                                        <p>{liaClass.name}</p>
+
+                                                        {liaClass.period ? (
+                                                            <p className="mt-1 text-xs text-zinc-500">
+                                                                Period{" "}
+                                                                {liaClass.period}
+                                                            </p>
+                                                        ) : null}
+                                                    </>
+                                                ) : (
+                                                    "Not selected"
+                                                )}
+                                            </td>
+
+                                            <td className="px-6 py-4">
+                                                <p className="text-sm font-semibold text-zinc-900">
+                                                    {
+                                                        registration.competition_category
+                                                    }
+                                                </p>
+
+                                                <p className="mt-1 text-sm text-zinc-500">
+                                                    {registration.entry_title}
+                                                </p>
+                                            </td>
+
+                                            <td className="px-6 py-4">
+                                                <span
+                                                    className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
+                                                        registration.status ===
+                                                        "checked_in"
+                                                            ? "bg-green-50 text-green-700"
+                                                            : registration.status ===
+                                                                "ticket_issued"
+                                                                ? "bg-blue-50 text-blue-700"
+                                                                : "bg-amber-50 text-amber-700"
+                                                    }`}
+                                                >
+                                                    {registration.status ===
+                                                    "checked_in"
+                                                        ? "Checked In"
+                                                        : registration.status ===
+                                                            "ticket_issued"
+                                                            ? "Ticket Issued"
+                                                            : "Registered"}
+                                                </span>
+                                            </td>
+
+                                            <td className="px-6 py-4">
+                                                <p className="font-mono text-xs font-semibold text-zinc-700">
+                                                    {
+                                                        registration.ticket_number
+                                                    }
+                                                </p>
+
+                                                <span className="mt-1 block text-xs text-zinc-400">
+                                                    Ticket page coming next
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </section>
         </div>
     );
 }
