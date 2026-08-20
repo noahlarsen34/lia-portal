@@ -121,7 +121,21 @@ export default async function EventTicketPage({
 
     return (
         <main className="min-h-screen bg-[#f8f3f4] px-4 py-10">
-            
+            <div className="mx-auto max-w-5xl">
+                <div className="overflow-hidden rounded-3xl shadow-xl">
+                    <section className="bg-gradient-to-br from-[#b50926] to-[#e32246] px-7 text-white md:px-12">
+                        <p className="text-sm font-bold uppercase tracking-[0.2em] text-white/75">
+                            Latinos In Action Event Ticket
+                        </p>
+
+                        <h1 className="mt-3 text-4xl font-bold md:text-5xl">
+                            {event.name}
+                        </h1>
+
+                        
+                    </section>
+                </div>
+            </div>
         </main>
     )
 }

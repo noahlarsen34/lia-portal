@@ -1,5 +1,9 @@
 import { createAdminClient } from "@/utils/supabase/admin";
 import { submitTutoringLog } from './actions';
+import {
+    SubmitTutoringLogButton,
+    TutoringFormPersistence,
+} from "./form-safety";
 
 type StudentTutoringFormPageProps = {
     params: Promise<{
@@ -102,7 +106,11 @@ export default async function StudentTutoringFormPage({
                 )}
 
                 {query.error && (
-                    <div className="mt-5 rounded-md border border-red-200 bg-red-50 p-4 text-sm font-medium text-[#c4122f]">
+                    <div
+                        id="tutoring-form-error"
+                        tabIndex={-1}
+                        className="mt-5 scroll-mt-6 rounded-md border border-red-200 bg-red-50 p-4 text-sm font-medium text-[#c4122f] outline-none focus:ring-2 focus:ring-red-300"
+                    >
                         {query.error === "invalid-time"
                             ? "Departure time must be after arrival time."
                             : query.error === "missing-student"
@@ -115,12 +123,30 @@ export default async function StudentTutoringFormPage({
                                             ? "The proof file must be 8 MB or smaller."
                                             : query.error === "proof-upload-failed"
                                                 ? "The proof file could not be uploaded. Please try again."
-                                                : "Something went wrong. Please try again."}
+                                                : query.error === "duplicate-log"
+                                                    ? "This session has already been submitted. Please do not submit it again."
+                                                    : "Something went wrong. Please try again."}
+
+                        {query.error !== "duplicate-log" ? (
+                            <span className="mt-2 block font-normal text-red-700">
+                                Your other answers were restored. For security,
+                                please select the proof file again before submitting.
+                            </span>
+                        ) : null}
                     </div>
                 )}
 
                 {liaClass && (
-                    <form action={submitLog} className="mt-8 space-y-5">
+                    <form
+                        action={submitLog}
+                        data-tutoring-form
+                        className="mt-8 space-y-5"
+                    >
+                        <TutoringFormPersistence
+                            token={token}
+                            submitted={query.submitted === "true"}
+                            hasError={Boolean(query.error)}
+                        />
                         <label className="block">
                             <span className="text-sm font-semibold text-zinc-800">
                                 Name
@@ -337,12 +363,7 @@ export default async function StudentTutoringFormPage({
                             </label>
                         </div>
 
-                        <button
-                            type="submit"
-                            className="rounded-md bg-[#c4122f] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#a70d25]"
-                        >
-                            Submit Log
-                        </button>
+                        <SubmitTutoringLogButton />
                     </form>
                 )}
             </section>

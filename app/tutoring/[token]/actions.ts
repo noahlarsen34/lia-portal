@@ -52,6 +52,31 @@ function cleanFileName(fileName: string) {
         .slice(0, 180);
 }
 
+async function createSubmissionId(parts: string[]) {
+    const digest = await crypto.subtle.digest(
+        "SHA-256",
+        new TextEncoder().encode(parts.join("|")),
+    );
+    const bytes = new Uint8Array(digest).slice(0, 16);
+
+    // Format the deterministic digest as an RFC 4122 version-5 UUID. The
+    // database primary key then becomes the final duplicate-submission lock.
+    bytes[6] = (bytes[6] & 0x0f) | 0x50;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+
+    const hex = Array.from(bytes, (byte) =>
+        byte.toString(16).padStart(2, "0"),
+    ).join("");
+
+    return [
+        hex.slice(0, 8),
+        hex.slice(8, 12),
+        hex.slice(12, 16),
+        hex.slice(16, 20),
+        hex.slice(20),
+    ].join("-");
+}
+
 export async function submitTutoringLog(
     token: string,
     formData: FormData,
@@ -139,7 +164,31 @@ export async function submitTutoringLog(
     const studentName =
         `${student?.first_name ?? ""} ${student?.last_name ?? ""}`.trim();
 
-    const logId = crypto.randomUUID();
+    const { data: existingLog } = await admin
+        .from("tutoring_logs")
+        .select("id")
+        .eq("lia_class_id", liaClass.id)
+        .eq("student_enrollment_id", studentEnrollmentId)
+        .eq("activity_type", activityType === "service" ? "service" : "tutoring")
+        .eq("session_date", sessionDate)
+        .eq("arrival_time", arrivalTime)
+        .eq("departure_time", departureTime)
+        .or("status.is.null,status.neq.rejected")
+        .limit(1)
+        .maybeSingle();
+
+    if (existingLog) {
+        redirect(`/tutoring/${token}?error=duplicate-log`);
+    }
+
+    const logId = await createSubmissionId([
+        liaClass.id,
+        studentEnrollmentId,
+        activityType === "service" ? "service" : "tutoring",
+        sessionDate,
+        arrivalTime,
+        departureTime,
+    ]);
     const safeFileName =
         cleanFileName(proofFile.name) || "tutoring-proof";
 
@@ -224,6 +273,14 @@ export async function submitTutoringLog(
         });
 
     if (insertError) {
+        if (insertError.code === "23505") {
+            await admin.storage
+                .from(TUTORING_PROOF_BUCKET)
+                .remove([proofFilePath]);
+
+            redirect(`/tutoring/${token}?error=duplicate-log`);
+        }
+
         console.error("Tutoring log insert failed", {
             classId: liaClass.id,
             enrollmentId: studentEnrollmentId,
