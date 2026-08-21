@@ -108,11 +108,10 @@ export default async function NewEventPage({
                         </div>
                     ) : null}
 
-                    <form 
-                        action={createEvent}
-                        encType="multipart/form-data"
-                        className="mt-6 space-y-6"
-                    >
+                <form
+                    action={createEvent}
+                    className="mt-6 space-y-6"
+                >
                         <section className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
                             <h2 className="text-xl font-semibold">
                                 Event Details

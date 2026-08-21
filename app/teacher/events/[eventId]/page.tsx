@@ -276,10 +276,16 @@ export default async function TeacherEventPage({
         last_name: string;
         student_email: string;
         grade_level: string | null;
-        competition_category: string;
-        entry_title: string;
+        competition_category: string | null;
+        entry_title: string | null;
+        competition_entries: Array<{
+            id: string;
+            category: string;
+            title: string | null;
+        }>;
         status: string;
         ticket_number: string;
+        ticket_token: string;
         submitted_at: string;
         schools: 
             | {
@@ -316,8 +322,14 @@ export default async function TeacherEventPage({
                     grade_level,
                     competition_category,
                     entry_title,
+                    competition_entries:event_competition_entries(
+                        id,
+                        category,
+                        title
+                    ),
                     status,
                     ticket_number,
+                    ticket_token,
                     submitted_at,
                     schools (
                         name
@@ -357,8 +369,14 @@ export default async function TeacherEventPage({
                     grade_level,
                     competition_category,
                     entry_title,
+                    competition_entries:event_competition_entries(
+                        id,
+                        category,
+                        title
+                    ),
                     status,
                     ticket_number,
+                    ticket_token,
                     submitted_at,
                     schools (
                         name
@@ -897,6 +915,9 @@ export default async function TeacherEventPage({
                                         ? registration.lia_classes[0]
                                         : registration.lia_classes;
                                     
+                                    const competitionEntries =
+                                        registration.competition_entries ?? [];
+
                                     return (
                                         <tr
                                             key={registration.id}
@@ -942,15 +963,39 @@ export default async function TeacherEventPage({
                                             </td>
 
                                             <td className="px-6 py-4">
-                                                <p className="text-sm font-semibold text-zinc-900">
-                                                    {
-                                                        registration.competition_category
-                                                    }
-                                                </p>
+                                                {competitionEntries.length > 0 ? (
+                                                    <div className="space-y-2">
+                                                        {competitionEntries.map((entry) => (
+                                                            <Link
+                                                                key={entry.id}
+                                                                href={`/teacher/events/${event.id}/competitions/${entry.id}`}
+                                                                className="block rounded-lg border border-zinc-200 bg-white px-3 py-2 transition hover:border-[#c8102e] hover:bg-red-50"
+                                                            >
+                                                                <span className="block text-sm font-semibold text-[#c8102e]">
+                                                                    {entry.category}
+                                                                </span>
 
-                                                <p className="mt-1 text-sm text-zinc-500">
-                                                    {registration.entry_title}
-                                                </p>
+                                                                <span className="mt-0.5 block text-xs text-zinc-500">
+                                                                    {entry.title || "Untitled entry"}
+                                                                </span>
+                                                            </Link>
+                                                        ))}
+                                                    </div>
+                                                ) : registration.competition_category ? (
+                                                    <div>
+                                                        <p className="text-sm font-semibold text-zinc-900">
+                                                            {registration.competition_category}
+                                                        </p>
+
+                                                        <p className="mt-1 text-sm text-zinc-500">
+                                                            {registration.entry_title || "Untitled entry"}
+                                                        </p>
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-sm text-zinc-400">
+                                                        No entry submitted
+                                                    </span>
+                                                )}
                                             </td>
 
                                             <td className="px-6 py-4">
@@ -976,14 +1021,17 @@ export default async function TeacherEventPage({
                                             </td>
 
                                             <td className="px-6 py-4">
-                                                <p className="font-mono text-xs font-semibold text-zinc-700">
-                                                    {
-                                                        registration.ticket_number
-                                                    }
-                                                </p>
+                                                <Link
+                                                    href={`/event-ticket/${registration.ticket_token}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="inline-flex rounded-lg border border-red-200 bg-red-50 px-3 py-2 font-mono text-xs font-bold text-[#c8102e] transition hover:border-[#c8102e] hover:bg-red-100"
+                                                >
+                                                    {registration.ticket_number}
+                                                </Link>
 
-                                                <span className="mt-1 block text-xs text-zinc-400">
-                                                    Ticket page coming next
+                                                <span className="mt-2 block text-xs text-zinc-400">
+                                                    Open ticket
                                                 </span>
                                             </td>
                                         </tr>

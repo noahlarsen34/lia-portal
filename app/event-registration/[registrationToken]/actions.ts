@@ -32,6 +32,14 @@ const ALLOWED_FILE_TYPES = new Set([
     "video/quicktime",
 ]);
 
+type CompetitionEntryInput = {
+    key: string;
+    category: string;
+    title: string;
+    externalUrl: string;
+    files: File[];
+};
+
 function textValue(formData: FormData, name: string) {
     const value = formData.get(name);
 
@@ -69,6 +77,24 @@ function isValidExternalUrl(value: string) {
     }
 }
 
+function competitionEntriesFrom(formData: FormData): CompetitionEntryInput[] {
+    return formData
+        .getAll("competition_entry_key")
+        .filter((value): value is string => typeof value === "string")
+        .map((key) => ({
+            key,
+            category: textValue(formData, `competition_category_${key}`),
+            title: textValue(formData, `entry_title_${key}`),
+            externalUrl: textValue(formData, `external_url_${key}`),
+            files: formData
+                .getAll(`entry_files_${key}`)
+                .filter(
+                    (value): value is File =>
+                        value instanceof File && value.size > 0,
+                ),
+        }));
+}
+
 export async function submitEventRegistration(
     registrationToken: string,
     formData: FormData,
@@ -89,25 +115,14 @@ export async function submitEventRegistration(
         "student_enrollment_id",
     );
 
-    const competitionCategory = textValue(formData, "competition_category");
-
-    const entryTitle = textValue(formData, "entry_title");
-    const externalUrl = textValue(formData, "external_url");
-
-    const files = formData
-        .getAll("entry_files")
-        .filter(
-            (value): value is File =>
-                value instanceof File && value.size > 0,
-        );
+    const competitionEntries = competitionEntriesFrom(formData);
+    const files = competitionEntries.flatMap((entry) => entry.files);
     
     if (
         !schoolId ||
         !teacherId ||
         !classId ||
-        !studentEnrollmentId ||
-        !competitionCategory ||
-        !entryTitle
+        !studentEnrollmentId
     ) {
         errorRedirect(
             registrationToken,
@@ -115,24 +130,51 @@ export async function submitEventRegistration(
         );
     }
 
-    if (!isValidExternalUrl(externalUrl)) {
+    if (competitionEntries.length > COMPETITION_CATEGORIES.size) {
         errorRedirect(
             registrationToken,
-            "The competition entry link must be a valid website URL.",
+            "You may submit no more than one entry in each competition category.",
         );
     }
 
-    if (!COMPETITION_CATEGORIES.has(competitionCategory)) {
+    const invalidCategory = competitionEntries.find(
+        (entry) => !COMPETITION_CATEGORIES.has(entry.category),
+    );
+
+    if (invalidCategory) {
         errorRedirect(
             registrationToken,
-            "Please select a valid competition category.",
+            "Select a valid category for every competition entry you add.",
         );
     }
 
-    if (!externalUrl && files.length === 0) {
+    const categories = competitionEntries.map((entry) => entry.category);
+    if (new Set(categories).size !== categories.length) {
         errorRedirect(
             registrationToken,
-            "Please upload at least one competition file or provide a shareable Google Doc, website, or video link.",
+            "Only one competition entry may be submitted in each category.",
+        );
+    }
+
+    const invalidUrlEntry = competitionEntries.find(
+        (entry) => !isValidExternalUrl(entry.externalUrl),
+    );
+
+    if (invalidUrlEntry) {
+        errorRedirect(
+            registrationToken,
+            "Each competition entry link must be a valid website URL.",
+        );
+    }
+
+    const emptyEntry = competitionEntries.find(
+        (entry) => !entry.externalUrl && entry.files.length === 0,
+    );
+
+    if (emptyEntry) {
+        errorRedirect(
+            registrationToken,
+            "Each competition entry you add needs at least one file or a shareable link. Remove an empty entry if you only want to register for the event.",
         );
     }
 
@@ -329,6 +371,8 @@ export async function submitEventRegistration(
         ).toISOString();
     }   
 
+    const primaryEntry = competitionEntries[0];
+
     const { data: registration, error: registrationError } =
         await supabase
             .from("event_registrations")
@@ -344,10 +388,12 @@ export async function submitEventRegistration(
                 phone: phone || null,
                 grade_level: gradeLevel || null,
 
-                competition_category: competitionCategory,
-                entry_title: entryTitle,
+                // Keep the first entry in the legacy columns while older pages
+                // are transitioned to the multiple-entry table.
+                competition_category: primaryEntry?.category || null,
+                entry_title: primaryEntry?.title || null,
                 written_response: null,
-                external_url: externalUrl || null,
+                external_url: primaryEntry?.externalUrl || null,
 
                 status: "registered",
 
@@ -395,8 +441,33 @@ export async function submitEventRegistration(
     const uploadedPaths: string[] = [];
 
     try {
+        const entryIdByCategory = new Map<string, string>();
+
+        if (competitionEntries.length > 0) {
+            const { data: savedEntries, error: entriesError } = await supabase
+                .from("event_competition_entries")
+                .insert(
+                    competitionEntries.map((entry) => ({
+                        registration_id: registration.id,
+                        category: entry.category,
+                        title: entry.title || null,
+                        external_url: entry.externalUrl || null,
+                    })),
+                )
+                .select("id, category");
+
+            if (entriesError || !savedEntries) {
+                throw entriesError ?? new Error("Competition entries were not saved.");
+            }
+
+            for (const savedEntry of savedEntries) {
+                entryIdByCategory.set(savedEntry.category, savedEntry.id);
+            }
+        }
+
         const fileRows: Array<{
             registration_id: string;
+            competition_entry_id: string;
             bucket_name: string;
             file_path: string;
             original_file_name: string;
@@ -404,39 +475,49 @@ export async function submitEventRegistration(
             file_size: number;
         }> = [];
 
-        for (const file of files) {
-            const safeFileName =
-                sanitizeFileName(file.name) || "competition-entry";
-            
-            const filePath = [
-                event.id,
-                registration.id,
-                `${crypto.randomUUID()}-${safeFileName}`,
-            ].join("/");
+        for (const entry of competitionEntries) {
+            const competitionEntryId = entryIdByCategory.get(entry.category);
 
-            const fileBuffer = await file.arrayBuffer();
-
-            const { error: uploadError } = await supabase.storage
-                .from(UPLOAD_BUCKET)
-                .upload(filePath, fileBuffer, {
-                    contentType: file.type,
-                    upsert: false,
-                });
-            
-            if (uploadError) {
-                throw uploadError;
+            if (!competitionEntryId) {
+                throw new Error("A competition entry could not be matched to its files.");
             }
 
-            uploadedPaths.push(filePath);
+            for (const file of entry.files) {
+                const safeFileName =
+                    sanitizeFileName(file.name) || "competition-entry";
+            
+                const filePath = [
+                    event.id,
+                    registration.id,
+                    competitionEntryId,
+                    `${crypto.randomUUID()}-${safeFileName}`,
+                ].join("/");
 
-            fileRows.push({
-                registration_id: registration.id,
-                bucket_name: UPLOAD_BUCKET,
-                file_path: filePath,
-                original_file_name: file.name,
-                mime_type: file.type,
-                file_size: file.size,
-            });
+                const fileBuffer = await file.arrayBuffer();
+
+                const { error: uploadError } = await supabase.storage
+                    .from(UPLOAD_BUCKET)
+                    .upload(filePath, fileBuffer, {
+                        contentType: file.type,
+                        upsert: false,
+                    });
+            
+                if (uploadError) {
+                    throw uploadError;
+                }
+
+                uploadedPaths.push(filePath);
+
+                fileRows.push({
+                    registration_id: registration.id,
+                    competition_entry_id: competitionEntryId,
+                    bucket_name: UPLOAD_BUCKET,
+                    file_path: filePath,
+                    original_file_name: file.name,
+                    mime_type: file.type,
+                    file_size: file.size,
+                });
+            }
         }
 
         if (fileRows.length > 0) {
@@ -471,7 +552,7 @@ export async function submitEventRegistration(
 
         errorRedirect(
             registrationToken,
-            "Your competition files could not be uploaded. Please try again.",
+            "Your registration or competition entries could not be saved. Please try again.",
         )
     }
 
@@ -526,10 +607,6 @@ export async function submitEventRegistration(
                         <td style="padding: 20px;">
                             <p style="margin:0 0 6px; color:#71717a; font-size:12px; font-weight:700; text-transform:uppercase;">
                                 Event
-                            </p>
-
-                            <p style="margin:0 0 16px; color:#18181b; font-size:19px; font-weight:700;">
-                                ${escapeHtml(event.name)}
                             </p>
 
                             <p style="margin:0 0 16px; color:#18181b; font-size:19px; font-weight:700;">

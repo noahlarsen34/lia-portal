@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { submitEventRegistration } from "./actions";
 import { StudentPicker } from "./student-picker";
+import { CompetitionEntries } from "./competition-entries";
 
 type PageProps = {
     params: Promise<{
@@ -500,90 +501,7 @@ export default async function EventRegistrationPage({
                             </div>
                             </fieldset>
 
-                            <div className="border-t border-gray-200 pt-8">
-                                <h3 className="mb-2 text-xl font-bold">
-                                    Competition entry
-                                </h3>
-
-                                <p className="mb-5 text-gray-600">
-                                    Select a category, name your entry, and submit
-                                    either a file or a shareable Google Doc,
-                                    website, or video link.
-                                </p>
-
-                                <div className="space-y-5">
-                                    <label className="block space-y-2 font-semibold">
-                                        <span>
-                                            Competition category{" "}
-                                            <span className="text-[#c8102e]">*</span>
-                                        </span>
-                                        <select
-                                            name="competition_category"
-                                            required
-                                            defaultValue=""
-                                            className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 font-normal text-gray-950 outline-none placeholder:text-gray-500 focus:border-[#c8102e] focus:ring-2 focus:ring-red-100"
-                                        >
-                                            <option value="" disabled>
-                                                Select a competition category
-                                            </option>
-                                            <option value="Public speaking">
-                                                Public speaking
-                                            </option>
-                                            <option value="Art">Art</option>
-                                            <option value="Video">Video</option>
-                                            <option value="Essay">Essay</option>
-                                        </select>
-                                    </label>
-
-                                    <label className="block space-y-2 font-semibold">
-                                        <span>
-                                            Entry title{" "}
-                                            <span className="text-[#c8102e]">*</span>
-                                        </span>
-                                        <input
-                                            name="entry_title"
-                                            required
-                                            placeholder="Enter the title of your competition entry"
-                                            className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 font-normal text-gray-950 outline-none placeholder:text-gray-500 focus:border-[#c8102e] focus:ring-2 focus:ring-red-100"
-                                        />
-                                    </label>
-
-                                    <label className="block space-y-2 font-semibold">
-                                        <span>
-                                            Google Doc, website, or video link
-                                        </span>
-                                        <input
-                                            type="url"
-                                            name="external_url"
-                                            placeholder="https://docs.google.com/... or https://youtube.com/..."
-                                            className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 font-normal text-gray-950 outline-none placeholder:text-gray-500 focus:border-[#c8102e] focus:ring-2 focus:ring-red-100"
-                                        />
-                                        <span className="block text-sm font-normal text-gray-500">
-                                            Make sure anyone with the link can view
-                                            your Google Doc or Drive file.
-                                        </span>
-                                    </label>
-
-                                    <label className="block space-y-2 font-semibold">
-                                        <span>Upload competition files</span>
-                                        <input
-                                            type="file"
-                                            name="entry_files"
-                                            multiple
-                                            accept=".jpg,.jpeg,.png,.webp,.pdf,.txt,.doc,.docx,.ppt,.pptx,.mp4,.mov"
-                                            className="block w-full rounded-xl border border-dashed border-gray-300 bg-gray-50 px-4 py-6 font-normal text-gray-700 file:mr-4 file:rounded-lg file:border-0 file:bg-[#c8102e] file:px-4 file:py-2 file:font-semibold file:text-white hover:file:bg-[#a80d27]"
-                                        />
-                                        
-                                        <span className="block text-sm font-normal text-gray-500">
-                                            Up to five files with a combined size below
-                                            9 MB. Word documents and PDFs are accepted.
-                                            Download a Google Doc as a Word document or
-                                            PDF before uploading it, or paste its
-                                            shareable link above.
-                                        </span>
-                                    </label>
-                                </div>
-                            </div>
+                            <CompetitionEntries />
 
                             <div className="border-t border-gray-200 pt-7">
                                 <button

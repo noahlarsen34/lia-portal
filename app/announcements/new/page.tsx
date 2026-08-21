@@ -2,6 +2,7 @@ import Link from "next/link";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { requireStaff } from "@/utils/role-guards";
 import { createAnnouncement } from "./actions";
+import { AnnouncementMediaUploader } from "../announcement-media-uploader";
 
 type Props = {
     searchParams: Promise<{ error?: string }>;
@@ -81,6 +82,8 @@ export default async function NewAnnouncementPage({
                                 className="w-full rounded-md border border-zinc-300 px-4 py-3 text-zinc-950"
                             />
                         </div>
+
+                        <AnnouncementMediaUploader />
 
                         <div className="flex justify-end gap-3 border-t border-zinc-200 pt-6">
                             <button

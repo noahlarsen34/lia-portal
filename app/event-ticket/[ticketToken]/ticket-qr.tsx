@@ -59,7 +59,7 @@ export function TicketQr({
 
     if (!qrCodeUrl) {
         return (
-            <div className="flex aspect-square items-center justify-center rounded-2xp bg-white text-sm text-zinc-500">
+            <div className="flex aspect-square items-center justify-center rounded-2xl bg-white text-sm text-zinc-500">
                 Creating ticket QR code...
             </div>
         );
@@ -67,22 +67,22 @@ export function TicketQr({
 
     return (
         <div>
-            <div className="rounded-2xl bg-white p-4 shadow-sm">
+            <div className="rounded-3xl bg-white p-5 shadow-[0_16px_40px_rgba(0,0,0,0.22)] sm:p-6">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                     src={qrCodeUrl}
                     alt={`Check-in QR code for ticket ${ticketNumber}`}
-                    className="mx-auto aspect-square w-full max-w-72"
+                    className="mx-auto aspect-square w-full max-w-80"
                 />
             </div>
 
             <button
                 type="button"
                 onClick={downloadTicketQr}
-                className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/25 bg-white/10 px-4 py-3 font-semibold text-white transition hover:bg-white/20"
+                className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/25 bg-white/10 px-4 py-3.5 font-semibold text-white transition hover:border-white/40 hover:bg-white/20"
             >
                 <Download size={18} />
-                Downloard QR Code
+                Download QR Code
             </button>
         </div>
     );

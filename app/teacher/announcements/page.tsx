@@ -1,5 +1,6 @@
 import { ExternalLink, Megaphone } from "lucide-react";
 import { requireTeacher } from "@/utils/role-guards";
+import { createAdminClient } from "@/utils/supabase/admin";
 
 export default async function TeacherAnnouncementsPage() {
     const { supabase, profile } = await requireTeacher();
@@ -24,7 +25,7 @@ export default async function TeacherAnnouncementsPage() {
 
     let announcementsQuery = supabase
         .from("announcements")
-        .select("id, title, body, published_at")
+        .select("id, title, body, published_at, media_bucket, media_path, media_kind, media_mime_type, media_file_name")
         .eq("status", "published");
 
     announcementsQuery = assignedRpmId
@@ -59,8 +60,30 @@ export default async function TeacherAnnouncementsPage() {
         );
     }
 
+    const admin = createAdminClient();
+    const announcementsWithMedia = await Promise.all(
+        (announcements ?? []).map(async (announcement) => {
+            if (!announcement.media_bucket || !announcement.media_path) {
+                return { ...announcement, mediaUrl: null };
+            }
+
+            const { data, error } = await admin.storage
+                .from(announcement.media_bucket)
+                .createSignedUrl(announcement.media_path, 60 * 60);
+
+            if (error) {
+                console.error("Announcement media URL creation failed", {
+                    announcementId: announcement.id,
+                    message: error.message,
+                });
+            }
+
+            return { ...announcement, mediaUrl: data?.signedUrl ?? null };
+        }),
+    );
+
     return (
-        <main className="min-h-scren bg-red-50/40 px-5 py-8 lg:px-10">
+        <main className="min-h-screen bg-red-50/40 px-5 py-8 lg:px-10">
             <div className="mx-auto max-w-5xl">
                 <header className="mb-7">
                     <p className="text-sm font-semibold uppercase text-red-700">
@@ -102,12 +125,38 @@ export default async function TeacherAnnouncementsPage() {
                 )}
 
                 <div className="space-y-4">
-                    {(announcements ?? []).map((announcement) => (
+                    {announcementsWithMedia.map((announcement) => (
                         <article
                             key={announcement.id}
-                            className="rounded-md border border-red-100 bg-white p-6 shadow-sm"
+                            className="overflow-hidden rounded-2xl border border-red-100 bg-white shadow-sm"
                         >
-                            <div className="flex items-start gap-4">
+                            {announcement.mediaUrl && announcement.media_kind === "video" ? (
+                                <div className="border-b border-zinc-200 bg-zinc-950">
+                                    <video
+                                        controls
+                                        preload="metadata"
+                                        playsInline
+                                        className="mx-auto aspect-video max-h-[36rem] w-full object-contain"
+                                    >
+                                        <source
+                                            src={announcement.mediaUrl}
+                                            type={announcement.media_mime_type ?? undefined}
+                                        />
+                                        Your browser does not support video playback.
+                                    </video>
+                                </div>
+                            ) : null}
+
+                            {announcement.mediaUrl && announcement.media_kind === "image" ? (
+                                <div
+                                    role="img"
+                                    aria-label={announcement.media_file_name ?? announcement.title}
+                                    className="aspect-video w-full border-b border-zinc-200 bg-zinc-100 bg-contain bg-center bg-no-repeat"
+                                    style={{ backgroundImage: `url(${JSON.stringify(announcement.mediaUrl)})` }}
+                                />
+                            ) : null}
+
+                            <div className="flex items-start gap-4 p-6 sm:p-7">
                                 <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-red-50 text-red-700">
                                     <Megaphone size={20} />
                                 </div>
@@ -133,7 +182,7 @@ export default async function TeacherAnnouncementsPage() {
                         </article>
                     ))}
 
-                    {!announcements?.length && (
+                    {!announcementsWithMedia.length && (
                         <div className="rounded-md border border-dashed border-zinc-300 bg-white p-10 text-center text-zinc-600">
                             There are no announcements right now.
                         </div>
