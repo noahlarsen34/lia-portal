@@ -20,6 +20,7 @@ import { requireTeacher } from "@/utils/role-guards";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { EventCountdown } from "./event-countdown";
 import { EventRegistrationShare } from "./event-registration-share";
+import { RemoveRegistrationButton } from "./remove-registration-button";
 
 type TeacherEventPageProps = {
     params: Promise<{
@@ -898,6 +899,10 @@ export default async function TeacherEventPage({
                                     <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-500">
                                         Ticket
                                     </th>
+
+                                    <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                                        Actions
+                                    </th>
                                 </tr>
                             </thead>
 
@@ -1033,6 +1038,16 @@ export default async function TeacherEventPage({
                                                 <span className="mt-2 block text-xs text-zinc-400">
                                                     Open ticket
                                                 </span>
+                                            </td>
+
+                                            <td className="px-6 py-4">
+                                                {profile.role === "teacher" ? (
+                                                    <RemoveRegistrationButton
+                                                        eventId={event.id}
+                                                        registrationId={registration.id}
+                                                        studentName={`${registration.first_name} ${registration.last_name}`}
+                                                    />
+                                                ) : null}
                                             </td>
                                         </tr>
                                     );
