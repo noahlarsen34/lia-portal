@@ -71,7 +71,7 @@ export async function findTicket(
     }
 
     let query = admin
-        .from("event-registrations")
+        .from("event_registrations")
         .select("id, event_id")
         .eq("event_id", eventId);
     

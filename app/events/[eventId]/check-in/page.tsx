@@ -200,7 +200,7 @@ export default async function CheckInPage({
                     <section className="mt-7 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
                         <form
                             action={findTicket.bind(null, eventId)}
-                            className="flex flex-col gap-3 sm:flex-row"
+                            className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]"
                         >
                             <div className="relative flex-1">
                                 <ScanLine className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-400" />
@@ -211,7 +211,8 @@ export default async function CheckInPage({
                                     name="ticket"
                                     defaultValue={query.ticket ?? ""}
                                     placeholder="LIA-XXXXXXXXXX or ticket URL"
-                                    className="h-14w-full rounded-lg border border-zinc-300 pl-12 pr-4 font-mono text-base outline-none focus:border-[#c8102e] focus:ring-2 focus:ring-red-100"
+                                    aria-label="Ticket number or QR code URL"
+                                    className="h-14 w-full rounded-lg border border-zinc-300 pl-12 pr-4 font-mono text-base outline-none focus:border-[#c8102e] focus:ring-2 focus:ring-red-100"
                                 />
                             </div>
 

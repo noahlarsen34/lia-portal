@@ -4,7 +4,6 @@ import {
     ArrowLeft,
     Award,
     Building2,
-    Search,
     TicketCheck,
     UserCheck,
     Users,
@@ -13,6 +12,7 @@ import {
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { requireStaff } from "@/utils/role-guards";
 import { createAdminClient } from "@/utils/supabase/admin";
+import { EventFilters } from "./event-filters";
 
 type EventDetailsPageProps = {
     params: Promise<{eventId: string}>;
@@ -26,6 +26,21 @@ type EventDetailsPageProps = {
 
 function relation<T>(value: T | T[] | null) {
     return Array.isArray(value) ? value[0] ?? null : value;
+}
+
+function statusClassName(status: string) {
+    switch (status) {
+        case "withdrawn":
+            return "bg-red-100 text-red-700 ring-1 ring-inset ring-red-200";
+        case "registered":
+            return "bg-green-100 text-green-700 ring-1 ring-inset ring-green-200";
+        case "checked_in":
+            return "bg-blue-100 text-blue-700 ring-1 ring-inset ring-blue-200";
+        case "ticket_issued":
+            return "bg-amber-100 text-amber-800 ring-1 ring-inset ring-amber-200";
+        default:
+            return "bg-zinc-100 text-zinc-700 ring-1 ring-inset ring-zinc-200";
+    }
 }
 
 export default async function EventDetailPage({
@@ -279,63 +294,17 @@ export default async function EventDetailPage({
                         })}
                     </section>
 
-                    <form className="mt-7 grid gap-3 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm md:grid-cols-[minmax(240px,1fr)_180px_220px_220px_auto">
-                        <div className="relative">
-                            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
-                            <input
-                                name="q"
-                                defaultValue={filters.q}
-                                placeholder="Student, email, school, ticket..."
-                                className="h-11 w-full rounded-lg border border-zinc-300 pl-10 pr-3"
-                            />
-                        </div>
-
-                        <select
-                            name="status"
-                            defaultValue={filters.status ?? ""}
-                            className="h-11 rounded-lg border border-zinc-300 px-3"
-                        >
-                            <option value="">All statuses</option>
-                            <option value="registered">Registered</option>
-                            <option value="ticket_issued">Ticket issued</option>
-                            <option value="checked_in">Checked in</option>
-                            <option value="withdrawn">Withdrawn</option>
-                        </select>
-
-                        <select
-                            name="school"
-                            defaultValue={filters.school ?? ""}
-                            className="h-11 rounded-lg border border-zinc-300 px-3"
-                        >
-                            <option value="">All schools</option>
-                            {Array.from(schoolMap.entries())
-                                .sort((a, b) => 
-                                    a[1].localeCompare(b[1]),
-                                )
-                                .map(([id, name]) => (
-                                    <option key={id} value={id}>
-                                        {name}
-                                    </option>
-                                ))}
-                        </select>
-
-                        <select
-                            name="category"
-                            defaultValue={filters.category ?? ""}
-                            className="h-11 rounded-lg border border border-zinc-300 px-3"
-                        >
-                            <option value="">All categories</option>
-                            {categories.map((category) => (
-                                <option key={category} value={category}>
-                                    {category}
-                                </option>
-                            ))}
-                        </select>
-
-                        <button className="h-11 rounded-lg bg-zinc-900 px-5 font-semibold text-white hover:bg-zinc-700">
-                            Filter
-                        </button>
-                    </form>
+                    <EventFilters
+                        eventId={event.id}
+                        initialQuery={filters.q ?? ""}
+                        initialStatus={filters.status ?? ""}
+                        initialSchool={filters.school ?? ""}
+                        initialCategory={filters.category ?? ""}
+                        schools={Array.from(schoolMap.entries())
+                            .sort((a, b) => a[1].localeCompare(b[1]))
+                            .map(([value, label]) => ({ value, label }))}
+                        categories={categories}
+                    />
 
                     <section className="mt-5 overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
                         <div className="overflow-x-auto">
@@ -394,7 +363,9 @@ export default async function EventDetailPage({
                                                     </td>
 
                                                     <td className="px-5 py-4">
-                                                        <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold capitalize">
+                                                        <span
+                                                            className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold capitalize ${statusClassName(registration.status)}`}
+                                                        >
                                                             {registration.status.replaceAll(
                                                                 "_",
                                                                 " ",
