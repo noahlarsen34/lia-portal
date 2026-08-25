@@ -9,7 +9,7 @@ import {
     ArchiveRestore,
 } from "lucide-react";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
-import { requireAdmin } from "@/utils/role-guards";
+import { requireStaff } from "@/utils/role-guards";
 import { setEventStatus } from "./actions";
 import { ArchiveEventButton } from "./archive-event-button";
 
@@ -64,7 +64,7 @@ export default async function EventsPage({
         view,
         error: actionError, 
     } = await searchParams;
-    const { supabase } = await requireAdmin();
+    const { supabase, profile } = await requireStaff();
 
     const selectedView =
         view === "archived" || view === "all"
@@ -126,13 +126,15 @@ export default async function EventsPage({
                             </p>
                         </div>
 
-                        <Link
-                            href="/events/new"
-                            className="inline-flex h-11 items-center gap-2 rounded-md bg-[#c8102e] px-4 text-sm font-semibold text-white hover:bg-[#a70d25]"
-                        >
-                            <Plus className="h-4 w-4" />
-                            Create Event
-                        </Link>
+                        {profile.role === "admin" ? (
+                            <Link
+                                href="/events/new"
+                                className="inline-flex h-11 items-center gap-2 rounded-md bg-[#c8102e] px-4 text-sm font-semibold text-white hover:bg-[#a70d25]"
+                            >
+                                <Plus className="h-4 w-4" />
+                                Create Event
+                            </Link>
+                        ) : null}
                     </header>
 
                     {created ? (
@@ -299,7 +301,15 @@ export default async function EventsPage({
                                                 </span>
 
                                                 <div className="flex flex-wrap justify-end gap-2">
-                                                    {event.status === "archived" ? (
+                                                    <Link
+                                                        href={`/events/${event.id}`}
+                                                        className="inline-flex h-9 items-center rounded-md border border-[#c8102e] bg-white px-3 text-xs font-semibold text-[#c8102e] hover:bg-red-50"
+                                                    >
+                                                        Manage
+                                                    </Link>
+
+                                                    {profile.role === "admin" ? (
+                                                        event.status === "archived" ? (
                                                         <form action={restoreEvent}>
                                                             <button
                                                                 type="submit"
@@ -309,7 +319,7 @@ export default async function EventsPage({
                                                                 Restore as Closed
                                                             </button>
                                                         </form>
-                                                    ) : (
+                                                        ) : (
                                                         <>
                                                             <Link
                                                                 href={`/events/${event.id}/edit`}
@@ -349,7 +359,8 @@ export default async function EventsPage({
                                                                 action={archiveEvent}
                                                             />
                                                         </>
-                                                    )}
+                                                        )
+                                                    ) : null}
                                                 </div>
                                             </div>
                                         </div>

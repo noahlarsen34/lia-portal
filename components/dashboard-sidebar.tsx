@@ -21,6 +21,7 @@ const adminLinks: DashboardLink[] = [
 ];
 
 const rpmLinks: DashboardLink[] = [
+    { href: "/events", label: "Events" },
     { href: "/activity-log", label: "Activity Log" },
     { href: "/contacts", label: "Contacts" },
     { href: "/teachers", label: "Teachers" },
