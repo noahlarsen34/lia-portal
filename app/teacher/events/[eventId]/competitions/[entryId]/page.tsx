@@ -77,6 +77,10 @@ export default async function CompetitionEntryPage({
                 title,
                 external_url,
                 created_at,
+                is_finalist,
+                is_winner,
+                prize_placement,
+                prize_amount,
                 event_registration_files (
                     id,
                     bucket_name,
@@ -169,7 +173,7 @@ export default async function CompetitionEntryPage({
                     Back to event
                 </Link>
 
-                <section className="mt-6 overflow-hidden roundd-3xl bg-gradient-to-br from-[#b50926] to-[#e32246] p-8 text-white shadow-lg md:p-10">
+                <section className="mt-6 overflow-hidden rounded-3xl bg-gradient-to-br from-[#b50926] to-[#e32246] p-8 text-white shadow-lg md:p-10">
                     <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
                         <div>
                             <p className="text-sm font-bold uppercase tracking-[0.18em] text-white/75">
@@ -197,6 +201,48 @@ export default async function CompetitionEntryPage({
                             </p>
                         </div>
                     </div>
+                </section>
+
+                <section className="mt-6 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+                    <p className="text-xs font-bold uppercase tracking-wide text-zinc-500">
+                        Submission status
+                    </p>
+
+                    <div className="mt-3 flex flex-wrap gap-2">
+                        {entry.is_winner ? (
+                            <span className="rounded-full bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-800">
+                                Winner
+                                {entry.prize_placement
+                                    ? ` · Place ${entry.prize_placement}`
+                                    : ""}
+                            </span>
+                        ) : entry.is_finalist ? (
+                            <span className="rounded-full bg-blue-100 px-3 py-1 text-sm font-semibold text-blue-800">
+                                Finalist
+                            </span>
+                        ) : (
+                            <span className="rounded-full bg-zinc-100 px-3 py-1 text-sm font-semibold text-zinc-700">
+                                Submitted
+                            </span>
+                        )}
+                    </div>
+
+                    {entry.is_winner && entry.prize_amount != null ? (
+                        <p className="mt-3 text-sm text-zinc-600">
+                            Prize amount:{" "}
+                            <span className="font-semibold text-zinc-950">
+                                {new Intl.NumberFormat("en-US", {
+                                    style: "currency",
+                                    currency: "USD",
+                                }).format(Number(entry.prize_amount))}
+                            </span>
+                        </p>
+                    ) : null}
+
+                    <p className="mt-3 text-sm text-zinc-500">
+                        Judging scores and private staff notes are not visible
+                        to teachers.
+                    </p>
                 </section>
 
                 <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">

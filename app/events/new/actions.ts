@@ -5,6 +5,14 @@ import { redirect } from "next/navigation";
 import { requireAdmin } from "@/utils/role-guards";
 import { uploadEventBanner } from "@/utils/events/upload-event-banner";
 
+
+const EVENT_TYPES = new Set([
+    "conference",
+    "bootcamp",
+    "mastermind",
+]);
+
+
 function redirectWithError(error: string): never {
     redirect(`/events/new?error=${error}`);
 }
@@ -13,6 +21,14 @@ export async function createEvent(formData: FormData) {
     const { supabase, profile } = await requireAdmin();
 
     const name = String(formData.get("name") ?? "").trim();
+    const eventType = String(
+        formData.get("event_type") ?? "conference",
+    ).trim();
+
+    if (!EVENT_TYPES.has(eventType)) {
+        redirectWithError("invalid-event-type");
+    }
+
     const description = String(
         formData.get("description") ?? "",
     ).trim();
@@ -166,6 +182,7 @@ export async function createEvent(formData: FormData) {
         .from("lia_events")
         .insert({
             name,
+            event_type: eventType,
             description: description || null,
             event_date: eventDate,
             start_time: startTime || null,

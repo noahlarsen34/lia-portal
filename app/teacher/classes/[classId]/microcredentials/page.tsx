@@ -14,12 +14,47 @@ import {
 
 type PageProps = {
     params: Promise<{ classId: string }>;
+    searchParams: Promise<{ assignment?: string }>;
 };
+
+const INTERMOUNTAIN_ASSIGNMENT_KEY =
+    "intermountain-emotional-wellbeing";
+
+const INTERMOUNTAIN_QUESTIONS = [
+    [
+        "emotionalWellbeing",
+        "What does emotional well-being mean after completing this training?",
+    ],
+    [
+        "threeSteps",
+        "What are the three steps for managing emotional health, and why are they important?",
+    ],
+    [
+        "healthyStrategy",
+        "What healthy strategy can you use during difficult emotions, and why would it help?",
+    ],
+    [
+        "helpingSomeone",
+        "What would you do if a friend or family member were struggling emotionally?",
+    ],
+] as const;
+
+function responseRecord(value: unknown) {
+    if (!value || typeof value !== "object" || Array.isArray(value)) {
+        return null;
+    }
+
+    return value as Record<string, unknown>;
+}
 
 export default async function ClassMicrocredentialsPage({
     params,
+    searchParams,
 }: PageProps) {
     const { classId } = await params;
+    const { assignment } = await searchParams;
+    const isIntermountainView =
+        assignment === INTERMOUNTAIN_ASSIGNMENT_KEY;
     const { supabase, profile } = await requireTeacher();
 
     const { data: liaClass } = await supabase
@@ -31,12 +66,15 @@ export default async function ClassMicrocredentialsPage({
     
     if (!liaClass) notFound();
 
-    const { data: submissions } = await supabase
+    let submissionsQuery = supabase
         .from("microcredential_submissions")
         .select(`
                 id,
                 student_name_snapshot,
                 credential_type,
+                assignment_key,
+                responses,
+                evidence_kind,
                 original_file_name,
                 file_path,
                 student_note,
@@ -46,6 +84,15 @@ export default async function ClassMicrocredentialsPage({
             `)
         .eq("lia_class_id", liaClass.id)
         .order("submitted_at", { ascending: false });
+
+    if (isIntermountainView) {
+        submissionsQuery = submissionsQuery.eq(
+            "assignment_key",
+            INTERMOUNTAIN_ASSIGNMENT_KEY,
+        );
+    }
+
+    const { data: submissions } = await submissionsQuery;
     
     const admin = createAdminClient();
 
@@ -87,8 +134,9 @@ export default async function ClassMicrocredentialsPage({
         ? `${protocol}://${host}`
         : process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
     
-    const studentFormUrl =
-        `${baseUrl}/microcredentials/${liaClass.application_token}`;
+    const studentFormUrl = isIntermountainView
+        ? `${baseUrl}/microcredentials/${liaClass.application_token}#intermountain-assignment`
+        : `${baseUrl}/microcredentials/${liaClass.application_token}`;
     
     const studentFormQrCode = await QRCode.toDataURL(studentFormUrl, {
         width: 280,
@@ -117,11 +165,19 @@ export default async function ClassMicrocredentialsPage({
 
             <header className="mt-5 rounded-md border border-red-100 bg-white p-6 shadow-sm">
                 <p className="text-sm font-semibold uppercase text-[#c4122f]">
-                    Microcredentials
+                    {isIntermountainView
+                        ? "Standardized microcredential"
+                        : "Microcredentials"}
                 </p>
-                <h1 className="mt-2 text-3xl font-semibold">{liaClass.name}</h1>
+                <h1 className="mt-2 text-3xl font-semibold">
+                    {isIntermountainView
+                        ? "Intermountain Health: Emotional Well-Being"
+                        : liaClass.name}
+                </h1>
                 <p className="mt-2 text-sm text-zinc-600">
-                    Review documents submitted by students.
+                    {isIntermountainView
+                        ? `${liaClass.name} · Review student reflections and evidence.`
+                        : "Review documents submitted by students."}
                 </p>
 
                 <section className="mt-5 grid gap-4 sm:grid-cols-3 lg:grid-cols-[repeat(3,minmax(0,1fr))_280px]">
@@ -212,6 +268,9 @@ export default async function ClassMicrocredentialsPage({
                         </thead>
                         <tbody className="divide-y divide-zinc-100">
                             {rows.map((submission) => {
+                                const responses = responseRecord(
+                                    submission.responses,
+                                );
                                 const approveAction = approveMicrocredential.bind(
                                     null,
                                     classId,
@@ -250,6 +309,55 @@ export default async function ClassMicrocredentialsPage({
                                         ) : (
                                             <span className="text-zinc-400">Unavailable</span>
                                         )}
+
+                                        {submission.assignment_key ===
+                                            "intermountain-emotional-wellbeing" &&
+                                        responses ? (
+                                            <details className="mt-3">
+                                                <summary className="cursor-pointer text-xs font-semibold text-[#c4122f] hover:underline">
+                                                    View reflection answers
+                                                </summary>
+
+                                                <div className="mt-3 space-y-3 rounded-md border border-zinc-200 bg-zinc-50 p-4 text-sm">
+                                                    {INTERMOUNTAIN_QUESTIONS.map(
+                                                        ([key, question]) => (
+                                                            <div key={key}>
+                                                                <p className="font-semibold text-zinc-800">
+                                                                    {question}
+                                                                </p>
+                                                                <p className="mt-1 whitespace-pre-wrap leading-6 text-zinc-600">
+                                                                    {String(
+                                                                        responses[
+                                                                            key
+                                                                        ] ??
+                                                                            "No response",
+                                                                    )}
+                                                                </p>
+                                                            </div>
+                                                        ),
+                                                    )}
+
+                                                    {responses.suggestions ? (
+                                                        <div>
+                                                            <p className="font-semibold text-zinc-800">
+                                                                Ideas or suggestions
+                                                            </p>
+                                                            <p className="mt-1 whitespace-pre-wrap leading-6 text-zinc-600">
+                                                                {String(
+                                                                    responses.suggestions,
+                                                                )}
+                                                            </p>
+                                                        </div>
+                                                    ) : null}
+
+                                                    <p className="border-t border-zinc-200 pt-3 text-xs font-semibold capitalize text-zinc-500">
+                                                        Evidence type:{" "}
+                                                        {submission.evidence_kind ??
+                                                            "file"}
+                                                    </p>
+                                                </div>
+                                            </details>
+                                        ) : null}
                                     </td>
                                     <td className="px-5 py-4 text-center tabular-nums">
                                         {new Date(submission.submitted_at).toLocaleDateString()}

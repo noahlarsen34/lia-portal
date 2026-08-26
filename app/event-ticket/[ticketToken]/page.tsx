@@ -19,6 +19,7 @@ type TicketPageProps = {
 type EventRecord = {
     id: string;
     name: string;
+    event_type: string;
     event_date: string | null;
     start_time: string | null;
     end_time: string | null;
@@ -81,6 +82,7 @@ export default async function EventTicketPage({
                 lia_events (
                     id,
                     name,
+                    event_type,
                     event_date,
                     start_time,
                     end_time,
@@ -195,19 +197,23 @@ export default async function EventTicketPage({
                                 </p>
                             ) : null}
 
-                            <div className="mt-10 border-t border-white/15 pt-8">
-                                <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/50">
-                                    Competition Entry
-                                </p>
+                            {event.event_type === "conference" &&
+                            registration.competition_category ? (
+                                <div className="mt-10 border-t border-white/15 pt-8">
+                                    <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/50">
+                                        Competition Entry
+                                    </p>
 
-                                <p className="mt-3 text-xl font-semibold sm:text-2xl">
-                                    {registration.entry_title}
-                                </p>
+                                    <p className="mt-3 text-xl font-semibold sm:text-2xl">
+                                        {registration.entry_title ||
+                                            "Untitled entry"}
+                                    </p>
 
-                                <p className="mt-1 text-white/65">
-                                    {registration.competition_category}
-                                </p>
-                            </div>
+                                    <p className="mt-1 text-white/65">
+                                        {registration.competition_category}
+                                    </p>
+                                </div>
+                            ) : null}
 
                             <div className="mt-10 rounded-2xl border border-white/15 bg-white/[0.07] p-6">
                                 <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/50">

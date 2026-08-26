@@ -8,6 +8,12 @@ import {
     uploadEventBanner,
 } from "@/utils/events/upload-event-banner";
 
+const EVENT_TYPES = new Set([
+    "conference",
+    "bootcamp",
+    "mastermind",
+]);
+
 function redirectWithError(
     eventId: string,
     error: string,
@@ -36,6 +42,13 @@ export async function updateEvent(
     const description = String(
         formData.get("description") ?? "",
     ).trim();
+    const eventType = String(
+    formData.get("event_type") ?? "conference",
+    ).trim();
+
+    if (!EVENT_TYPES.has(eventType)) {
+        redirectWithError(eventId, "invalid-event-type");
+    }
     const eventDate = String(
         formData.get("event_date") ?? "",
     ).trim();
@@ -226,6 +239,7 @@ export async function updateEvent(
         .from("lia_events")
         .update({
             name,
+            event_type: eventType,
             description: description || null,
             event_date: eventDate,
             start_time: startTime || null,

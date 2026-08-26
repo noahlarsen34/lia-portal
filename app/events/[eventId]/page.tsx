@@ -386,16 +386,27 @@ export default async function EventDetailPage({
                                                     </td>
 
                                                     <td className="px-5 py-4 text-sm">
-                                                        {entries.length
-                                                            ? entries
-                                                                  .map(
-                                                                      (
-                                                                          entry,
-                                                                      ) =>
-                                                                          entry.category,
-                                                                  )
-                                                                  .join(", ")
-                                                            : "None"}
+                                                        {entries.length > 0 ? (
+                                                            <div className="space-y-2">
+                                                                {entries.map((entry) => (
+                                                                    <Link
+                                                                        key={entry.id}
+                                                                        href={`/events/${event.id}/competitions/${entry.id}`}
+                                                                        className="block rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[#c8102e] transition hover:border-[#c8102e] hover:bg-red-100"
+                                                                    >
+                                                                        <span className="block font-semibold">
+                                                                            {entry.category}
+                                                                        </span>
+
+                                                                        <span className="mt-0.5 block text-xs text-zinc-500">
+                                                                            {entry.title || "Untitled entry"}
+                                                                        </span>
+                                                                    </Link>
+                                                                ))}
+                                                            </div>
+                                                        ) : (
+                                                            "None"
+                                                        )}
                                                     </td>
 
                                                     <td className="px-5 py-4 text-sm">

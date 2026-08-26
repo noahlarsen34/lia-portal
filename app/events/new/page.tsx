@@ -44,6 +44,8 @@ function getErrorMessage(error: string | undefined) {
             return "The banner image must be 5 MB or smaller.";
         case "banner-upload-failed":
             return "The banner image could not be uploaded. Please try again.";
+        case "invalid-event-type":
+            return "Select a valid event type.";
         default:
             return null;
     }
@@ -116,6 +118,37 @@ export default async function NewEventPage({
                             <h2 className="text-xl font-semibold">
                                 Event Details
                             </h2>
+
+                            <label className="block">
+                                <span className="text-sm font-semibold text-zinc-700">
+                                    Event Type
+                                </span>
+
+                                <select
+                                    name="event_type"
+                                    required
+                                    defaultValue="conference"
+                                    className="mt-2 h-11 w-full rounded-md border border-zinc-300 bg-white px-3 text-sm outline-none focus:border-[#c8102e] focus:ring-4 focus:ring-red-100"
+                                >
+                                    <option value="conference">
+                                        Confrence - students and teachers
+                                    </option>
+
+                                    <option value="bootcamp">
+                                        Bootcamp - student presidency
+                                    </option>
+
+                                    <option value="mastermind">
+                                        Mastermind - student presidency
+                                    </option>
+                                </select>
+
+                                <span className="mt-2 block text-xs text-zinc-500">
+                                    Confrence registrations include competition entries.
+                                    Bootcamp and Mastermind are limited to class presidency
+                                    students and do not include competitions.
+                                </span>
+                            </label>
 
                             <div className="mt-5 space-y-5">
                                 <label className="block">

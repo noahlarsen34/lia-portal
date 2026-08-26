@@ -1,5 +1,9 @@
 import Link from "next/link";
-import { Award, ExternalLink } from "lucide-react";
+import {
+    Award,
+    ExternalLink,
+    HeartPulse,
+} from "lucide-react";
 import { requireTeacher } from "@/utils/role-guards";
 
 export default async function TeacherMicrocredentialsPage() {
@@ -58,6 +62,52 @@ export default async function TeacherMicrocredentialsPage() {
                             </Link>
                         </article>
                     ))}
+
+                    {classes
+                        .filter(
+                            (liaClass) => liaClass.status === "active",
+                        )
+                        .map((liaClass) => (
+                            <article
+                                key={`intermountain-${liaClass.id}`}
+                                className="flex flex-col rounded-md border border-red-100 bg-white p-5 shadow-sm"
+                            >
+                                <div className="flex items-start justify-between gap-4">
+                                    <div className="flex h-11 w-11 items-center justify-center rounded-full bg-red-50 text-[#c4122f]">
+                                        <HeartPulse
+                                            className="h-5 w-5"
+                                            aria-hidden
+                                        />
+                                    </div>
+                                    <span className="rounded-full bg-green-50 px-3 py-1 text-xs font-semibold text-green-700">
+                                        Standardized
+                                    </span>
+                                </div>
+
+                                <h2 className="mt-4 text-lg font-semibold text-zinc-950">
+                                    Intermountain Health: Emotional Well-Being
+                                </h2>
+                                <p className="mt-2 text-sm text-zinc-600">
+                                    {liaClass.name}
+                                    {liaClass.period
+                                        ? ` · Period ${liaClass.period}`
+                                        : ` · ${liaClass.school_year}`}
+                                </p>
+
+                                <Link
+                                    href={`/teacher/classes/${liaClass.id}/microcredentials?assignment=intermountain-emotional-wellbeing`}
+                                    className="mt-auto pt-5"
+                                >
+                                    <span className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md border border-red-200 bg-white px-4 text-sm font-semibold text-[#c4122f] transition hover:bg-red-50">
+                                        Review Submissions
+                                        <ExternalLink
+                                            className="h-4 w-4"
+                                            aria-hidden
+                                        />
+                                    </span>
+                                </Link>
+                            </article>
+                        ))}
                 </section>
             ) : (
                 <div className="mt-5 rounded-md border border-dashed border-zinc-200 bg-white px-5 py-12 text-center text-sm text-zinc-500">

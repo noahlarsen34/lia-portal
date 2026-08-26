@@ -47,6 +47,7 @@ export default async function EventRegistrationPage({
             `
                 id,
                 name,
+                event_type,
                 description,
                 event_date,
                 start_time,
@@ -65,6 +66,20 @@ export default async function EventRegistrationPage({
     if (eventError || !event) {
         notFound();
     }
+
+    const hasCompetitions =
+        event.event_type === "conference";
+    
+    const presidencyOnly =
+        event.event_type === "bootcamp" ||
+        event.event_type === "mastermind";
+    
+    const eventTypeLabel =
+        event.event_type === "bootcamp"
+            ? "Bootcamp"
+            : event.event_type === "mastermind"
+                ? "Mastermind"
+                : "Conference"
 
     let schoolsQuery = supabase
         .from("schools")
@@ -202,10 +217,9 @@ export default async function EventRegistrationPage({
                     </h1>
 
                     <p className="mx-auto mt-4 max-w-xl text-gray-600">
-                        Your registration and competition entry were received
-                        successfully. We will send reminders as the event gets
-                        closer, followed by your QR-code ticket during the week
-                        of the event.
+                        {hasCompetitions
+                            ? "Your registration and competition entry were received successfully. We will send reminders as the event gets closer, followed by your QR-code ticket during the week of the event."
+                            : "Your registration was received successfully."}
                     </p>
 
                     {query.email === "sent" ? (
@@ -281,13 +295,22 @@ export default async function EventRegistrationPage({
                         </p>
 
                         <h2 className="mt-2 text-3xl font-bold text-gray-950">
-                            Register and submit your competition entry
+                            Register for {eventTypeLabel}
                         </h2>
 
                         <p className="mt-3 text-gray-600">
-                            Complete your information and submit your
-                            competition entry as a file or shareable link.
+                            {hasCompetitions
+                                ? "Complete your information and optionally submit competition entries as files or shareable links."
+                                : "Complete your information to register for this event."}
                         </p>
+
+                        {presidencyOnly ? (
+                            <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">
+                                Registration is limited to students assigned to a class
+                                presidency position. If your name does not appear, ask your
+                                teacher to verify your leadership assignment.
+                            </div>
+                        ) : null}
                     </div>
 
                     {query.error ? (
@@ -501,7 +524,7 @@ export default async function EventRegistrationPage({
                             </div>
                             </fieldset>
 
-                            <CompetitionEntries />
+                            {hasCompetitions ? <CompetitionEntries /> : null}
 
                             <div className="border-t border-gray-200 pt-7">
                                 <button

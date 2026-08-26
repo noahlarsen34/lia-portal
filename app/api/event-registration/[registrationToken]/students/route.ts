@@ -21,7 +21,7 @@ export async function GET(
     const supabase = createAdminClient();
     const { data: event } = await supabase
         .from("lia_events")
-        .select("id, status, all_schools")
+        .select("id, status, all_schools, event_type")
         .eq("registration_token", registrationToken)
         .maybeSingle();
 
@@ -50,7 +50,7 @@ export async function GET(
 
     const { data, error } = await supabase
         .from("lia_class_students")
-        .select("id, students(first_name, last_name, grade_level)")
+        .select("id, officer_role, students(first_name, last_name, grade_level)")
         .eq("lia_class_id", classId)
         .or("status.is.null,status.neq.removed")
         .order("id");
@@ -60,12 +60,49 @@ export async function GET(
         return Response.json({ error: "The class roster could not be loaded." }, { status: 500 });
     }
 
-    const students = (data ?? []).flatMap((enrollment) => {
+    const presidencyOnly = 
+        event.event_type === "bootcamp" ||
+        event.event_type === "mastermind";
+
+    const presidencyRoles = new Set([
+        "president",
+        "vice_president",
+        "secretary",
+        "historian",
+    ]);
+
+    const students = (data ?? [])
+    .filter(
+        (enrollment) =>
+            !presidencyOnly ||
+            presidencyRoles.has(enrollment.officer_role ?? ""),
+    )
+    .flatMap((enrollment) => {
         const student = relatedStudent(enrollment.students);
-        if (!student) return [];
-        const name = [student.first_name, student.last_name].filter(Boolean).join(" ").trim();
-        return name ? [{ enrollmentId: enrollment.id, name, gradeLevel: student.grade_level }] : [];
-    }).sort((a, b) => a.name.localeCompare(b.name));
+
+        if (!student) {
+            return [];
+        }
+
+        const name = [
+            student.first_name,
+            student.last_name,
+        ]
+            .filter(Boolean)
+            .join(" ")
+            .trim();
+
+        return name
+            ? [
+                  {
+                      enrollmentId: enrollment.id,
+                      name,
+                      gradeLevel: student.grade_level,
+                  },
+              ]
+            : [];
+    })
+    .sort((a, b) => a.name.localeCompare(b.name));
 
     return Response.json({ students }, { headers: { "Cache-Control": "private, no-store" } });
 }
