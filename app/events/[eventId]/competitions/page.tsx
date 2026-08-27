@@ -6,6 +6,7 @@ import {
     Eye,
     Star,
     Trophy,
+    CircleDollarSign,
 } from "lucide-react";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { requireStaff } from "@/utils/role-guards";
@@ -21,6 +22,7 @@ type CompetitionPageProps = {
         category?: string;
         school?: string;
         status?: string;
+        payment?: string;
     }>;
 };
 
@@ -62,6 +64,35 @@ function resultBadge(entry: {
     };
 }
 
+function paymentBadge(status: string | null) {
+    switch (status) {
+        case "ready":
+            return {
+                label: "Ready to send",
+                className:
+                    "bg-blue-100 text-blue-700 ring-blue-200",
+            };
+        case "sent":
+            return {
+                label: "Sent",
+                className:
+                    "bg-green-100 text-green-700 ring-green-200",
+            };
+        case "issue":
+            return {
+                label: "Issue",
+                className:
+                    "bg-red-100 text-red-700 ring-red-200",
+            };
+        default:
+            return {
+                label: "Not ready",
+                className:
+                    "bg-zinc-100 text-zinc-600 ring-zinc-200",
+            };
+    }
+}
+
 export default async function EventCompetitionsPage({
     params,
     searchParams,
@@ -97,6 +128,10 @@ export default async function EventCompetitionsPage({
                 is_winner,
                 prize_placement,
                 prize_amount,
+                prize_payment_status,
+                prize_payment_method,
+                prize_payment_reference,
+                prize_payment_sent_at,
                 event_competition_reviews (
                     id,
                     rating,
@@ -204,11 +239,17 @@ export default async function EventCompetitionsPage({
                 break;
         }
 
+        const matchesPayment =
+            !filters.payment ||
+            (entry.is_winner &&
+                entry.prize_payment_status === filters.payment);
+
         return (
             matchesSearch &&
             matchesCategory &&
             matchesSchool &&
-            matchesStatus
+            matchesStatus &&
+            matchesPayment
         );
     });
     
@@ -242,6 +283,13 @@ export default async function EventCompetitionsPage({
         (entry) => entry.is_winner,
     ).length;
 
+    const awaitingPaymentCount = entries.filter(
+        (entry) =>
+            entry.is_winner &&
+            entry.prize_amount != null &&
+            entry.prize_payment_status !== "sent",
+    ).length;
+
     return (
         <main className="min-h-screen bg-[#f8f4f4] text-zinc-950">
             <DashboardSidebar />
@@ -270,7 +318,7 @@ export default async function EventCompetitionsPage({
                         </p>
                     </header>
 
-                    <section className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    <section className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
                         <article className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
                             <Award className="h-5 w-5 text-[#c8102e]" />
 
@@ -318,6 +366,18 @@ export default async function EventCompetitionsPage({
                                 Winners
                             </p>
                         </article>
+
+                        <article className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+                            <CircleDollarSign className="h-5 w-5 text-[#c8102e]" />
+
+                            <p className="mt-4 text-3xl font-bold">
+                                {awaitingPaymentCount}
+                            </p>
+
+                            <p className="mt-1 text-sm text-zinc-500">
+                                Awaiting payment
+                            </p>
+                        </article>
                     </section>
 
                     <CompetitionFilters
@@ -326,6 +386,7 @@ export default async function EventCompetitionsPage({
                         initialCategory={filters.category ?? ""}
                         initialSchool={filters.school ?? ""}
                         initialStatus={filters.status ?? ""}
+                        initialPayment={filters.payment ?? ""}
                         categories={categories}
                         schools={Array.from(schoolMap.entries())
                             .sort((a, b) => a[1].localeCompare(b[1]))
@@ -344,6 +405,7 @@ export default async function EventCompetitionsPage({
                                             "Staff ratings",
                                             "Average",
                                             "Result",
+                                            "Prize payment",
                                             "",
                                         ].map((heading) => (
                                             <th
@@ -477,9 +539,43 @@ export default async function EventCompetitionsPage({
                                                     </span>
                                                 </td>
 
+                                                <td className="px-5 py-4">
+                                                    {entry.is_winner ? (() => {
+                                                        const payment = paymentBadge(
+                                                            entry.prize_payment_status,
+                                                        );
+
+                                                        return (
+                                                            <div>
+                                                                <span
+                                                                    className={`inline-flex whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold ring-1 ring-inset ${payment.className}`}
+                                                                >
+                                                                    {payment.label}
+                                                                </span>
+
+                                                                {entry.prize_payment_sent_at ? (
+                                                                    <p className="mt-2 whitespace-nowrap text-xs text-zinc-500">
+                                                                        {new Intl.DateTimeFormat("en-US", {
+                                                                            dateStyle: "medium",
+                                                                        }).format(
+                                                                            new Date(
+                                                                                entry.prize_payment_sent_at,
+                                                                            ),
+                                                                        )}
+                                                                    </p>
+                                                                ) : null}
+                                                            </div>
+                                                        );
+                                                    })() : (
+                                                        <span className="text-sm text-zinc-400">
+                                                            -
+                                                        </span>
+                                                    )}
+                                                </td>
+
                                                 <td className="px-5 py-4 text-right">
                                                     <Link
-                                                        href={`/events/${eventId}/competitions/${entry.id}`}
+                                                        href={`/events/${eventId}/competitions/${entry.id}?from=competitions`}
                                                         className="inline-flex h-10 items-center gap-2 whitespace-nowrap rounded-lg bg-[#c8102e] px-4 text-sm font-semibold text-white hover:bg-[#a70d25]"
                                                     >
                                                         <Eye className="h-4 w-4" />
@@ -493,7 +589,7 @@ export default async function EventCompetitionsPage({
                                     {filteredEntries.length === 0 ? (
                                         <tr>
                                             <td
-                                                colSpan={7}
+                                                colSpan={8}
                                                 className="px-5 py-14 text-center text-sm text-zinc-500"
                                             >
                                                 No competition entries

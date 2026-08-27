@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { requireStaff } from "@/utils/role-guards";
+import { requireStaff, requireAdmin } from "@/utils/role-guards";
 import { createAdminClient } from "@/utils/supabase/admin";
 
 function textValue(formData: FormData, key: string) {
@@ -228,5 +228,142 @@ export async function saveCompetitionOutcome(
 
     redirect(
         `${reviewPath(eventId, entryId)}?saved=outcome`,
+    );
+}
+
+export async function savePrizePayment (
+    eventId: string,
+    entryId: string,
+    formData: FormData,
+) {
+    const { profile } = await requireAdmin();
+    const admin = createAdminClient();
+
+    const verifiedEntry = await verifyEntry(eventId, entryId);
+
+    if (!verifiedEntry) {
+        redirect(`/events/${eventId}`);
+    }
+
+    const paymentStatus = textValue(
+        formData,
+        "prize_payment_status",
+    );
+
+    const paymentMethod = textValue(
+        formData,
+        "prize_payment_method",
+    );
+
+    const paymentReference = textValue(
+        formData,
+        "prize_payment_reference",
+    );
+
+    const paymentNotes = textValue(
+        formData,
+        "prize_payment_notes",
+    );
+
+    const validStatuses = new Set([
+        "not_ready",
+        "ready",
+        "sent",
+        "issue",
+    ]);
+
+    if (!validStatuses.has(paymentStatus)) {
+        redirect(
+            `${reviewPath(eventId,entryId)}?error=invalid-payment-status`,
+        );
+    }
+
+    if (paymentMethod.length > 100) {
+        redirect(
+            `${reviewPath(eventId, entryId)}?error=payment-method-too-long`,
+        );
+    }
+
+    if (paymentReference.length > 200) {
+        redirect(
+            `${reviewPath(eventId, entryId)}?error=payment-reference-too-long`,
+        );
+    }
+
+    if (paymentNotes.length > 5000) {
+        redirect (
+            `${reviewPath(eventId, entryId)}?error=payment-notes-too-long`,
+        );
+    }
+
+    const { data: entry, error: entryError } = await admin
+        .from("event_competition_entries")
+        .select(`
+                id,
+                is_winner,
+                prize_amount,
+                prize_payment_sent_at 
+            `)
+        .eq("id", entryId)
+        .maybeSingle();
+    
+    if (entryError || !entry) {
+        redirect(
+            `${reviewPath(eventId, entryId)}?error=payment-failed`,
+        );
+    }
+
+    if (!entry.is_winner || entry.prize_amount == null) {
+        redirect(
+            `${reviewPath(eventId, entryId)}?error=payment-winner-required`,
+        );
+    }
+
+    if (
+        paymentStatus === "sent" &&
+        (!paymentMethod || !paymentReference)
+    ) {
+        redirect(
+            `${reviewPath(eventId, entryId)}?error=payment-details-required`,
+        );
+    }
+
+    const now = new Date().toISOString();
+
+    const { error } = await admin
+        .from("event_competition_entries")
+        .update({
+            prize_payment_status: paymentStatus,
+            prize_payment_method: paymentMethod || null,
+            prize_payment_reference: paymentReference || null,
+            prize_payment_notes: paymentNotes || null,
+            prize_payment_sent_at:
+                paymentStatus === "sent"
+                    ? entry.prize_payment_sent_at ?? now
+                    : null,
+            prize_payment_recorded_by: profile.id,
+            updated_at: now,
+        })
+        .eq("id", entryId);
+
+    
+    if (error) {
+        console.error("Prize payment update failed", {
+            eventId,
+            entryId,
+            message: error.message,
+        });
+
+        redirect(
+            `${reviewPath(eventId, entryId)}?error=payment-failed`,
+        )
+    }
+
+    revalidatePath(`/events/${eventId}`);
+    revalidatePath(`/events/${eventId}/competitions`);
+    revalidatePath(reviewPath(eventId, entryId));
+
+    redirect(
+        `${reviewPath(eventId, entryId)}?saved=payment`,
     );
 }

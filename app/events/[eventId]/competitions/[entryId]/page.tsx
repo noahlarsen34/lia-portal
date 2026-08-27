@@ -8,6 +8,7 @@ import {
     Medal,
     Star,
     Trophy,
+    CircleDollarSign,
 } from "lucide-react";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { requireStaff } from "@/utils/role-guards";
@@ -15,6 +16,7 @@ import { createAdminClient } from "@/utils/supabase/admin";
 import {
     saveCompetitionOutcome,
     saveCompetitionReview,
+    savePrizePayment,
 } from "./actions";
 
 type PageProps = {
@@ -25,6 +27,7 @@ type PageProps = {
     searchParams: Promise<{
         saved?: string;
         error?: string;
+        from?: string;
     }>;
 };
 
@@ -64,6 +67,20 @@ function errorMessage(error: string | undefined) {
             return "Mark the entry as a winner before entering prize information.";
         case "outcome-failed":
             return "The competition result could not be saved.";
+        case "invalid-payment-status":
+            return "Select a valid payment status.";
+        case "payment-method-too-long":
+            return "The payment method is too long.";
+        case "payment-reference-too-long":
+            return "The payment reference is too long";
+        case "payment-notes-too-long":
+            return "Payment notes must be 5,000 characters or fewer.";
+        case "payment-details-required":
+            return "Enter the payment method and reference before marking the prize as sent.";
+        case "payment-winner-required":
+            return "Only winners with a prize amount can have payment information.";
+        case "payment-failed":
+            return "The prize payment information could not be saved.";
         default:
             return null;
     }
@@ -91,6 +108,12 @@ export default async function CompetitionReviewPage({
                 is_winner,
                 prize_placement,
                 prize_amount,
+                prize_payment_status,
+                prize_payment_method,
+                prize_payment_reference,
+                prize_payment_notes,
+                prize_payment_sent_at,
+                prize_payment_recorded_by,
                 event_registration_files (
                     id,
                     bucket_name,
@@ -204,6 +227,19 @@ export default async function CompetitionReviewPage({
         entryId,
     );
 
+    const paymentAction = savePrizePayment.bind(
+        null,
+        eventId,
+        entryId,
+    );
+
+    const canManagePayments = profile.role === "admin";
+
+    const cameFromCompetitionTable = query.from === "competitions";
+    const backHref = cameFromCompetitionTable
+        ? `/events/${eventId}/competitions`
+        : `/events/${eventId}`;
+
     const message = errorMessage(query.error);
 
     const teacherName =
@@ -222,11 +258,13 @@ export default async function CompetitionReviewPage({
             <section className="min-h-screen px-4 py-6 sm:px-6 lg:ml-52 lg:px-8">
                 <div className="mx-auto max-w-6xl">
                     <Link
-                        href={`/events/${eventId}`}
+                        href={backHref}
                         className="inline-flex items-center gap-2 text-sm font-semibold text-[#c8102e] hover:underline"
                     >
                         <ArrowLeft className="h-4 w-4" />
-                        Event management
+                        {cameFromCompetitionTable
+                            ? "Competition entries"
+                            : "Event management"}
                     </Link>
 
                     <header className="mt-6 rounded-2xl bg-gradient-to-br from-[#a90925] to-[#e32246] p-7 text-white shadow-lg">
@@ -512,6 +550,159 @@ export default async function CompetitionReviewPage({
                                     Save result
                                 </button>
                             </form>
+                            {entry.is_winner && entry.prize_amount != null ? (
+                                <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm lg:col-span-2 lg:col-start-1 lg:row-start-3">
+                                    <div className="flex items-center gap-3">
+                                        <CircleDollarSign className="h-5 w-5 text-[#c8102e]" />
+
+                                        <div>
+                                            <h2 className="text-xl font-semibold">
+                                                Prize payment
+                                            </h2>
+
+                                            <p className="mt-1 text-sm text-zinc-500">
+                                                Prize amount:{" "}
+                                                {new Intl.NumberFormat("en-US", {
+                                                    style: "currency",
+                                                    currency: "USD",
+                                                }).format(Number(entry.prize_amount))}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {canManagePayments ? (
+                                        <form
+                                            action={paymentAction}
+                                            className="mt-5 grid gap-5 md:grid-cols-2 xl:grid-cols-4"
+                                        >
+                                            <label className="block">
+                                                <span className="text-sm font-semibold">
+                                                    Payment status
+                                                </span>
+
+                                                <select
+                                                    name="prize_payment_status"
+                                                    defaultValue={
+                                                        entry.prize_payment_status ??
+                                                        "not_ready"
+                                                    }
+                                                    className="mt-2 h-11 w-full rounded-lg border border-zinc-300 px-3"
+                                                >
+                                                    <option value="not_ready">
+                                                        Not ready
+                                                    </option>
+
+                                                    <option value="ready">
+                                                        Ready to send
+                                                    </option>
+
+                                                    <option value="sent">
+                                                        Sent
+                                                    </option>
+
+                                                    <option value="issue">
+                                                        Payment issue
+                                                    </option>
+                                                </select>
+                                            </label>
+
+                                            <label className="block">
+                                                <span className="text-sm font-semibold">
+                                                    Payment method
+                                                </span>
+
+                                                <select
+                                                    name="prize_payment_method"
+                                                    defaultValue={
+                                                        entry.prize_payment_method ?? ""
+                                                    }
+                                                    className="mt-2 h-11 w-full rounded-lg border border-zinc-300 px-3"
+                                                >
+                                                    <option value="">
+                                                        Select method
+                                                    </option>
+                                                    
+                                                    <option value="Check">Check</option> 
+                                                    <option value="Gift card">
+                                                        Gift card
+                                                    </option>
+                                                    <option value="Direct deposit">
+                                                        Direct deposit
+                                                    </option>
+                                                    <option value="Other">Other</option>
+                                                </select>
+                                            </label>
+
+                                            <label className="block md:col-span-2">
+                                                <span className="text-sm font-semibold">
+                                                    Payment/reference number
+                                                </span>
+
+                                                <input
+                                                    type="text"
+                                                    name="prize_payment_reference"
+                                                    maxLength={200}
+                                                    defaultValue={
+                                                        entry.prize_payment_reference ?? ""
+                                                    }
+                                                    placeholder="Check, transaction, or confirmation number"
+                                                    className="mt-2 h-11 w-full rounded-lg border border-zinc-300 px-3"
+                                                />
+                                            </label>
+
+                                            <label className="block md:col-span-2 xl:col-span-3">
+                                                <span className="text-sm font-semibold">
+                                                    Private payment notes
+                                                </span>
+
+                                                <textarea
+                                                    name="prize_payment_notes"
+                                                    rows={3}
+                                                    maxLength={5000}
+                                                    defaultValue={
+                                                        entry.prize_payment_notes ?? ""
+                                                    }
+                                                    className="mt-2 w-full rounded-lg border border-zinc-300 p-3"
+                                                />
+                                            </label>
+
+                                            {entry.prize_payment_sent_at ? (
+                                                <p className="rounded-lg bg-green-50 px-4 py-3 text-sm font-medium text-green-800 md:col-span-2 xl:col-span-3">
+                                                    Sent on{" "}
+                                                    {new Intl.DateTimeFormat("en-US", {
+                                                        dateStyle: "medium",
+                                                        timeStyle: "short",
+                                                    }).format(
+                                                        new Date(
+                                                            entry.prize_payment_sent_at,
+                                                        )
+                                                    )}
+                                                </p>
+                                            ) : null}
+
+                                            <button className="inline-flex h-11 w-full items-center justify-center gap-2 self-end rounded-lg bg-[#c8102e] px-4 font-semibold text-white hover:bg-[#a70d25] md:col-span-2 xl:col-span-1 xl:col-start-4 xl:row-start-2">
+                                                <CircleDollarSign className="h-5 w-5" />
+                                                Save payment status
+                                            </button>
+                                        </form>
+                                    ) : (
+                                        <div className="mt-5 rounded-lg bg-zinc-50 p-4 text-sm text-zinc-600">
+                                            Payment status:{" "}
+                                            <span className="font-semibold capitalize text-zinc-950">
+                                                {(
+                                                    entry.prize_payment_status ??
+                                                    "not_ready"
+                                                ).replaceAll("_", " ")}
+                                            </span>
+
+                                            <p className="mt-2 text-zinc-500">
+                                                Only administrators can change payment
+                                                information.
+                                            </p>
+                                        </div>
+                                    )}
+                                </section>
+                            ) : null}
                         </aside>
                     </div>
 
