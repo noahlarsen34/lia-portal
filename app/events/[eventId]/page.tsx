@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
     ArrowLeft,
+    ArrowRight,
     Award,
     Building2,
     TicketCheck,
@@ -224,6 +225,7 @@ export default async function EventDetailPage({
             label: "Competition entries",
             value: competitionCount,
             icon: Award,
+            href: `/events/${event.id}/competitions`,
         },
         {
             label: "withdrawn",
@@ -277,18 +279,45 @@ export default async function EventDetailPage({
                         {cards.map((card) => {
                             const Icon = card.icon;
 
+                            const content = (
+                                <>
+                                    <Icon className="h-5 w-5 text-[#c8102e]" />
+
+                                    <p className="mt-4 text-3xl font-bold">
+                                        {card.value}
+                                    </p>
+
+                                    <p className="mt-1 text-sm text-zinc-500">
+                                        {card.label}
+                                    </p>
+
+                                    {card.href ? (
+                                        <p className="mt-3 inline-flex items-center gap-1.5 whitespace-nowrap text-xs font-semibold text-[#c8102e]">
+                                            View competition table
+                                            <ArrowRight className="h-3.5 w-3.5 shrink-0" />
+                                        </p>
+                                    ) : null}
+                                </>
+                            );
+
+                            if (card.href) {
+                                return (
+                                    <Link
+                                        key={card.label}
+                                        href={card.href}
+                                        className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-red-200 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#c8102e] focus:ring-offset-2"
+                                    >
+                                        {content}
+                                    </Link>
+                                );
+                            }
+
                             return (
                                 <article
                                     key={card.label}
                                     className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm"
                                 >
-                                    <Icon className="h-5 w-5 text-[#c8102e]" />
-                                    <p className="mt-4 text-3xl font-bold">
-                                        {card.value}
-                                    </p>
-                                    <p className="mt-1 text-sm text-zinc-500">
-                                        {card.label}
-                                    </p>
+                                    {content}
                                 </article>
                             );
                         })}
