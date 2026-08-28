@@ -81,7 +81,7 @@ export async function createLiaClass(formData: FormData) {
 
     const scheduleIsInvalid =
         !validScheduleTypes.has(scheduleType) ||
-        !validTimezones.has(timeZone) ||
+        !validTimezones.has(timezone) ||
         meetingDays.some((day) => !validDays.has(day)) ||
         Boolean(startTime) !== Boolean(endTime) ||
         Boolean(startDate) !== Boolean(endDate) ||

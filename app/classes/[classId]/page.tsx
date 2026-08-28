@@ -51,6 +51,111 @@ function formatRosterRole(
     return role ? formatRosterValue(role) : "Member";
 }
 
+const dayLabels:  Record<string, string> = {
+    monday: "Monday",
+    tuesday: "Tuesday",
+    wednesday: "Wednesday",
+    thursday: "Thursday",
+    friday: "Friday",
+    saturday: "Saturday",
+    sunday: "Sunday",
+};
+
+const timezoneLabels: Record<string, string> = {
+    "America/Los_Angeles": "Pacific Time",
+    "America/Denver": "Mountain Time",
+    "America/Phoenix": "Arizona Time",
+    "America/Chicago": "Central Time",
+    "America/New_York": "Eastern Time",
+    "America/Anchorage": "Alaska Time",
+    "Pacific/Honolulu": "Hawaii Time",
+};
+
+function formatClassTime(value: string | null | undefined) {
+    if(!value) {
+        return "Not provided";
+    }
+
+    const [hourValue, minuteValue] = value.split(":");
+    const hour = Number(hourValue);
+    const minute = Number(minuteValue);
+
+    if (
+        !Number.isInteger(hour) ||
+        !Number.isInteger(minute)
+    ) {
+        return value;
+    }
+
+    const suffix = hour >= 12 ? "PM" : "AM";
+    const displayHour = hour % 12 || 12;
+
+    return `${displayHour}:${String(minute).padStart(
+        2,
+        "0",
+    )} ${suffix}`;
+}
+
+function formatClassDate(value: string | null | undefined) {
+    if (!value) {
+        return "Not provided";
+    }
+
+    const date = new Date(`${value}T00:00:00`);
+
+    if (Number.isNaN(date.getTime())) {
+        return value;
+    }
+
+    return new Intl.DateTimeFormat("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+    }).format(date);
+}
+
+function formatMeetingDays(
+    meetingDays: string[] | null | undefined,
+) {
+    if (!meetingDays || meetingDays.length === 0) {
+        return "Not provided";
+    }
+
+    return meetingDays 
+        .map((day) => dayLabels[day] ?? formatRosterValue(day))
+        .join(", ");
+}
+
+function formatScheduleType(
+    value: string | null | undefined,
+) {
+    switch (value) {
+        case "traditional":
+            return "Traditional schedule";
+        case "block":
+            return "Block schedule";
+        case "other":
+            return "Other schedule";
+        default:
+            return "Not provided";
+    }
+}
+
+function formatBlockDesignation(
+    value: string | null | undefined,
+) {
+    switch (value) {
+        case "a_day":
+            return "A Day";
+        case "b_day":
+            return " B Day";
+        case "both":
+            return "Both A and B Days";
+        default:
+            return "Not provided";
+    }
+}
+
 export default async function StaffClassDetailsPage({
     params,
 }: StaffClassDetialsPageProps) {
@@ -67,7 +172,17 @@ export default async function StaffClassDetailsPage({
                 teacher_profile_id,
                 period,
                 grade_level,
-                status 
+                school_year,
+                status,
+                schedule_type,
+                meeting_days,
+                start_time,
+                end_time,
+                start_date,
+                end_date,
+                timezone,
+                block_designation,
+                notes
             `,
         )
         .eq("id", classId)
@@ -288,8 +403,124 @@ export default async function StaffClassDetailsPage({
                         <div className="mt-5 border-t border-zinc-100 pt-4 text-sm text-zinc-600">
                             School year:{" "}
                             <span className="font-semibold text-zinc-900">
-                                2026-2027
+                                {liaClass.school_year || "Not provided"}
                             </span>
+                        </div>
+                    </section>
+
+                    <section className="mt-6 rounded-lg border border-zinc-200 bg-white p-5 shadow-sm sm:p-6">
+                        <div>
+                            <p className="text-sm font-semibold uppercase tracking-wide text-[#c8102e]">
+                                Class Schedule
+                            </p>
+
+                            <h2 className="mt-2 text-2xl font-semibold text-zinc-950">
+                                Schedule Details
+                            </h2>
+
+                            <p className="mt-1 text-sm text-zinc-600">
+                                The class schedule and additional details provided
+                                by the teacher.
+                            </p>
+                        </div>
+
+                        <div className="mt-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+                            <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+                                <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                                    Schedule Type
+                                </p>
+
+                                <p className="mt-2 font-semibold text-zinc-950">
+                                    {formatScheduleType(
+                                        liaClass.schedule_type,
+                                    )}
+                                </p>
+
+                                {liaClass.schedule_type === "block" ? (
+                                    <p className="mt-1 text-sm text-zinc-600">
+                                        {formatBlockDesignation(
+                                            liaClass.block_designation,
+                                        )}
+                                    </p>
+                                ): null}
+                            </div>
+
+                            <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+                                <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                                    Meeting Days
+                                </p>
+
+                                <p className="mt-2 font-semibold leading-6 text-zinc-950">
+                                    {formatMeetingDays(
+                                        liaClass.meeting_days
+                                    )}
+                                </p>
+                            </div>
+
+                            <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+                                <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                                    Class Time
+                                </p>
+
+                                <p className="mt-2 font-semibold text-zinc-950">
+                                    {liaClass.start_time &&
+                                    liaClass.end_time
+                                        ? `${formatClassTime(
+                                            liaClass.start_time,
+                                        )} - ${formatClassTime(
+                                            liaClass.end_time,
+                                        )}`
+                                        : "Not provided" }
+                                </p>
+
+                                <p className="mt-1 text-sm text-zinc-600">
+                                    {liaClass.timezone
+                                        ? timezoneLabels[
+                                            liaClass.timezone
+                                        ] ?? liaClass.timezone
+                                        : "Timezone not provided"}
+                                </p>
+                            </div>
+
+                            <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+                                <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                                    Class Dates
+                                </p>
+
+                                <p className="mt-2 font-semibold text-zinc-950">
+                                    {liaClass.start_date
+                                        ? formatClassDate(
+                                            liaClass.start_date,
+                                        )
+                                        : "Not provided"}
+                                </p>
+
+                                <p className="mt-1 text-sm text-zinc-600">
+                                    Through{" "}
+                                    {liaClass.end_date
+                                        ? formatClassDate(
+                                            liaClass.end_date,
+                                        )
+                                        : "Not provided"}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="mt-5 rounded-lg border border-zinc-200 p-4">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                                Class &amp; Schedule Notes
+                            </p>
+
+                            {liaClass.notes ? (
+                                <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-zinc-700">
+                                    {liaClass.notes}
+                                </p>
+                            ) : (
+                                <p className="mt-3 text-sm text-zinc-500">
+                                    No additional class or schedule notes were
+                                    provided.
+                                </p>
+                            )}
                         </div>
                     </section>
 
