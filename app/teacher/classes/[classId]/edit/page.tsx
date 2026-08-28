@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireTeacher } from "@/utils/role-guards";
 import { updateLiaClass } from "./actions";
+import { ClassScheduleFields } from "../../class-schedule-fields";
 
 type EditTeacherClassPageProps = {
     params: Promise<{
@@ -31,6 +32,14 @@ export default async function EditTeacherClassPage({
                 grade_level,
                 status,
                 notes,
+                schedule_type,
+                timezone,
+                meeting_days,
+                start_time,
+                end_time,
+                start_date,
+                end_date,
+                block_designation,
                 teacher_profile_id
             `,
         )
@@ -70,7 +79,9 @@ export default async function EditTeacherClassPage({
                     <div className="mb-5 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                         {error === "missing-fields"
                             ? "Class name and school year are required."
-                            : "Something went wrong. Please try again."
+                            : error === "invalid-schedule"
+                                ? "Check the class schedule. Start and end times and dates must be entered in valid pairs."
+                                : "Something went wrong. Please try again."
                         } 
                     </div>
                 ) : null} 
@@ -143,15 +154,26 @@ export default async function EditTeacherClassPage({
                         </label>
                     </div>
 
+                    <ClassScheduleFields
+                        initialScheduleType={liaClass.schedule_type}
+                        initialTimeZone={liaClass.timezone}
+                        initialMeetingDays={liaClass.meeting_days}
+                        initialStartTime={liaClass.start_time}
+                        initialEndTime={liaClass.end_time}
+                        initialStartDate={liaClass.start_date}
+                        initialEndDate={liaClass.end_date}
+                        initialBlockDesignation={liaClass.block_designation}
+                    />
+
                     <label className="block">
                         <span className="text-sm font-medium text-zinc-800">
-                            Notes
+                            Class & Schedule Notes
                         </span>
                         <textarea
                             name="notes"
                             rows={4}
                             defaultValue={liaClass.notes ?? ""}
-                            placeholder="Optional notes about this class"
+                            placeholder="Optional class notes, schedule exceptions, rotations, or other details"
                             className="mt-2 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-[#c4122f] focus:ring-4 focus:ring-red-100"
                         />
                     </label>

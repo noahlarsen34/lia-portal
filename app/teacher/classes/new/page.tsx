@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createLiaClass } from './actions';
 import { requireTeacher } from "@/utils/role-guards";
+import { ClassScheduleFields } from "../class-schedule-fields";
 
 type NewClassPageProps = {
     searchParams: Promise<{
@@ -59,7 +60,9 @@ export default async function NewTeacherClassPage({
                             ? "Class name and school year are required."
                             : error === "teacher-not-linked"
                                 ? "Your teacher account is not linked to a school record yet."
-                                : "Something went wrong. Please try again."}
+                                : error === "invalid-schedule"
+                                    ? "Check the class schedule. Start and end times and dates must be entered in valid pairs."
+                                    : "Something went wrong. Please try again."}
                     </div>
                 ) : null}
 
@@ -128,14 +131,16 @@ export default async function NewTeacherClassPage({
                         </label>
                     </div>
 
+                    <ClassScheduleFields />
+
                     <label className="block">
                         <span className="text-sm font-medium text-zinc-800">
-                            Notes
+                            Class & Schedule Notes
                         </span>
                         <textarea
                             name="notes"
                             rows={4}
-                            placeholder="Optional notes about this class"
+                            placeholder="Optional class notes, schedule exceptions, rotations, or other details"
                             className="mt-2 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-[#c4122f] focus:ring-4 focus:ring-red-100"
                         />
                     </label>
