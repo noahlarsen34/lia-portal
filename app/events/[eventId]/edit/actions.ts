@@ -7,6 +7,7 @@ import {
     deleteEventBanner,
     uploadEventBanner,
 } from "@/utils/events/upload-event-banner";
+import { isSupportedEventTimezone } from "@/utils/timezones";
 
 const EVENT_TYPES = new Set([
     "conference",
@@ -57,6 +58,9 @@ export async function updateEvent(
     ).trim();
     const endTime = String(
         formData.get("end_time") ?? "",
+    ).trim();
+    const timezone = String(
+        formData.get("timezone") ?? "America/Denver",
     ).trim();
     const locationName = String(
         formData.get("location_name") ?? "",
@@ -140,6 +144,10 @@ export async function updateEvent(
 
     if (startTime && endTime && endTime <= startTime) {
         redirectWithError(eventId, "invalid-time");
+    }
+
+    if (!isSupportedEventTimezone(timezone)) {
+        redirectWithError(eventId, "invalid-timezone");
     }
 
     if (
@@ -244,6 +252,7 @@ export async function updateEvent(
             event_date: eventDate,
             start_time: startTime || null,
             end_time: endTime || null,
+            timezone,
             location_name: locationName,
             address: address || null,
             registration_deadline:

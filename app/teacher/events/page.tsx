@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { requireTeacher } from "@/utils/role-guards";
 import { createAdminClient } from "@/utils/supabase/admin";
+import { EVENT_TIMEZONES } from "@/utils/timezones";
 import Link from "next/link";
 
 function getMountainDate() {
@@ -158,6 +159,7 @@ export default async function TeacherEventsPage() {
                 event_date,
                 start_time,
                 end_time,
+                timezone,
                 location_name,
                 address,
                 registration_deadline,
@@ -246,6 +248,14 @@ export default async function TeacherEventsPage() {
                             event.end_time,
                         );
 
+                        const eventTimezone =
+                            event.timezone ?? "America/Denver";
+                        const eventTimezoneLabel =
+                            EVENT_TIMEZONES.find(
+                                (timezone) =>
+                                    timezone.value === eventTimezone,
+                            )?.label ?? eventTimezone;
+
                         const registrationStatus =
                             getRegistrationStatus(
                                 event.event_date,
@@ -320,6 +330,10 @@ export default async function TeacherEventsPage() {
                                                         {endTime
                                                             ? ` – ${endTime}`
                                                             : ""}
+                                                    </p>
+
+                                                    <p className="mt-1 text-xs text-zinc-500">
+                                                        {eventTimezoneLabel}
                                                     </p>
                                                 </div>
                                             </div>

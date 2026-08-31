@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/utils/role-guards";
 import { uploadEventBanner } from "@/utils/events/upload-event-banner";
+import { isSupportedEventTimezone } from "@/utils/timezones";
 
 
 const EVENT_TYPES = new Set([
@@ -40,6 +41,9 @@ export async function createEvent(formData: FormData) {
     ).trim();
     const endTime = String(
         formData.get("end_time") ?? "",
+    ).trim();
+    const timezone = String(
+        formData.get("timezone") ?? "America/Denver",
     ).trim();
     const locationName = String(
         formData.get("location_name") ?? "",
@@ -112,6 +116,10 @@ export async function createEvent(formData: FormData) {
 
     if (endTime && startTime && endTime <= startTime) {
         redirectWithError("invalid-time");
+    }
+
+    if (!isSupportedEventTimezone(timezone)) {
+        redirectWithError("invalid-timezone");
     }
     
     if (
@@ -187,6 +195,7 @@ export async function createEvent(formData: FormData) {
             event_date: eventDate,
             start_time: startTime || null,
             end_time: endTime || null,
+            timezone,
             location_name: locationName,
             address: address || null,
             registration_deadline:

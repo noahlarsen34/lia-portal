@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { requireAdmin } from "@/utils/role-guards";
+import { EVENT_TIMEZONES } from "@/utils/timezones";
 import { SchoolSelector } from "@/app/events/new/school-selector";
 import { updateEvent } from "./actions";
 
@@ -50,6 +51,8 @@ function getErrorMessage(error: string | undefined) {
             return "The banner image could not be uploaded. Please try again.";
         case "invalid-event-type":
             return "Select a valid event type.";
+        case "invalid-timezone":
+            return "Select a valid event timezone.";
         default:
             return null;
     }
@@ -79,6 +82,7 @@ export default async function EditEventPage({
                     event_date,
                     start_time,
                     end_time,
+                    timezone,
                     location_name,
                     address,
                     registration_deadline,
@@ -263,7 +267,7 @@ export default async function EditEventPage({
                                     />
                                 </label>
 
-                                <div className="grid gap-5 sm:grid-cols-3">
+                                <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
                                     <label className="block">
                                         <span className="text-sm font-semibold text-zinc-700">
                                             Date
@@ -314,6 +318,30 @@ export default async function EditEventPage({
                                             }
                                             className="mt-2 w-full rounded-md border border-zinc-300 px-3 py-3 text-sm outline-none focus:border-[#c8102e] focus:ring-4 focus:ring-red-100"
                                         />
+                                    </label>
+
+                                    <label className="block">
+                                        <span className="text-sm font-semibold text-zinc-700">
+                                            Timezone
+                                        </span>
+
+                                        <select
+                                            name="timezone"
+                                            required
+                                            defaultValue={
+                                                event.timezone ?? "America/Denver"
+                                            }
+                                            className="mt-2 h-11 w-full rounded-md border border-zinc-300 bg-white px-3 text-sm outline-none focus:border-[#c8102e] focus:ring-4 focus:ring-red-100"
+                                        >
+                                            {EVENT_TIMEZONES.map((timezone) => (
+                                                <option
+                                                    key={timezone.value}
+                                                    value={timezone.value}
+                                                >
+                                                    {timezone.label}
+                                                </option>
+                                            ))}
+                                        </select>
                                     </label>
                                 </div>
 

@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { requireTeacher } from "@/utils/role-guards";
 import { createAdminClient } from "@/utils/supabase/admin";
+import { EVENT_TIMEZONES } from "@/utils/timezones";
 import { EventCountdown } from "./event-countdown";
 import { EventRegistrationShare } from "./event-registration-share";
 import { RemoveRegistrationButton } from "./remove-registration-button";
@@ -93,16 +94,17 @@ function getDirectionsUrl(
     )}`;
 }
 
-function getMountainEventStart(
+function getEventStart(
     eventDate: string,
     startTime: string | null,
+    timezone: string,
 ) {
     const eventReference = new Date(
         `${eventDate}T12:00:00Z`,
     );
 
     const zoneName = new Intl.DateTimeFormat("en-US", {
-        timeZone: "America/Denver",
+        timeZone: timezone,
         timeZoneName: "longOffset",
     })
         .formatToParts(eventReference)
@@ -174,6 +176,7 @@ export default async function TeacherEventPage({
                     event_date,
                     start_time,
                     end_time,
+                    timezone,
                     location_name,
                     address,
                     registration_deadline,
@@ -416,10 +419,16 @@ export default async function TeacherEventPage({
     
     const startTime = formatTime(event.start_time);
     const endTime = formatTime(event.end_time);
+    const eventTimezone = event.timezone ?? "America/Denver";
+    const eventTimezoneLabel =
+        EVENT_TIMEZONES.find(
+            (timezone) => timezone.value === eventTimezone,
+        )?.label ?? eventTimezone;
 
-    const eventStart = getMountainEventStart(
+    const eventStart = getEventStart(
         event.event_date,
         event.start_time,
+        eventTimezone,
     );
 
     const registrationStatus = 
@@ -618,6 +627,10 @@ export default async function TeacherEventPage({
                                         {endTime
                                             ? ` - ${endTime}`
                                             : ""}
+                                    </p>
+
+                                    <p className="mt-1 text-sm text-zinc-500">
+                                        {eventTimezoneLabel}
                                     </p>
                                 </div>
                             </div>
