@@ -130,7 +130,11 @@ function getPortalResourceHref(href: string) {
 }
 
 function shouldOpenInNewTab(href: string) {
-    return !href.startsWith("/teacher/resources/") && !href.startsWith("/teacher/modules");
+    return (
+        !href.startsWith("/teacher/resources/") &&
+        !href.startsWith("/teacher/modules") &&
+        !href.startsWith("/resources/")
+    );
 }
 
 function isTeacherModuleLessonPage(pageLink: string, html: string) {
@@ -934,6 +938,39 @@ export default async function WordPressResourcesPage({
     const curriculumBook =
         parseCurriculumBook(page.content.rendered, page.title.rendered) ??
         parseDocumentAccordion(page.content.rendered, page.title.rendered);
+    
+    const isLiaDocumentsPage =
+        String(page.id) === "6769" ||
+        page.slug === "lia-docs-2";
+
+    if (isLiaDocumentsPage && curriculumBook) {
+        const tutoringDocuments = curriculumBook.units.find(
+            (unit) => unit.title === "Tutoring Documents",
+        );
+
+        const tutoringPreparationResource = {
+            title: "Tutoring Preparation Presentation",
+            href: "/resources/tutoring/tutoring-preparation",
+        };
+
+        if (tutoringDocuments) {
+            const alreadyAdded = tutoringDocuments.lessons.some(
+                (lesson) =>
+                    lesson.href === tutoringPreparationResource.href,
+            );
+
+            if (!alreadyAdded) {
+                tutoringDocuments.lessons.push(
+                    tutoringPreparationResource,
+                );
+            }
+        } else {
+            curriculumBook.units.push({
+                title: "Tutoring Documents",
+                lessons: [tutoringPreparationResource],
+            });
+        }
+    }
     const backLink = getBackToCurriculumLink(page.link, page.content.rendered);
     const currentPageHrefs = [
         `/teacher/resources/page/${page.id}`,
