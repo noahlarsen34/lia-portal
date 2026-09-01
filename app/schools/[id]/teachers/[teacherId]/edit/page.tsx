@@ -263,7 +263,7 @@ export default async function EditTeacherPage({
                                 </select>
 
                                 <p className='mt-2 text-xs text-zinc-500'>
-                                    Leave this on "Use school&apos;s assigned RPM" unless
+                                    Leave this on &quot;Use school&apos;s assigned RPM&quot; unless
                                     this teacher needs a different LIA contact.
                                 </p>
                             </label>

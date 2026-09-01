@@ -6,6 +6,7 @@ import { updateSchool } from "./actions";
 
 const states = [
     "Arizona",
+    "Arkansas",
     "California",
     "Colorado",
     "Connecticut",

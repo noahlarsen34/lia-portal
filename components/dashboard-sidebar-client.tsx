@@ -18,7 +18,7 @@ import {
   Megaphone,
   CalendarDays,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { signOut } from "@/app/login/actions";
 
 export type DashboardLink = {
@@ -126,11 +126,6 @@ export function DashboardSidebarClient({
   roleLabel,
 }: DashboardSidebarClientProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const pathname = usePathname();
-
-  useEffect(() => {
-    setIsOpen(false);
-  }, [pathname]);
 
   return (
     <>

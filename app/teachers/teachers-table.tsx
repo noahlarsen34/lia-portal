@@ -153,7 +153,7 @@ export function TeachersTable({ teachers, userRole }: TeacherTableProps) {
         selectedPortalAccess !== "all" ||
         selectedProgramLevel !== "all";
     
-    const filteredTeachers = useMemo(() => {
+    const filteredTeachers = (() => {
         const searchTerms = normalizeSearchValue(search)
             .split(/\s+/)
             .filter(Boolean);
@@ -210,17 +210,7 @@ export function TeachersTable({ teachers, userRole }: TeacherTableProps) {
             );
 
         });
-    }, [
-        teachers,
-        search,
-        selectedStatus,
-        selectedState,
-        selectedRpm,
-        selectedNewTeacher,
-        selectedPortalAccess,
-        selectedProgramLevel,
-        isAdmin,
-    ]);
+    })();
 
     return (
         <>

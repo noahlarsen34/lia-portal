@@ -85,7 +85,7 @@ export function DocumentsTable({ documents, userRole }: DocumentsTableProps) {
         selectedState !== "all" ||
         (isAdmin && selectedRpm !== "all");
 
-    const filteredDocuments = useMemo(() => {
+    const filteredDocuments = (() => {
         const searchText = search.trim().toLowerCase();
 
         return documents.filter((document) => {
@@ -110,7 +110,7 @@ export function DocumentsTable({ documents, userRole }: DocumentsTableProps) {
 
             return matchesSearch && matchesType && matchesState && matchesRpm;
         });
-    }, [documents, search, selectedType, selectedState, selectedRpm, isAdmin]);
+    })();
 
     return (
         <>

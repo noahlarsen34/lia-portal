@@ -12,6 +12,10 @@ import {
     deleteMicrocredentialSubmission,
 } from "./actions";
 
+
+const INTERMOUNTAIN_APPOINTMENT_URL =
+    "https://ihmacx.sjc1.qualtrics.com/jfe/form/SV_9LEvehIzdJ1XMCa";
+
 type PageProps = {
     params: Promise<{ classId: string }>;
     searchParams: Promise<{ assignment?: string }>;
@@ -240,6 +244,37 @@ export default async function ClassMicrocredentialsPage({
                             Open Student Form
                         </a>
                     </div>
+
+                    {isIntermountainView ? (
+                        <div className="rounded-md border border-blue-200 bg-blue-50 p-5 shadow-sm sm:col-span-3 lg:col-span-4">
+                            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                                <div>
+                                    <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
+                                        Intermountain Health
+                                    </p>
+
+                                    <h2 className="mt-1 text-lg font-semibold text-zinc-950">
+                                        Schedule an appoinment
+                                    </h2>
+
+                                    <p className="mt-1 max-w-2xl text-sm leading-6 text-zinc-600">
+                                        Use the Intermountain Health scheduleing form to arrange
+                                        an appointment for your class.
+                                    </p>
+                                </div>
+
+                                <a
+                                    href={INTERMOUNTAIN_APPOINTMENT_URL}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-md bg-blue-700 px-5 text-sm font-semibold text-white transition hover:bg-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
+                                >
+                                    <ExternalLink className="size-4" aria-hidden />
+                                    Open Scheduling Form
+                                </a>
+                            </div>
+                        </div>
+                    ) : null}
                 </section>
             </header>
 

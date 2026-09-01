@@ -58,13 +58,9 @@ export function StudentPicker({
     );
 
     useEffect(() => {
-        setStudents([]);
-        setStudentEnrollmentId("");
-        setLoadError("");
         if (!classId) return;
 
         const controller = new AbortController();
-        setLoading(true);
 
         fetch(
             `/api/event-registration/${encodeURIComponent(registrationToken)}/students?classId=${encodeURIComponent(classId)}`,
@@ -103,6 +99,10 @@ export function StudentPicker({
                             setSchoolId(event.target.value);
                             setTeacherId("");
                             setClassId("");
+                            setStudents([]);
+                            setStudentEnrollmentId("");
+                            setLoadError("");
+                            setLoading(false);
                         }}
                         className={selectClass}
                     >
@@ -125,6 +125,10 @@ export function StudentPicker({
                         onChange={(event) => {
                             setTeacherId(event.target.value);
                             setClassId("");
+                            setStudents([]);
+                            setStudentEnrollmentId("");
+                            setLoadError("");
+                            setLoading(false);
                         }}
                         className={selectClass}
                     >
@@ -142,7 +146,13 @@ export function StudentPicker({
                         required
                         value={classId}
                         disabled={!teacherId}
-                        onChange={(event) => setClassId(event.target.value)}
+                        onChange={(event) => {
+                            setClassId(event.target.value);
+                            setStudents([]);
+                            setStudentEnrollmentId("");
+                            setLoadError("");
+                            setLoading(true);
+                        }}
                         className={selectClass}
                     >
                         <option value="" disabled>{teacherId ? "Select your class" : "Select a teacher first"}</option>

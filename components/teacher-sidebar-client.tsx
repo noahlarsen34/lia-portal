@@ -18,7 +18,7 @@ import {
     X,
     Award,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { signOut } from '@/app/login/actions';
 import { teacherModulePageSlugs } from "@/utils/curriculum-links";
 
@@ -104,11 +104,6 @@ export function TeacherSideBarClient({
         displayName: string;
     }) {
         const [isOpen, setIsOpen] = useState(false);
-        const pathname = usePathname();
-
-        useEffect(() => {
-            setIsOpen(false);
-        }, [pathname]);
 
         return (
             <>
