@@ -277,10 +277,6 @@ export async function submitEventRegistration(
         }
     }
 
-    const presidencyOnly =
-    event.event_type === "bootcamp" ||
-    event.event_type === "mastermind";
-
     if (
         event.event_type !== "conference" &&
         competitionEntries.length > 0
@@ -330,7 +326,7 @@ export async function submitEventRegistration(
     const { data: enrollment, error: enrollmentError } = await supabase
         .from("lia_class_students")
         .select(
-            "id, officer_role, students(first_name, last_name, email, grade_level)",
+            "id, students(first_name, last_name, email, grade_level)",
         )
         .eq("id", studentEnrollmentId)
         .eq("lia_class_id", classId)
@@ -345,23 +341,6 @@ export async function submitEventRegistration(
         errorRedirect(
             registrationToken,
             "The selected student is not currently enrolled in that class.",
-        );
-    }
-
-    const presidencyRoles = new Set([
-        "president",
-        "vice_president",
-        "secretary",
-        "historian",
-    ]);
-
-    if (
-        presidencyOnly &&
-        !presidencyRoles.has(enrollment.officer_role ?? "")
-    ) {
-        errorRedirect(
-            registrationToken,
-            "This event is limited to students assigned to a class presidency position.",
         );
     }
 

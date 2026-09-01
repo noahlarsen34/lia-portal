@@ -127,6 +127,7 @@ export default async function TeacherClassesPage() {
                                         <td className="px-4 py-4 font-semibold">
                                             <Link
                                                 href={`/teacher/classes/${liaClass.id}`}
+                                                prefetch={false}
                                                 className="text-zinc-950 transition hover:text-[#c4122f] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#c4122f]"
                                             >
                                                 {liaClass.name}
@@ -149,6 +150,7 @@ export default async function TeacherClassesPage() {
                                         <td className="px-4 py-4 text-right">
                                             <Link
                                                 href={`/teacher/classes/${liaClass.id}`}
+                                                prefetch={false}
                                                 className="font-semibold text-[#c4122f] hover:text-[#a70d25]"
                                             >
                                                 View

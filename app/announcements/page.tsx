@@ -121,6 +121,7 @@ export default async function AnnouncementsPage() {
                                         <div className="ml-auto flex flex-wrap items-center gap-2">
                                             <Link
                                                 href={`/announcements/${announcement.id}/edit`}
+                                                prefetch={false}
                                                 className="inline-flex min-h-10 items-center gap-2 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-semibold text-zinc-700 transition hover:border-zinc-400 hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2"
                                             >
                                                 <Pencil

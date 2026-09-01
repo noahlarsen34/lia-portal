@@ -449,6 +449,7 @@ export default async function DashboardPage() {
                   <td className="px-4 py-4 font-semibold">
                     <Link 
                       href={`/schools/${school.id}`}
+                      prefetch={false}
                       className="text-zinc-950 hover:text-[#c8102e]"
                     >
                       {school.name}

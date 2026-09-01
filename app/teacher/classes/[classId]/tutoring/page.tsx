@@ -847,6 +847,7 @@ export default async function ClassTutoringPage({
                                         <div className="grid w-[78px] grid-cols-2 gap-1.5">
                                             <Link
                                                 href={`/teacher/classes/${classId}/tutoring?editLogId=${log.id}`}
+                                                prefetch={false}
                                                 aria-label={`Edit ${log.student_name_snapshot}'s log`}
                                                 title="Edit log"
                                                 className="inline-flex size-9 items-center justify-center rounded-md border border-zinc-200 bg-white text-zinc-600 transition hover:border-zinc-300 hover:bg-zinc-50 hover:text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c4122f] focus-visible:ring-offset-2"

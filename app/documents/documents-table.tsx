@@ -272,6 +272,7 @@ export function DocumentsTable({ documents, userRole }: DocumentsTableProps) {
                                 <td className="px-4 py-5">
                                     <Link
                                         href={`/schools/${document.schoolId}`}
+                                        prefetch={false}
                                         className="font-semibold text-zinc-950 hover:text-[#c8102e]"
                                     >
                                         {document.schoolName}
@@ -359,6 +360,7 @@ export function DocumentsTable({ documents, userRole }: DocumentsTableProps) {
                                 <p className="text-xs uppercase text-zinc-500">School</p>
                                 <Link
                                     href={`/schools/${document.schoolId}`}
+                                    prefetch={false}
                                     className="mt-1 block break-words font-semibold text-zinc-950 hover:text-[#c8102e] [overflow-wrap:anywhere]"
                                 >
                                     {document.schoolName}

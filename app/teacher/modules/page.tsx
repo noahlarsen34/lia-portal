@@ -153,6 +153,7 @@ export default async function TeacherModulesPage() {
                                     <Link
                                         key={`${module.title}-${lesson.title}`}
                                         href={lesson.href}
+                                        prefetch={false}
                                         target={lesson.isExternal ? "_blank" : undefined}
                                         rel={lesson.isExternal ? "noreferrer" : undefined}
                                         className="block px-1 py-4 text-base font-medium text-zinc-700 transition hover:text-[#c4122f]"

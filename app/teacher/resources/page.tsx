@@ -209,6 +209,7 @@ export default async function TeacherResourcesPage() {
                         <Link
                             key={section.key}
                             href={href}
+                            prefetch={false}
                             target={isExternal ? "_blank" : undefined}
                             rel={isExternal ? "noreferrer" : undefined}
                             className={activeClassName}

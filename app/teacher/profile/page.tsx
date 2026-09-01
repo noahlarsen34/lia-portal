@@ -564,6 +564,7 @@ export default async function TeacherProfilePage({
                                 <Link
                                     key={liaClass.id}
                                     href={`/teacher/classes/${liaClass.id}`}
+                                    prefetch={false}
                                     className="flex flex-col gap-2 p-4 transition hover:bg-red-50 sm:flex-row sm:items-center sm:justify-between"
                                 >
                                     <div className="min-w-0">

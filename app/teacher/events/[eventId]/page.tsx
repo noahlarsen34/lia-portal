@@ -987,6 +987,7 @@ export default async function TeacherEventPage({
                                                             <Link
                                                                 key={entry.id}
                                                                 href={`/teacher/events/${event.id}/competitions/${entry.id}`}
+                                                                prefetch={false}
                                                                 className="block rounded-lg border border-zinc-200 bg-white px-3 py-2 transition hover:border-[#c8102e] hover:bg-red-50"
                                                             >
                                                                 <span className="block text-sm font-semibold text-[#c8102e]">
@@ -1041,6 +1042,7 @@ export default async function TeacherEventPage({
                                             <td className="px-6 py-4">
                                                 <Link
                                                     href={`/event-ticket/${registration.ticket_token}`}
+                                                    prefetch={false}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
                                                     className="inline-flex rounded-lg border border-red-200 bg-red-50 px-3 py-2 font-mono text-xs font-bold text-[#c8102e] transition hover:border-[#c8102e] hover:bg-red-100"

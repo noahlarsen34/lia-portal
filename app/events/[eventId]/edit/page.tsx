@@ -227,11 +227,11 @@ export default async function EditEventPage({
                                     </option>
 
                                     <option value="bootcamp">
-                                        Bootcamp — student presidency
+                                        Bootcamp — all students
                                     </option>
 
                                     <option value="mastermind">
-                                        Mastermind — student presidency
+                                        Mastermind — all students
                                     </option>
                                 </select>
                             </label>

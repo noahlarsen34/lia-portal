@@ -303,6 +303,7 @@ export default async function EventsPage({
                                                 <div className="flex flex-wrap justify-end gap-2">
                                                     <Link
                                                         href={`/events/${event.id}`}
+                                                        prefetch={false}
                                                         className="inline-flex h-9 items-center rounded-md border border-[#c8102e] bg-white px-3 text-xs font-semibold text-[#c8102e] hover:bg-red-50"
                                                     >
                                                         Manage
@@ -323,6 +324,7 @@ export default async function EventsPage({
                                                         <>
                                                             <Link
                                                                 href={`/events/${event.id}/edit`}
+                                                                prefetch={false}
                                                                 className="inline-flex h-9 items-center gap-2 rounded-md border border-zinc-300 bg-white px-3 text-xs font-semibold text-zinc-700 hover:bg-zinc-50"
                                                             >
                                                                 <Pencil className="h-4 w-4" />

@@ -70,10 +70,6 @@ export default async function EventRegistrationPage({
     const hasCompetitions =
         event.event_type === "conference";
     
-    const presidencyOnly =
-        event.event_type === "bootcamp" ||
-        event.event_type === "mastermind";
-    
     const eventTypeLabel =
         event.event_type === "bootcamp"
             ? "Bootcamp"
@@ -304,13 +300,6 @@ export default async function EventRegistrationPage({
                                 : "Complete your information to register for this event."}
                         </p>
 
-                        {presidencyOnly ? (
-                            <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">
-                                Registration is limited to students assigned to a class
-                                presidency position. If your name does not appear, ask your
-                                teacher to verify your leadership assignment.
-                            </div>
-                        ) : null}
                     </div>
 
                     {query.error ? (

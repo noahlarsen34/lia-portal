@@ -435,6 +435,7 @@ export default async function LeadershipPage({
                                             <td className="px-5 py-4 font-semibold">
                                                 <Link
                                                     href={`/teacher/classes/${liaClass.id}/students/${enrollment.id}`}
+                                                    prefetch={false}
                                                     className="text-zinc-950 hover:text-[#c4122f]"
                                                 >
                                                     {student

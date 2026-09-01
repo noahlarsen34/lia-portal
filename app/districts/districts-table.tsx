@@ -146,6 +146,7 @@ export function DistrictsTable({ districts }: DistrictTableProps) {
                                     <div className="flex justify-end gap-2">
                                         <Link
                                             href={`/districts/${district.id}/edit`}
+                                            prefetch={false}
                                             className="inline-flex h-8 items-center rounded-md border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-700 hover:bg-red-50 hover:text-[#c8102e]"
                                         >
                                             Edit
@@ -153,6 +154,7 @@ export function DistrictsTable({ districts }: DistrictTableProps) {
 
                                         <Link
                                             href={`/districts/${district.id}/delete`}
+                                            prefetch={false}
                                             className="inline-flex h-8 items-center rounded-md border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-700 hover:bg-red-50"
                                         >
                                             Delete

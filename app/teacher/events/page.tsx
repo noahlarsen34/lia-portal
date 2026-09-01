@@ -286,6 +286,7 @@ export default async function TeacherEventsPage() {
                                         <h3 className="mt-4 text-2xl font-bold tracking-tight text-zinc-950">
                                             <Link
                                                 href={`/teacher/events/${event.id}`}
+                                                prefetch={false}
                                                 className="transition-colors hover:text-[#c8102e]"
                                             >
                                                 {event.name}
@@ -414,6 +415,7 @@ export default async function TeacherEventsPage() {
 
                                         <Link
                                             href={`/teacher/events/${event.id}`}
+                                            prefetch={false}
                                             className="mt-5 inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-[#c8102e] px-4 text-sm font-semibold text-white transition hover:bg-[#a70d25]"
                                         >
                                             View Event

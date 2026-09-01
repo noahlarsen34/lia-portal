@@ -415,6 +415,7 @@ export function SchoolsTable({ schools }: SchoolsTableProps) {
                                 <td className='px-4 py-5 font-semibold'>
                                     <Link
                                         href={`/schools/${school.id}`}
+                                        prefetch={false}
                                         className='text-zinc-950 hover:text-[#c8102e]'
                                     >
                                         {school.name}
@@ -471,6 +472,7 @@ export function SchoolsTable({ schools }: SchoolsTableProps) {
                                     {school.lastContactAt ? (
                                         <Link
                                             href={getActivityLogHref(school)}
+                                            prefetch={false}
                                             className='font-semibold text-zinc-700 hover:text-[#c8102e] hover:underline'
                                         >
                                             {formatDate(school.lastContactAt)}
@@ -495,6 +497,7 @@ export function SchoolsTable({ schools }: SchoolsTableProps) {
                             <div className='min-w-0'>
                                 <Link
                                     href={`/schools/${school.id}`}
+                                    prefetch={false}
                                     className='break-words text-base font-semibold text-zinc-950 hover:text-[#c8102e] [overflow-wrap:anywhere]'
                                 >
                                     {school.name}
@@ -588,6 +591,7 @@ export function SchoolsTable({ schools }: SchoolsTableProps) {
                                     {school.lastContactAt ? (
                                         <Link
                                             href={getActivityLogHref(school)}
+                                            prefetch={false}
                                             className='text-zinc-950 hover:text-[#c8102e] hover:underline'
                                         >
                                             {formatDate(school.lastContactAt)}
@@ -601,6 +605,7 @@ export function SchoolsTable({ schools }: SchoolsTableProps) {
 
                         <Link
                             href={`/schools/${school.id}`}
+                            prefetch={false}
                             className='mt-4 inline-flex h-10 w-full items-center justify-center rounded-md bg-[#c8102e] px-4 text-sm font-semibold text-white hover:bg-[#a70d25]'
                         >
                             View School

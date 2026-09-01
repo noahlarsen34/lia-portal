@@ -403,6 +403,7 @@ export function TeachersTable({ teachers, userRole }: TeacherTableProps) {
                                 <td className="px-4 py-5 font-semibold">
                                     <Link
                                         href={`/schools/${teacher.schoolId}/teachers/${teacher.id}`}
+                                        prefetch={false}
                                         className="text-zinc-950 hover:text-[#c8102e]"
                                     >
                                         {teacher.name}
@@ -483,6 +484,7 @@ export function TeachersTable({ teachers, userRole }: TeacherTableProps) {
                                 <td className="px-4 py-5">
                                     <Link
                                         href={`/schools/${teacher.schoolId}`}
+                                        prefetch={false}
                                         className="font-semibold text-zinc-950 hover:text-[#c8102e]"
                                     >
                                         {teacher.schoolName}
@@ -508,6 +510,7 @@ export function TeachersTable({ teachers, userRole }: TeacherTableProps) {
                             <div className="min-w-0">
                                 <Link
                                     href={`/schools/${teacher.schoolId}/teachers/${teacher.id}`}
+                                    prefetch={false}
                                     className="break-words text-base font-semibold text-zinc-950 hover:text-[#c8102e] [overflow-wrap:anywhere]"
                                 >
                                     {teacher.name}
@@ -585,6 +588,7 @@ export function TeachersTable({ teachers, userRole }: TeacherTableProps) {
                                 <p className="text-xs uppercase text-zinc-500">School</p>
                                 <Link
                                     href={`/schools/${teacher.schoolId}`}
+                                    prefetch={false}
                                     className="mt-1 block break-words font-semibold text-zinc-950 hover:text-[#c8102e] [overflow-wrap:anywhere]"
                                 >
                                     {teacher.schoolName}
@@ -608,6 +612,7 @@ export function TeachersTable({ teachers, userRole }: TeacherTableProps) {
 
                         <Link
                             href={`/schools/${teacher.schoolId}/teachers/${teacher.id}`}
+                            prefetch={false}
                             className="mt-4 inline-flex h-10 w-full items-center justify-center rounded-md bg-[#c8102e] px-4 text-sm font-semibold text-white hover:bg-[#a70d25]"
                         >
                             View Teacher

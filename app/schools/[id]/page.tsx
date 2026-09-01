@@ -413,6 +413,7 @@ export default async function SchoolProfilePage({
                                             <div className='flex shrink-0 flex-wrap items-center gap-2'>
                                                 <Link
                                                     href={`/schools/${school.id}/contacts/${contact.id}/edit`}
+                                                    prefetch={false}
                                                     className='inline-flex h-6 items-center text-xs font-semibold text-zinc-400 hover:text-[#c8102e]'
                                                 >
                                                     Edit
@@ -420,6 +421,7 @@ export default async function SchoolProfilePage({
 
                                                 <Link
                                                     href={`/schools/${school.id}/contacts/${contact.id}`}
+                                                    prefetch={false}
                                                     className='inline-flex h-6 w-6 items-center justify-center rounded-md text-zinc-400 hover:bg-red-50 hover:text-[#c8102e]'
                                                     title="View contact"
                                                     aria-label={`View ${contactDisplayName}`}
@@ -490,6 +492,7 @@ export default async function SchoolProfilePage({
                                     <div className="flex shrink-0 flex-wrap items-center gap-2">
                                         <Link
                                             href={`/schools/${school.id}/teachers/${teacher.id}/edit`}
+                                            prefetch={false}
                                             className="inline-flex h-6 items-center text-xs font-semibold text-zinc-400 hover:text-[#c8102e]"
                                         >
                                             Edit
@@ -497,6 +500,7 @@ export default async function SchoolProfilePage({
 
                                         <Link
                                             href={`/schools/${school.id}/teachers/${teacher.id}`}
+                                            prefetch={false}
                                             className='inline-flex h-6 w-6 items-center justify-center rounded-md text-zinc-400 hover:bg-red-50 hover:text-[#c8102e]'
                                             title="View teacher"
                                             aria-label={`View ${teacherDisplayName}`}
@@ -591,6 +595,7 @@ export default async function SchoolProfilePage({
                                    <div className="flex shrink-0 flex-wrap items-center gap-2">
                                         <Link
                                             href={`/schools/${school.id}/activities/${activity.id}/edit`}
+                                            prefetch={false}
                                             className="inline-flex h-6 items-center text-xs font-semibold text-zinc-400 hover:text-[#c8102e]"
                                         >
                                             Edit

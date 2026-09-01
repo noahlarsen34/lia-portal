@@ -346,6 +346,7 @@ export default async function StudentsPage({
                                             <td className="px-5 py-4 font-semibold leading-6">
                                                 <Link
                                                     href={`/teacher/classes/${liaClass.id}/students/${enrollment.id}`}
+                                                    prefetch={false}
                                                     className="break-words text-zinc-950 transition hover:text-[#c4122f]"
                                                 >
                                                     {studentName}
@@ -378,6 +379,7 @@ export default async function StudentsPage({
                                                 <div className="flex items-center justify-center gap-2">
                                                     <Link
                                                         href={`/teacher/classes/${liaClass.id}/students/${enrollment.id}`}
+                                                        prefetch={false}
                                                         aria-label={`View ${studentName}`}
                                                         title="View student"
                                                         className="inline-flex size-9 shrink-0 items-center justify-center rounded-md border border-zinc-200 bg-white text-zinc-600 transition hover:border-[#c4122f]/40 hover:bg-red-50 hover:text-[#c4122f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c4122f]/30"
@@ -386,6 +388,7 @@ export default async function StudentsPage({
                                                     </Link>
                                                     <Link
                                                         href={`/teacher/classes/${liaClass.id}/students/${enrollment.id}/edit`}
+                                                        prefetch={false}
                                                         aria-label={`Edit ${studentName}`}
                                                         title="Edit student"
                                                         className="inline-flex size-9 shrink-0 items-center justify-center rounded-md border border-zinc-200 bg-white text-zinc-600 transition hover:border-[#c4122f]/40 hover:bg-red-50 hover:text-[#c4122f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c4122f]/30"

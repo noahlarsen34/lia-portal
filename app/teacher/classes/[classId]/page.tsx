@@ -314,6 +314,7 @@ export default async function TeacherClassPage({
                         <Link
                             key={section.title}
                             href={section.href}
+                            prefetch={false}
                             className="flex h-full min-w-0 flex-col rounded-md border border-red-100 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-red-200 hover:shadow-md"
                         >
                             <div className="flex items-start justify-between gap-4">
@@ -398,6 +399,7 @@ export default async function TeacherClassPage({
                                                 <td className="px-5 py-4 font-semibold leading-6">
                                                     <Link
                                                         href={`/teacher/classes/${liaClass.id}/students/${enrollment.id}`}
+                                                        prefetch={false}
                                                         className="break-words text-zinc-950 transition hover:text-[#c4122f]"
                                                     >
                                                         {student

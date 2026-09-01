@@ -55,6 +55,7 @@ export default async function TeacherMicrocredentialsPage() {
 
                             <Link
                                 href={`/teacher/classes/${liaClass.id}/microcredentials`}
+                                prefetch={false}
                                 className="mt-5 inline-flex h-10 items-center justify-center gap-2 rounded-md border border-red-200 bg-white px-4 text-sm font-semibold text-[#c4122f] transition hover:bg-red-50"
                             >
                                 Review Submissions
@@ -96,6 +97,7 @@ export default async function TeacherMicrocredentialsPage() {
 
                                 <Link
                                     href={`/teacher/classes/${liaClass.id}/microcredentials?assignment=intermountain-emotional-wellbeing`}
+                                    prefetch={false}
                                     className="mt-auto pt-5"
                                 >
                                     <span className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md border border-red-200 bg-white px-4 text-sm font-semibold text-[#c4122f] transition hover:bg-red-50">

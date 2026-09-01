@@ -214,6 +214,7 @@ export function ActivityLogTable({
                                     {activity.schoolId ? (
                                         <Link
                                             href={`/schools/${activity.schoolId}`}
+                                            prefetch={false}
                                             className="font-semibold text-zinc-950 hover:text-[#c8102e]"
                                         >
                                             {activity.schoolName}
@@ -280,6 +281,7 @@ export function ActivityLogTable({
                                 {activity.schoolId ? (
                                     <Link
                                         href={`/schools/${activity.schoolId}`}
+                                        prefetch={false}
                                         className="mt-1 block break-words font-semibold text-zinc-950 hover:text-[#c8102e] [overflow-wrap:anywhere]"
                                     >
                                         {activity.schoolName}

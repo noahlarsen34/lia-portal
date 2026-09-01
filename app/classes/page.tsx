@@ -374,6 +374,7 @@ export default async function StaffClassesPage({
                                                 <td className="px-5 py-4">
                                                     <Link
                                                         href={`/classes/${liaClass.id}`}
+                                                        prefetch={false}
                                                         className="font-semibold text-zinc-900 hover:text-[#c8102e] hover:underline"
                                                     >
                                                         {liaClass.name}
@@ -432,6 +433,7 @@ export default async function StaffClassesPage({
                                                 <td className="px-5 py-4 text-right">
                                                     <Link
                                                         href={`/classes/${liaClass.id}`}
+                                                        prefetch={false}
                                                         className="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-md border border-[#c8102e] bg-white px-3 text-xs font-semibold text-[#c8102e] hover:bg-red-50"
                                                     >
                                                         View roster

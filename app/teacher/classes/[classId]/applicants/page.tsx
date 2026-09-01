@@ -144,6 +144,7 @@ export default async function ApplicantsPage({
 
                         <Link
                             href={applicationUrl}
+                            prefetch={false}
                             target="_blank"
                             rel="noreferrer"
                             className="inline-flex h-10 items-center justify-center rounded-md bg-[#c4122f] px-4 text-sm font-semibold text-white hover:bg-[#a70d25]"
@@ -221,6 +222,7 @@ export default async function ApplicantsPage({
                         <Link
                             key={filter.value}
                             href={href}
+                            prefetch={false}
                             className={
                                 active 
                                     ? "rounded-md bg-[#c4122f] px-3 py-2 text-sm font-semibold text-white"
@@ -330,6 +332,7 @@ export default async function ApplicantsPage({
                                                 <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-2">
                                                     <Link
                                                         href={`/teacher/classes/${liaClass.id}/applicants/${application.id}`}
+                                                        prefetch={false}
                                                         className="font-semibold text-[#c4122f] hover:text-[#a70d25]"
                                                     >
                                                         View

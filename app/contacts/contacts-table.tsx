@@ -304,6 +304,7 @@ export function ContactsTable({ contacts, userRole }: ContactsTableProps) {
                                     {contact.schoolId ? (
                                         <Link
                                             href={`/schools/${contact.schoolId}/contacts/${contact.id}`}
+                                            prefetch={false}
                                             className="text-zinc-950 hover:text-[#c8102e]"
                                         >
                                             {contact.name}
@@ -352,6 +353,7 @@ export function ContactsTable({ contacts, userRole }: ContactsTableProps) {
                                     {contact.schoolId ? (
                                         <Link
                                             href={`/schools/${contact.schoolId}`}
+                                            prefetch={false}
                                             className="font-semibold text-zinc-950 hover:text-[#c8102e]"
                                         >
                                             {contact.schoolName}
@@ -370,12 +372,14 @@ export function ContactsTable({ contacts, userRole }: ContactsTableProps) {
                                         <div className="flex justify-end gap-2">
                                             <Link
                                                 href={`/contacts/${contact.id}/edit`}
+                                                prefetch={false}
                                                 className="inline-flex h-9 items-center rounded-md border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-700 hover:bg-red-50 hover:text-[#c8102e]"
                                             >
                                                 Edit
                                             </Link>
                                             <Link
                                                 href={`/contacts/${contact.id}/delete`}
+                                                prefetch={false}
                                                 className="inline-flex h-9 items-center rounded-md border border-red-200 bg-white px-3 text-xs font-semibold text-[#c8102e] hover:bg-red-50"
                                             >
                                                 Delete
@@ -400,6 +404,7 @@ export function ContactsTable({ contacts, userRole }: ContactsTableProps) {
                                 {contact.schoolId ? (
                                     <Link
                                         href={`/schools/${contact.schoolId}/contacts/${contact.id}`}
+                                        prefetch={false}
                                         className="break-words text-base font-semibold text-zinc-950 hover:text-[#c8102e] [overflow-wrap:anywhere]"
                                     >
                                         {contact.name}
@@ -468,8 +473,9 @@ export function ContactsTable({ contacts, userRole }: ContactsTableProps) {
                             <div>
                                 <p className="text-xs uppercase text-zinc-500">School</p>
                                 {contact.schoolId ? (
-                                    <Link
-                                        href={`/schools/${contact.schoolId}`}
+                                <Link
+                                    href={`/schools/${contact.schoolId}`}
+                                    prefetch={false}
                                         className="mt-1 block break-words font-semibold text-zinc-950 hover:text-[#c8102e] [overflow-wrap:anywhere]"
                                     >
                                         {contact.schoolName}
@@ -500,6 +506,7 @@ export function ContactsTable({ contacts, userRole }: ContactsTableProps) {
                             {contact.schoolId ? (
                                 <Link
                                     href={`/schools/${contact.schoolId}/contacts/${contact.id}`}
+                                    prefetch={false}
                                     className="inline-flex h-10 w-full items-center justify-center rounded-md bg-[#c8102e] px-4 text-sm font-semibold text-white hover:bg-[#a70d25]"
                                 >
                                     View Contact
@@ -510,6 +517,7 @@ export function ContactsTable({ contacts, userRole }: ContactsTableProps) {
                                 <div className="grid grid-cols-2 gap-2">
                                     <Link
                                         href={`/contacts/${contact.id}/edit`}
+                                        prefetch={false}
                                         className="inline-flex h-10 items-center justify-center rounded-md border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-700 hover:bg-red-50 hover:text-[#c8102e]"
                                     >
                                         Edit
@@ -517,6 +525,7 @@ export function ContactsTable({ contacts, userRole }: ContactsTableProps) {
 
                                     <Link
                                         href={`/contacts/${contact.id}/delete`}
+                                        prefetch={false}
                                         className="inline-flex h-10 items-center justify-center rounded-md border border-red-200 bg-white px-4 text-sm font-semibold text-[#c8102e] hover:bg-red-50"
                                     >
                                         Delete

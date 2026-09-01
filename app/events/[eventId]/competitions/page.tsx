@@ -576,6 +576,7 @@ export default async function EventCompetitionsPage({
                                                 <td className="px-5 py-4 text-right">
                                                     <Link
                                                         href={`/events/${eventId}/competitions/${entry.id}?from=competitions`}
+                                                        prefetch={false}
                                                         className="inline-flex h-10 items-center gap-2 whitespace-nowrap rounded-lg bg-[#c8102e] px-4 text-sm font-semibold text-white hover:bg-[#a70d25]"
                                                     >
                                                         <Eye className="h-4 w-4" />

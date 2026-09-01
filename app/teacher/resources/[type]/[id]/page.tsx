@@ -1036,6 +1036,7 @@ export default async function WordPressResourcesPage({
                                             <Link
                                                 key={`${unit.title}-${lesson.title}`}
                                                 href={lesson.href}
+                                                prefetch={false}
                                                 target={
                                                     shouldOpenInNewTab(lesson.href)
                                                         ? "_blank"

@@ -405,6 +405,7 @@ export default async function EventDetailPage({
                                                     <td className="px-5 py-4">
                                                         <Link
                                                             href={`/event-ticket/${registration.ticket_token}`}
+                                                            prefetch={false}
                                                             target="_blank"
                                                             className="font-mono text-sm font-semibold text-[#c8102e] hover:underline"
                                                         >
@@ -418,9 +419,10 @@ export default async function EventDetailPage({
                                                         {entries.length > 0 ? (
                                                             <div className="space-y-2">
                                                                 {entries.map((entry) => (
-                                                                    <Link
-                                                                        key={entry.id}
-                                                                        href={`/events/${event.id}/competitions/${entry.id}`}
+                                                                <Link
+                                                                    key={entry.id}
+                                                                    href={`/events/${event.id}/competitions/${entry.id}`}
+                                                                    prefetch={false}
                                                                         className="block rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-[#c8102e] transition hover:border-[#c8102e] hover:bg-red-100"
                                                                     >
                                                                         <span className="block font-semibold">

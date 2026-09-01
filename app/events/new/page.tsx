@@ -134,22 +134,22 @@ export default async function NewEventPage({
                                     className="mt-2 h-11 w-full rounded-md border border-zinc-300 bg-white px-3 text-sm outline-none focus:border-[#c8102e] focus:ring-4 focus:ring-red-100"
                                 >
                                     <option value="conference">
-                                        Confrence - students and teachers
+                                        Conference - students and teachers
                                     </option>
 
                                     <option value="bootcamp">
-                                        Bootcamp - student presidency
+                                        Bootcamp - all students
                                     </option>
 
                                     <option value="mastermind">
-                                        Mastermind - student presidency
+                                        Mastermind - all students
                                     </option>
                                 </select>
 
                                 <span className="mt-2 block text-xs text-zinc-500">
-                                    Confrence registrations include competition entries.
-                                    Bootcamp and Mastermind are limited to class presidency
-                                    students and do not include competitions.
+                                    Conference registrations include competition entries.
+                                    Bootcamp and Mastermind are open to all students and do
+                                    not include competitions.
                                 </span>
                             </label>
 
