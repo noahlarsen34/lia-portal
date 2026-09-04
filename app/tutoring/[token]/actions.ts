@@ -22,6 +22,24 @@ function getString(formData: FormData, key: string) {
     return typeof value === "string" ? value.trim() : "";
 }
 
+function tutoringReturnUrl(
+    token: string,
+    studentEnrollmentId: string,
+    values: Record<string, string>,
+) {
+    const searchParams = new URLSearchParams();
+
+    if (studentEnrollmentId) {
+        searchParams.set("student", studentEnrollmentId);
+    }
+
+    for (const [key, value] of Object.entries(values)) {
+        searchParams.set(key, value);
+    }
+
+    return `/tutoring/${encodeURIComponent(token)}?${searchParams.toString()}`;
+}
+
 function getDurationMinutes(arrivalTime: string, departureTime: string) {
     const [arrivalHours, arrivalMinutes] = arrivalTime.split(":").map(Number);
     const [departureHours, departureMinutes] =
@@ -86,6 +104,11 @@ export async function submitTutoringLog(
     // class match below remain the authorization boundary.
     const admin = createAdminClient();
 
+    const studentEnrollmentId = getString(
+        formData,
+        "studentEnrollmentId",
+    );
+
     const { data: liaClass } = await admin
         .from("lia_classes")
         .select("id")
@@ -93,20 +116,27 @@ export async function submitTutoringLog(
         .maybeSingle();
 
     if (!liaClass) {
-        redirect(`/tutoring/${token}?error=class-not-found`);
+        redirect(
+            tutoringReturnUrl(token, studentEnrollmentId, {
+                view: "submit",
+                error: "invalid-time",
+            }),
+        );
     }
 
-    const studentEnrollmentId = getString(
-        formData,
-        "studentEnrollmentId",
-    );
+    
     const activityType = getString(formData, "activityType");
     const sessionDate = getString(formData, "sessionDate");
     const arrivalTime = getString(formData, "arrivalTime");
     const departureTime = getString(formData, "departureTime");
 
     if (!studentEnrollmentId) {
-        redirect(`/tutoring/${token}?error=missing-student`);
+        redirect(
+        tutoringReturnUrl(token, studentEnrollmentId, {
+            view: "submit",
+            error: "invalid-time",
+        }),
+    );
     }
 
     const durationMinutes = getDurationMinutes(
@@ -115,7 +145,12 @@ export async function submitTutoringLog(
     );
 
     if (!durationMinutes || durationMinutes <= 0) {
-        redirect(`/tutoring/${token}?error=invalid-time`);
+        redirect(
+            tutoringReturnUrl(token, studentEnrollmentId, {
+                view: "submit",
+                error: "invalid-time",
+            }),
+        );
     }
 
     const proofFileValue = formData.get("proofFile");
@@ -124,17 +159,32 @@ export async function submitTutoringLog(
         !(proofFileValue instanceof File) ||
         proofFileValue.size === 0
     ) {
-        redirect(`/tutoring/${token}?error=missing-proof`);
+        redirect(
+            tutoringReturnUrl(token, studentEnrollmentId, {
+                view: "submit",
+                error: "invalid-time",
+            }),
+        );
     }
 
     const proofFile = proofFileValue;
 
     if (proofFile.size > MAX_PROOF_FILE_SIZE) {
-        redirect(`/tutoring/${token}?error=proof-too-large`);
+        redirect(
+            tutoringReturnUrl(token, studentEnrollmentId, {
+                view: "submit",
+                error: "invalid-time",
+            }),
+        );
     }
 
     if (!ALLOWED_PROOF_TYPES.has(proofFile.type)) {
-        redirect(`/tutoring/${token}?error=invalid-proof-type`);
+        redirect(
+            tutoringReturnUrl(token, studentEnrollmentId, {
+                view: "submit",
+                error: "invalid-time",
+            }),
+        );
     }
 
     const { data: enrollment } = await admin
@@ -154,7 +204,12 @@ export async function submitTutoringLog(
         .maybeSingle();
 
     if (!enrollment) {
-        redirect(`/tutoring/${token}?error=missing-student`);
+        redirect(
+        tutoringReturnUrl(token, studentEnrollmentId, {
+            view: "submit",
+            error: "invalid-time",
+        }),
+    );
     }
 
     const student = Array.isArray(enrollment.students)
@@ -178,7 +233,12 @@ export async function submitTutoringLog(
         .maybeSingle();
 
     if (existingLog) {
-        redirect(`/tutoring/${token}?error=duplicate-log`);
+        redirect(
+            tutoringReturnUrl(token, studentEnrollmentId, {
+                view: "submit",
+                error: "invalid-time",
+            }),
+        );
     }
 
     const logId = await createSubmissionId([
@@ -216,7 +276,12 @@ export async function submitTutoringLog(
             message: uploadError.message,
         });
 
-        redirect(`/tutoring/${token}?error=proof-upload-failed`);
+        redirect(
+            tutoringReturnUrl(token, studentEnrollmentId, {
+                view: "submit",
+                error: "invalid-time",
+            }),
+        );
     }
 
     const { error: insertError } = await admin
@@ -278,7 +343,12 @@ export async function submitTutoringLog(
                 .from(TUTORING_PROOF_BUCKET)
                 .remove([proofFilePath]);
 
-            redirect(`/tutoring/${token}?error=duplicate-log`);
+            redirect(
+                tutoringReturnUrl(token, studentEnrollmentId, {
+                    view: "submit",
+                    error: "invalid-time",
+                }),
+            );
         }
 
         console.error("Tutoring log insert failed", {
@@ -291,8 +361,17 @@ export async function submitTutoringLog(
             .from(TUTORING_PROOF_BUCKET)
             .remove([proofFilePath]);
 
-        redirect(`/tutoring/${token}?error=submission-failed`);
+        redirect(
+        tutoringReturnUrl(token, studentEnrollmentId, {
+            view: "submit",
+            error: "invalid-time",
+        }),
+    );
     }
 
-    redirect(`/tutoring/${token}?submitted=true`);
+    redirect(
+        tutoringReturnUrl(token, studentEnrollmentId, {
+            submitted: "true",
+        }),
+    );
 }

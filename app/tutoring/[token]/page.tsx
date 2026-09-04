@@ -4,12 +4,15 @@ import {
     SubmitTutoringLogButton,
     TutoringFormPersistence,
 } from "./form-safety";
+import Link from "next/link";
 
 type StudentTutoringFormPageProps = {
     params: Promise<{
         token: string;
     }>;
     searchParams: Promise<{
+        student?: string;
+        view?: "hours" | "submit";
         submitted?: string;
         error?: string;
     }>;
@@ -66,6 +69,60 @@ export default async function StudentTutoringFormPage({
         .or("status.is.null,status.neq.removed")
         .order("enrolled_at", { ascending: false })
     
+    const selectedEnrollment = (enrollments ?? []).find(
+        (enrollment) => enrollment.id === query.student,
+    );
+
+    const selectedStudentRecord = selectedEnrollment
+        ? Array.isArray(selectedEnrollment.students)
+            ? selectedEnrollment.students[0]
+            : selectedEnrollment.students
+        : null;
+    
+    const selectedStudentName = selectedStudentRecord
+        ? `${selectedStudentRecord.first_name ?? ""} ${
+            selectedStudentRecord.last_name ?? ""
+        }`.trim()
+        : "";
+    
+    const { data: studentLogs} =
+        liaClass && selectedEnrollment 
+            ? await supabase
+                .from("tutoring_logs")
+                .select('activity_type, duration_minutes, status')
+                .eq("lia_class_id", liaClass.id)
+                .eq("student_enrollment_id", selectedEnrollment.id)
+            : { data: [] };
+        
+    const approvedLogs = (studentLogs ?? []).filter(
+        (log) => log.status === "approved",
+    );
+
+    const pendingLogs = (studentLogs ?? []).filter(
+        (log) => log.status === "pending" || log.status === null,
+    );
+
+    const tutoringMinutes = approvedLogs
+        .filter((log) => log.activity_type === "tutoring")
+        .reduce((total, log) => total + Number(log.duration_minutes ?? 0), 0);
+    
+    const serviceMinutes = approvedLogs
+        .filter((log) => log.activity_type === "service")
+        .reduce((total, log) => total + Number(log.duration_minutes ?? 0), 0);
+    
+    const pendingMinutes = pendingLogs.reduce(
+        (total, log) => total + Number(log.duration_minutes ?? 0),
+        0,
+    );
+
+    function formatHours(minutes: number) {
+        const hours = minutes / 60;
+
+        return new Intl.NumberFormat("en-US", {
+            maximumFractionDigits: 2,
+        }).format(hours);
+    }
+
     const submitLog = submitTutoringLog.bind(null, token);
 
     return (
@@ -135,33 +192,30 @@ export default async function StudentTutoringFormPage({
                         ) : null}
                     </div>
                 )}
-
-                {liaClass && (
+                
+                {liaClass && !selectedEnrollment ? (
                     <form
-                        action={submitLog}
-                        data-tutoring-form
+                        action={`/tutoring/${encodeURIComponent(token)}`}
+                        method="get"
                         className="mt-8 space-y-5"
                     >
-                        <TutoringFormPersistence
-                            token={token}
-                            submitted={query.submitted === "true"}
-                            hasError={Boolean(query.error)}
-                        />
                         <label className="block">
                             <span className="text-sm font-semibold text-zinc-800">
-                                Name
+                                Select your name
                             </span>
+
                             <select
-                                name="studentEnrollmentId"
+                                name="student"
                                 required
                                 className={fieldClasses}
                             >
-                                <option value="">Select your name</option>
+                                <option value="">Choose your name</option>
+
                                 {(enrollments ?? []).map((enrollment) => {
                                     const student = Array.isArray(enrollment.students)
                                         ? enrollment.students[0]
                                         : enrollment.students;
-
+                                    
                                     return (
                                         <option
                                             key={enrollment.id}
@@ -173,6 +227,159 @@ export default async function StudentTutoringFormPage({
                                 })}
                             </select>
                         </label>
+
+                        <button
+                            type="submit"
+                            className="w-full rounded-md bg-[#c4122f] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#a70d25]"
+                        >
+                            Continue
+                            </button>
+                    </form>
+                ): null}
+
+                {liaClass && selectedEnrollment && !query.view ? (
+                    <section className="mt-8">
+                        <div className="rounded-md border border-red-100 bg-red-50 p-5">
+                            <p className="text-sm font-semibold uppercase tracking-wide text-[#c4122f]">
+                                Student
+                            </p>
+
+                            <h2 className="mt-1 text-2xl font-semibold text-zinc-950">
+                                {selectedStudentName}
+                            </h2>
+
+                            <p className="mt-1 text-sm text-zinc-600">
+                                What would you like to do?
+                            </p>
+                        </div>
+
+                        <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                            <Link
+                                href={`/tutoring/${encodeURIComponent(
+                                    token,
+                                )}?student=${encodeURIComponent(
+                                    selectedEnrollment.id,
+                                )}&view=hours`}
+                                className="rounded-xl border border-zinc-200 bg-white p-5 transition hover:border-red-200 hoevr:bg-red-50"
+                            >
+                                <p className="text-lg font-semibold text-zinc-950">
+                                    View My Hours
+                                </p>
+                                <p className="mt-1 text-sm text-zinc-600">
+                                    See your approved tutoring and service hours.
+                                </p>
+                            </Link>
+
+                            <Link
+                                href={`/tutoring/${encodeURIComponent(
+                                    token,
+                                )}?student=${encodeURIComponent(
+                                    selectedEnrollment.id,
+                                )}&view=submit`}
+                                className="rounded-xl bg-[#c4122f] p-5 text-white transition hover:bg-[#a70d25]"
+                            >
+                                <p className="text-lg font-semibold">
+                                    Submit a Log
+                                </p>
+                                <p className="mt-1 text-sm text-white/80">
+                                    Record a new tutoring or service session.
+                                </p>
+                            </Link>
+                        </div>
+
+                        <Link
+                            href={`/tutoring/${encodeURIComponent(token)}`}
+                            className="mt-5 inline-flex text-sm font-semibold text-[#c4122f] hover:text-[#a70d25]"
+                        >
+                            Choose a different student
+                        </Link>
+                    </section>
+                ) : null}
+
+                {liaClass && selectedEnrollment && query.view === "hours" ? (
+                    <section className="mt-8">
+                        <p className="text-sm font-semibold uppercase tracking-wide text-[#c4122f]">
+                            Hours for
+                        </p>
+
+                        <h2 className="mt-1 text-2xl font-semibold text-zinc-950">
+                            {selectedStudentName}
+                        </h2>
+
+                        <div className="mt-5 grid gap-4 sm:grid-cols-3">
+                            <div className="rounded-xl border border-blue-200 bg-blue-50 p-5">
+                                <p className="text-sm font-semibold text-blue-700">
+                                    Tutoring
+                                </p>
+                                <p className="mt-2 text-3xl font-bold text-blue-950">
+                                    {formatHours(tutoringMinutes)}
+                                </p>
+                                <p className="text-sm text-blue-700">approved hours</p>
+                            </div>
+
+                            <div className="rounded-xl border border-green-200 bg-green-50 p-5">
+                                <p className="text-sm font-semibold text-green-700">
+                                    Service
+                                </p>
+                                <p className="mt-2 text-3xl font-bold text-green-950">
+                                    {formatHours(serviceMinutes)}
+                                </p>
+                                <p className="text-sm text-green-700">approved hours</p>
+                            </div>
+
+                            <div className="rounded-xl border border-amber-200 bg-amber-50 p-5">
+                                <p className="text-sm font-semibold text-amber-700">
+                                    Pending
+                                </p>
+                                <p className="mt-2 text-3xl font-bold text-amber-950">
+                                    {formatHours(pendingMinutes)}
+                                </p>
+                                <p className="text-sm text-amber-700">
+                                    awaiting approval
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                            <Link
+                                href={`/tutoring/${encodeURIComponent(
+                                    token,
+                                )}?student=${encodeURIComponent(
+                                    selectedEnrollment.id,
+                                )}&view=submit`}
+                                className="inline-flex min-h-11 items-center justify-center rounded-md bg-[#c4122f] px-5 text-sm font-semibold text-white hover:bg-[#a70d25]"
+                            >
+                                Submit a Log
+                            </Link>
+                        </div>
+                    </section>
+                ) : null}
+
+                {liaClass && selectedEnrollment && query.view === "submit" ? (
+                    <form
+                        action={submitLog}
+                        data-tutoring-form
+                        className="mt-8 space-y-5"
+                    >
+                        <TutoringFormPersistence
+                            token={token}
+                            submitted={query.submitted === "true"}
+                            hasError={Boolean(query.error)}
+                        />
+                        <input
+                            type="hidden"
+                            name="studentEnrollmentId"
+                            value={selectedEnrollment.id}
+                        />
+
+                        <div className="rounded-md border border-zinc-200 bg-zinc-50 p-4">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                                Submitting as
+                            </p>
+                            <p className="mt-1 font-semibold text-zinc-950">
+                                {selectedStudentName}
+                            </p>
+                        </div>
 
                         <div className="grid gap-4 sm:grid-cols-2">
                             <label className="block">
@@ -365,7 +572,7 @@ export default async function StudentTutoringFormPage({
 
                         <SubmitTutoringLogButton />
                     </form>
-                )}
+                ) : null}
             </section>
         </main>
     );
