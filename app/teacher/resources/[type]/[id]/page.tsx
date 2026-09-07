@@ -130,6 +130,10 @@ function getPortalResourceHref(href: string) {
 }
 
 function shouldOpenInNewTab(href: string) {
+    if (href.toLowerCase().endsWith(".pdf")) {
+        return true;
+    }
+
     return (
         !href.startsWith("/teacher/resources/") &&
         !href.startsWith("/teacher/modules") &&
@@ -943,6 +947,10 @@ export default async function WordPressResourcesPage({
         String(page.id) === "6769" ||
         page.slug === "lia-docs-2";
 
+    const isCreatedByTeachersPage =
+        String(page.id) === "6796" ||
+        page.slug === "created-by-teachers";
+
     if (isLiaDocumentsPage && curriculumBook) {
         const tutoringDocuments = curriculumBook.units.find(
             (unit) => unit.title === "Tutoring Documents",
@@ -971,6 +979,32 @@ export default async function WordPressResourcesPage({
             });
         }
     }
+
+    if (isCreatedByTeachersPage && curriculumBook) {
+        const programDescriptionResource = {
+            title: "Revised LIA Program Description (PDF)",
+            href: "/resources/created-by-teachers/revised-lia-program-description.pdf",
+        };
+        const programDescriptions = curriculumBook.units.find(
+            (unit) => unit.title === "TEACHER-CREATED PROGRAM DESCRIPTIONS",
+        );
+
+        if (programDescriptions) {
+            const alreadyAdded = programDescriptions.lessons.some(
+                (lesson) => lesson.href === programDescriptionResource.href,
+            );
+
+            if (!alreadyAdded) {
+                programDescriptions.lessons.push(programDescriptionResource);
+            }
+        } else {
+            curriculumBook.units.unshift({
+                title: "TEACHER-CREATED PROGRAM DESCRIPTIONS",
+                lessons: [programDescriptionResource],
+            });
+        }
+    }
+
     const backLink = getBackToCurriculumLink(page.link, page.content.rendered);
     const currentPageHrefs = [
         `/teacher/resources/page/${page.id}`,

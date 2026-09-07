@@ -5,9 +5,19 @@ import { toDataURL } from "qrcode";
 
 type ApplicationQrCodeProps = {
     applicationUrl: string;
+    title?: string;
+    description?: string;
+    downloadName?: string;
+    imageAlt?: string;
 }
 
-export function ApplicationQrCode({ applicationUrl }: ApplicationQrCodeProps) {
+export function ApplicationQrCode({
+    applicationUrl,
+    title = "QR Code",
+    description = "Students can scan this code to open the application form.",
+    downloadName = "lia-application-qr-code.png",
+    imageAlt = "Student application QR code",
+}: ApplicationQrCodeProps) {
     const [qrCodeUrl, setQrCodeUrl] = useState("");
     const [copied, setCopied] = useState(false);
 
@@ -37,14 +47,14 @@ export function ApplicationQrCode({ applicationUrl }: ApplicationQrCodeProps) {
 
         const link = document.createElement("a");
         link.href = qrCodeUrl;
-        link.download = "lia-application-qr-code.png";
+        link.download = downloadName;
         link.click();
     }
 
     return (
         <div className="rounded-md border border-zinc-100 bg-zinc-50 p-4">
             <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                QR Code
+                {title}
             </p>
 
             <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-center">
@@ -53,7 +63,7 @@ export function ApplicationQrCode({ applicationUrl }: ApplicationQrCodeProps) {
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
                             src={qrCodeUrl}
-                            alt="Student application QR code"
+                            alt={imageAlt}
                             className="h-full w-full"
                         />
                     ) : (
@@ -66,7 +76,7 @@ export function ApplicationQrCode({ applicationUrl }: ApplicationQrCodeProps) {
                         {applicationUrl}
                     </p>
                     <p className="mt-2 text-sm leading-6 text-zinc-600">
-                        Students can scan this code to open the application form.
+                        {description}
                     </p>
 
                     <div className="mt-4 flex flex-col gap-2 sm:flex-row">
@@ -91,5 +101,4 @@ export function ApplicationQrCode({ applicationUrl }: ApplicationQrCodeProps) {
         </div>
     );
 }
-
 

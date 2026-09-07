@@ -17,6 +17,7 @@ import {
   X,
   Megaphone,
   CalendarDays,
+  Workflow,
 } from "lucide-react";
 import { useState } from "react";
 import { signOut } from "@/app/login/actions";
@@ -35,6 +36,7 @@ type DashboardSidebarClientProps = {
 const iconsByHref = {
   "/dashboard": Home,
   "/schools": School,
+  "/onboarding/interest-form": Workflow,
   "/events": CalendarDays,
   "/districts": Map,
   "/activity-log": ClipboardList,
@@ -42,7 +44,7 @@ const iconsByHref = {
   "/teachers": GraduationCap,
   "/documents": FileText,
   "/users": Users,
-  "/announcements": Megaphone
+  "/announcements": Megaphone,
 };
 
 function DashboardNav({
