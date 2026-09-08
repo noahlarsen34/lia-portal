@@ -2,8 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { requireStaff } from "@/utils/role-guards";
-import { updateInterestSubmission } from "./actions";
 import type { ReactNode } from "react";
+import { ReviewAndNextAction } from "./review-and-next-action";
 
 type SubmissionPageProps = {
     params: Promise<{id: string }>;
@@ -12,23 +12,6 @@ type SubmissionPageProps = {
         error?: string;
     }>;
 };
-
-const pipelineStages = [
-    ["new_interest", "New Interest"],
-    ["scheduling", "Scheduling"],
-    ["meeting_scheduled", "Meeting Scheduled"],
-    ["qualified", "Qualified"],
-    ["awaiting_school_signature", "Awaiting School Signature"],
-    ["awaiting_lia_signature", "Awating LIA Signature"],
-    ["fully_executed", "Fully Executed"],
-    ["active", "Active"],
-    ["unqualified", "Unqualified"],
-    ["unresponsive", "Unresponsive"],
-    ["declined", "Declined"],
-] as const;
-
-const fieldClass =
-    "mt-2 h-11 w-full rounded-md border border-zinc-300 bg-white px-3 text-sm outline-none focus:border-[#c8102e] focus:ring-2 focus:ring-red-100";
 
 export default async function SubmissionPage({
     params,
@@ -204,110 +187,30 @@ export default async function SubmissionPage({
                             ) : null}
                         </section>
 
-                        <section className="rounded-lg border border-red-100 bg-white p-5 shadow-sm sm:p-6">
-                            <h2 className="text-xl font-semibold">
-                                Review and next action
-                            </h2>
-
-                            <form
-                                action={updateInterestSubmission}
-                                className="mt-5 space-y-5"
-                            >
-                                <input
-                                    type="hidden"
-                                    name="submission_id"
-                                    value={submission.id}
-                                />
-
-                                <label className="block text-sm font-medium text-zinc-700">
-                                    Assigned staff member
-                                    <select
-                                        name="assigned_to"
-                                        defaultValue={submission.assigned_to ?? ""}
-                                        className={fieldClass}
-                                    >
-                                        <option value="">Unassigned</option>
-
-                                        {(staff ?? []).map((person) => (
-                                            <option key={person.id} value={person.id}>
-                                                {person.full_name ??
-                                                    person.email ??
-                                                    "Unnamed staff member"}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </label>
-
-                                <label className="block text-sm font-medium text-zinc-700">
-                                    Pipeline stage *
-                                    <select
-                                        name="pipeline_stage"
-                                        defaultValue={submission.pipeline_stage}
-                                        className={fieldClass}
-                                        required
-                                    >
-                                        {pipelineStages.map(([value, label]) => (
-                                            <option key={value} value={value}>
-                                                {label}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </label>
-
-                                <label className="block text-sm font-medium text-zinc-700">
-                                    Record status *
-                                    <select
-                                        name="status"
-                                        defaultValue={submission.status}
-                                        className={fieldClass}
-                                        required
-                                    >
-                                        <option value="open">Open</option>
-                                        <option value="completed">Completed</option>
-                                        <option value="closed">Closed</option>
-                                    </select>
-                                </label>
-
-                                <label className="block text-sm font-medium text-zinc-700">
-                                    Next action *
-                                    <input
-                                        name="next_action"
-                                        defaultValue={submission.next_action}
-                                        className={fieldClass}
-                                        required
-                                    />
-                                </label>
-
-                                <label className="block text-sm font-medium text-zinc-700">
-                                    Next-action due date
-                                    <input
-                                        name="next_action_due_at"
-                                        type="date"
-                                        defaultValue={
-                                            submission.next_action_due_at ?? ""
-                                        }
-                                        className={fieldClass}
-                                    />
-                                </label>
-
-                                <label className="block text-sm font-medium text-zinc-700">
-                                    Internal notes
-                                    <textarea
-                                        name="internal_notes"
-                                        defaultValue={submission.internal_notes ?? ""}
-                                        className="mt-2 min-h-40 w-full rounded-md border border-zinc-300 px-3 py-3 text-sm outline-none focus:border-[#c8102e] focus:ring-2 focus:ring-red-100"
-                                        maxLength={2000}
-                                    />
-                                </label>
-
-                                <button
-                                    type="submit"
-                                    className="h-11 w-full rounded-md bg-[#c8102e] px-5 text-sm font-semibold text-white hover:bg-[#a70d25]"
-                                >
-                                    Save review
-                                </button>
-                            </form>
-                        </section>
+                        <ReviewAndNextAction
+                            initalEditing={Boolean(error)}
+                            review={{
+                                id: submission.id,
+                                assignedTo: submission.assigned_to,
+                                assignedToName: submission.assigned_to
+                                    ? staff?.find(
+                                        (person) => person.id === submission.assigned_to,
+                                    )?.full_name ?? null
+                                    : null,
+                                pipelineStage: submission.pipeline_stage,
+                                status: submission.status,
+                                nextAction: submission.next_action,
+                                nextActionDueAt: submission.next_action_due_at,
+                                internalNotes: submission.internal_notes,
+                            }}
+                            staff={(staff ?? []).map((person) => ({
+                                id: person.id,
+                                name:
+                                    person.full_name ??
+                                    person.email ??
+                                    "Unnamed staff member",
+                            }))}
+                        />
                     </div>
                 </div>
             </section>
