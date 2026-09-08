@@ -21,9 +21,6 @@ export function InterestForm({ source }: { source: string }) {
   return (
     <form action={formAction} className="space-y-8">
       <input type="hidden" name="source" value={source} />
-      <div className="absolute left-[-10000px] top-auto h-px w-px overflow-hidden" aria-hidden="true">
-        <label>Company fax<input name="company_fax" tabIndex={-1} autoComplete="off" /></label>
-      </div>
 
       <fieldset className="space-y-4">
         <legend className="text-lg font-semibold">School information</legend>
@@ -45,11 +42,11 @@ export function InterestForm({ source }: { source: string }) {
           <Field label="Job title" name="contact_title" required />
           <Field label="Work email" name="contact_email" type="email" autoComplete="email" required />
           <Field label="Phone" name="contact_phone" type="tel" autoComplete="tel" />
+          <label className="flex min-h-11 items-start gap-3 self-end rounded-md bg-zinc-50 px-4 py-3 text-sm leading-5 text-zinc-700 md:items-center">
+            <input className="mt-0.5 shrink-0 md:mt-0" type="checkbox" name="is_decision_maker" value="yes" />
+            I am authorized to make or approve decisions about bringing LIA to this school.
+          </label>
         </div>
-        <label className="flex items-start gap-3 text-sm text-zinc-700">
-          <input className="mt-1" type="checkbox" name="is_decision_maker" value="yes" />
-          I am authorized to make or approve decisions about bringing LIA to this school.
-        </label>
       </fieldset>
 
       <fieldset className="space-y-4">

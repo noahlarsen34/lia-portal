@@ -7,7 +7,7 @@ import {
 const sharedLinks: DashboardLink[] = [
     { href: '/dashboard', label: 'Home' },
     { href: '/schools', label: "Schools"},
-    { href: "/onboarding/interest-form", label: "School Onboarding" },
+    { href: "/onboarding", label: "School Onboarding" },
     { href: "/announcements", label: "Announcements" }, 
 ];
 

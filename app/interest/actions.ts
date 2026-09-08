@@ -23,11 +23,6 @@ export async function submitSchoolInterest(
   _previousState: InterestFormState,
   formData: FormData,
 ): Promise<InterestFormState> {
-  // Honeypot: real visitors never see or fill this field.
-  if (text(formData, "company_fax")) {
-    return { status: "success", message: "Thank you. Your interest form was received." };
-  }
-
   const schoolName = text(formData, "school_name");
   const city = text(formData, "city", 120);
   const state = text(formData, "state", 2).toUpperCase();

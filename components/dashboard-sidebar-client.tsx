@@ -36,7 +36,7 @@ type DashboardSidebarClientProps = {
 const iconsByHref = {
   "/dashboard": Home,
   "/schools": School,
-  "/onboarding/interest-form": Workflow,
+  "/onboarding": Workflow,
   "/events": CalendarDays,
   "/districts": Map,
   "/activity-log": ClipboardList,
