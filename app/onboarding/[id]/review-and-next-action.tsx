@@ -1,7 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { updateInterestSubmission } from "./actions";
+import {
+    archiveInterestSubmission,
+    deleteInterestSubmission,
+    restoreInterestSubmission,
+    updateInterestSubmission,
+} from "./actions";
 
 type StaffMember = {
     id: string;
@@ -17,13 +22,28 @@ type ReviewData = {
     nextAction: string;
     nextActionDueAt: string | null;
     internalNotes: string | null;
+    schoolName: string;
+    archivedAt: string | null;
+    archiveReason: string | null;
 };
 
 type ReviewAndNextActionProps = {
     review: ReviewData;
     staff: StaffMember[];
     initialEditing?: boolean;
+    canDelete: boolean;
 };
+
+const archiveReasons = [
+    ["onboarding_completed", "Onboarding completed"],
+    ["school_declined", "School declined"],
+    ["not_qualified", "Not qualified"],
+    ["unresponsive", "Unresponsive"],
+    ["duplicate", "Duplicate submission"],
+    ["other", "Other"],
+] as const;
+
+const archiveReasonLabels = Object.fromEntries(archiveReasons);
 
 const pipelineStages = [
     ["new_interest", "New Interest"],
@@ -54,10 +74,13 @@ export function ReviewAndNextAction({
     review,
     staff,
     initialEditing = false,
+    canDelete,
 }: ReviewAndNextActionProps) {
     const [isEditing, setIsEditing] = useState(initialEditing);
+    const [showArchiveForm, setShowArchiveForm] = useState(false);
+    const [showDeleteForm, setShowDeleteForm] = useState(false);
 
-    if (isEditing) {
+    if (isEditing && !review.archivedAt) {
         return (
             <section className="rounded-lg border border-red-100 bg-white p-5 shadow-sm sm:p-6">
                 <div>
@@ -185,7 +208,18 @@ export function ReviewAndNextAction({
     
     return (
         <section className="rounded-lg border border-red-100 bg-white p-5 shadow-sm sm:p-6">
-            <div className="flex items-start justify-between gap-4">
+            {review.archivedAt ? (
+                <div className="mb-6 rounded-md border border-amber-200 bg-amber-50 p-4">
+                    <p className="text-sm font-semibold text-amber-900">
+                        Archived {new Date(review.archivedAt).toLocaleDateString("en-US")}
+                    </p>
+                    <p className="mt-1 text-sm text-amber-800">
+                        Reason: {archiveReasonLabels[review.archiveReason ?? ""] ?? "Not specified"}
+                    </p>
+                </div>
+            ) : null}
+
+            <div className="flex flex-col items-start justify-between gap-4 sm:flex-row">
                 <div>
                     <h2 className="text-xl font-semibold">
                         Review and next action
@@ -196,14 +230,57 @@ export function ReviewAndNextAction({
                     </p>
                 </div>
 
-                <button
-                    type="button"
-                    onClick={() => setIsEditing(true)}
-                    className="shrink-0 rounded-md border border-red-200 bg-white px-4 py-2 text-sm font-semibold text-[#c8102e] hover:bg-red-50"
-                >
-                    Edit review
-                </button>
+                <div className="flex shrink-0 flex-nowrap gap-2">
+                    {review.archivedAt ? (
+                        <form action={restoreInterestSubmission}>
+                            <input type="hidden" name="submission_id" value={review.id} />
+                            <button type="submit" className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-50">
+                                Restore record
+                            </button>
+                        </form>
+                    ) : (
+                        <>
+                            <button
+                                type="button"
+                                onClick={() => setIsEditing(true)}
+                                className="rounded-md border border-red-200 bg-white px-4 py-2 text-sm font-semibold text-[#c8102e] hover:bg-red-50"
+                            >
+                                Edit review
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setShowArchiveForm((value) => !value)}
+                                className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-50"
+                            >
+                                Archive
+                            </button>
+                        </>
+                    )}
+                </div>
             </div>
+
+            {showArchiveForm && !review.archivedAt ? (
+                <form action={archiveInterestSubmission} className="mt-5 rounded-md border border-zinc-200 bg-zinc-50 p-4">
+                    <input type="hidden" name="submission_id" value={review.id} />
+                    <label className="block text-sm font-medium text-zinc-700">
+                        Why are you archiving this record?
+                        <select name="archive_reason" required defaultValue="" className={fieldClass}>
+                            <option value="" disabled>Select a reason</option>
+                            {archiveReasons.map(([value, label]) => (
+                                <option key={value} value={value}>{label}</option>
+                            ))}
+                        </select>
+                    </label>
+                    <div className="mt-4 flex justify-end gap-2">
+                        <button type="button" onClick={() => setShowArchiveForm(false)} className="h-10 rounded-md border border-zinc-300 bg-white px-4 text-sm font-semibold text-zinc-700 hover:bg-zinc-100">
+                            Cancel
+                        </button>
+                        <button type="submit" className="h-10 rounded-md bg-zinc-800 px-4 text-sm font-semibold text-white hover:bg-zinc-950">
+                            Archive record
+                        </button>
+                    </div>
+                </form>
+            ) : null}
 
             <div className="mt-6 flex flex-wrap gap-2">
                 <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-[#c8102e]">
@@ -265,6 +342,29 @@ export function ReviewAndNextAction({
                     </p>
                 )}
             </div>
+
+            {canDelete ? (
+                <div className="mt-8 border-t border-zinc-200 pt-5">
+                    {!showDeleteForm ? (
+                        <button type="button" onClick={() => setShowDeleteForm(true)} className="text-sm font-semibold text-red-700 hover:text-red-900">
+                            Permanently delete record
+                        </button>
+                    ) : (
+                        <form action={deleteInterestSubmission} className="rounded-md border border-red-200 bg-red-50 p-4">
+                            <input type="hidden" name="submission_id" value={review.id} />
+                            <p className="text-sm font-semibold text-red-900">This cannot be undone.</p>
+                            <label className="mt-2 block text-sm text-red-800">
+                                Type <strong>{review.schoolName}</strong> to permanently delete this submission.
+                                <input name="confirmation" required autoComplete="off" className="mt-2 h-11 w-full rounded-md border border-red-300 bg-white px-3 text-sm outline-none focus:border-red-600 focus:ring-2 focus:ring-red-100" />
+                            </label>
+                            <div className="mt-4 flex justify-end gap-2">
+                                <button type="button" onClick={() => setShowDeleteForm(false)} className="h-10 rounded-md border border-zinc-300 bg-white px-4 text-sm font-semibold text-zinc-700 hover:bg-zinc-50">Cancel</button>
+                                <button type="submit" className="h-10 rounded-md bg-red-700 px-4 text-sm font-semibold text-white hover:bg-red-800">Delete permanently</button>
+                            </div>
+                        </form>
+                    )}
+                </div>
+            ) : null}
         </section>
     );
 }

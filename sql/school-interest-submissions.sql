@@ -32,6 +32,10 @@ create table if not exists public.school_interest_submissions (
     next_action text not null default 'Review and qualify submission',
     status text not null default 'open',
     assigned_to uuid references public.profiles(id) on delete set null,
+    archived_at timestamptz,
+    archived_by uuid references public.profiles(id) on delete set null,
+    archive_reason text,
+    converted_school_id uuid references public.schools(id) on delete set null,
     submitted_at timestamptz not null default now(),
     updated_at timestamptz not null default now(),
     constraint school_interest_pipeline_stage_check check (
@@ -54,6 +58,12 @@ create table if not exists public.school_interest_submissions (
     ),
     constraint school_interest_student_count_check check (
         estimated_student_count is null or estimated_student_count > 0
+    ),
+    constraint school_interest_archive_reason_check check (
+        archive_reason is null or archive_reason in (
+            'onboarding_completed', 'school_declined', 'not_qualified',
+            'unresponsive', 'duplicate', 'other'
+        )
     )
 );
 
@@ -62,6 +72,13 @@ on public.school_interest_submissions (status, pipeline_stage, submitted_at desc
 
 create index if not exists school_interest_email_idx
 on public.school_interest_submissions (lower(contact_email), submitted_at desc);
+
+create index if not exists school_interest_archive_idx
+on public.school_interest_submissions (archived_at, submitted_at desc);
+
+create unique index if not exists school_interest_converted_school_idx
+on public.school_interest_submissions (converted_school_id)
+where converted_school_id is not null;
 
 alter table public.school_interest_submissions enable row level security;
 
@@ -79,6 +96,36 @@ using (
     )
 );
 
+drop policy if exists "school_interest_staff_update" on public.school_interest_submissions;
+create policy "school_interest_staff_update"
+on public.school_interest_submissions
+for update
+to authenticated
+using (
+    exists (
+        select 1 from public.profiles
+        where profiles.id = auth.uid() and profiles.role in ('admin', 'rpm')
+    )
+)
+with check (
+    exists (
+        select 1 from public.profiles
+        where profiles.id = auth.uid() and profiles.role in ('admin', 'rpm')
+    )
+);
+
+drop policy if exists "school_interest_admin_delete" on public.school_interest_submissions;
+create policy "school_interest_admin_delete"
+on public.school_interest_submissions
+for delete
+to authenticated
+using (
+    exists (
+        select 1 from public.profiles
+        where profiles.id = auth.uid() and profiles.role = 'admin'
+    )
+);
+
 -- Public writes go through a validated server action using the service-role client.
 revoke insert, update, delete on public.school_interest_submissions from anon, authenticated;
-grant select on public.school_interest_submissions to authenticated;
+grant select, update, delete on public.school_interest_submissions to authenticated;

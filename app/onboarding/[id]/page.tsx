@@ -9,6 +9,7 @@ type SubmissionPageProps = {
     params: Promise<{id: string }>;
     searchParams: Promise<{
         saved?: string;
+        restored?: string;
         error?: string;
     }>;
 };
@@ -18,8 +19,8 @@ export default async function SubmissionPage({
     searchParams,
 }: SubmissionPageProps) {
     const { id } = await params;
-    const { saved, error } = await searchParams;
-    const { supabase } = await requireStaff();
+    const { saved, restored, error } = await searchParams;
+    const { supabase, profile } = await requireStaff();
 
     const [{ data: submission }, { data: staff }] =
         await Promise.all([
@@ -69,12 +70,14 @@ export default async function SubmissionPage({
                         </p>
                     </div>
 
-                    {saved ? (
+                    {saved || restored ? (
                         <p
                             role="status"
                             className="mt-5 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800"
                         >
-                            Onboarding record updated.
+                            {restored
+                                ? "The onboarding record was restored."
+                                : "Onboarding record updated."}
                         </p>
                     ) : null}
 
@@ -87,6 +90,16 @@ export default async function SubmissionPage({
                                 ? "Complete the stage, status, and next action."
                                 : error === "invalid-assignee"
                                     ? "Select a valid staff member."
+                                    : error === "invalid-archive"
+                                        ? "Select a reason before archiving this record."
+                                        : error === "archive-failed"
+                                            ? "The record could not be archived. Run the onboarding archive SQL migration if you have not already."
+                                            : error === "restore-failed"
+                                                ? "The record could not be restored."
+                                                : error === "delete-confirmation"
+                                                    ? "The school name did not match. The record was not deleted."
+                                                    : error === "delete-failed"
+                                                        ? "The record could not be permanently deleted."
                                     : "The record could not be updated."}
                         </p>
                     ) : null}
@@ -200,7 +213,11 @@ export default async function SubmissionPage({
                         </section>
 
                         <ReviewAndNextAction
-                            initialEditing={Boolean(error)}
+                            initialEditing={[
+                                "missing-fields",
+                                "invalid-assignee",
+                                "update-failed",
+                            ].includes(error ?? "")}
                             review={{
                                 id: submission.id,
                                 assignedTo: submission.assigned_to,
@@ -214,7 +231,11 @@ export default async function SubmissionPage({
                                 nextAction: submission.next_action,
                                 nextActionDueAt: submission.next_action_due_at,
                                 internalNotes: submission.internal_notes,
+                                schoolName: submission.school_name,
+                                archivedAt: submission.archived_at,
+                                archiveReason: submission.archive_reason,
                             }}
+                            canDelete={profile.role === "admin"}
                             staff={(staff ?? []).map((person) => ({
                                 id: person.id,
                                 name:

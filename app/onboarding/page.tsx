@@ -5,6 +5,9 @@ import { requireStaff } from "@/utils/role-guards";
 type OnboardingPageProps = {
     searchParams: Promise<{
         stage?: string;
+        visibility?: string;
+        archived?: string;
+        deleted?: string;
     }>;
 };
 
@@ -25,8 +28,11 @@ const stageLabels: Record<string, string> = {
 export default async function OnboardingPage({
     searchParams,
 } : OnboardingPageProps) {
-    const { stage } = await searchParams;
+    const { stage, visibility, archived, deleted } = await searchParams;
     const { supabase } = await requireStaff();
+    const selectedVisibility = ["active", "archived", "all"].includes(visibility ?? "")
+        ? visibility!
+        : "active";
 
     let query = supabase
         .from("school_interest_submissions")
@@ -44,12 +50,20 @@ export default async function OnboardingPage({
             next_action_due_at,
             status,
             submitted_at,
-            assigned_to
+            assigned_to,
+            archived_at,
+            archive_reason
         `)
         .order("submitted_at", { ascending: false })
     
     if (stage && stage !== "all") {
         query = query.eq("pipeline_stage", stage);
+    }
+
+    if (selectedVisibility === "active") {
+        query = query.is("archived_at", null);
+    } else if (selectedVisibility === "archived") {
+        query = query.not("archived_at", "is", null);
     }
 
     const [{data: submissions, error}, { data: staff}] =
@@ -106,10 +120,34 @@ export default async function OnboardingPage({
                         </Link>
                     </div>
 
-                    <form className="mt-6 flex max-w-sm gap-3">
+                    {archived ? (
+                        <p role="status" className="mt-5 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+                            The onboarding record was archived.
+                        </p>
+                    ) : null}
+
+                    {deleted ? (
+                        <p role="status" className="mt-5 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+                            The onboarding record was permanently deleted.
+                        </p>
+                    ) : null}
+
+                    <form className="mt-6 flex max-w-2xl flex-col gap-3 sm:flex-row">
+                        <select
+                            name="visibility"
+                            defaultValue={selectedVisibility}
+                            aria-label="Record visibility"
+                            className="h-11 rounded-md border border-zinc-300 bg-white px-3 text-sm sm:w-44"
+                        >
+                            <option value="active">Active records</option>
+                            <option value="archived">Archived records</option>
+                            <option value="all">All records</option>
+                        </select>
+
                         <select
                             name="stage"
                             defaultValue={stage ?? "all"}
+                            aria-label="Pipeline stage"
                             className="h-11 flex-1 rounded-md border border-zinc-300 bg-white px-3 text-sm"
                         >
                             <option value="all">All stages</option>
@@ -156,6 +194,7 @@ export default async function OnboardingPage({
                                     <tbody className="divide-y divide-zinc-100">
                                         {(submissions ?? []).map((submission) => {
                                             const overdue =
+                                                !submission.archived_at &&
                                                 submission.status === "open" &&
                                                 submission.next_action_due_at &&
                                                 submission.next_action_due_at < today;
@@ -163,7 +202,7 @@ export default async function OnboardingPage({
                                             return (
                                                 <tr
                                                     key={submission.id}
-                                                    className="hover:bg-red-50/30"
+                                                    className={submission.archived_at ? "bg-zinc-50 text-zinc-600 hover:bg-zinc-100" : "hover:bg-red-50/30"}
                                                 >
                                                     <td className="px-5 py-4">
                                                         <div className="font-semibold text-zinc-950">
@@ -173,6 +212,11 @@ export default async function OnboardingPage({
                                                         <div className="mt-1 text-xs text-zinc-500">
                                                             {submission.city} · {submission.state}
                                                         </div>
+                                                        {submission.archived_at ? (
+                                                            <div className="mt-2 inline-flex rounded-full bg-zinc-200 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-zinc-700">
+                                                                Archived
+                                                            </div>
+                                                        ) : null}
                                                     </td>
 
                                                     <td className="px-5 py-4">
@@ -229,7 +273,7 @@ export default async function OnboardingPage({
                                                             href={`/onboarding/${submission.id}`}
                                                             className="font-semibold text-[#c8102e] hover:text-[#a70d25]"
                                                         >
-                                                            Review
+                                                            {submission.archived_at ? "View" : "Review"}
                                                         </Link>
                                                     </td>
                                                 </tr>
