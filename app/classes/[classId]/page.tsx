@@ -250,7 +250,7 @@ export default async function StaffClassDetailsPage({
                 `,
             )
             .eq("lia_class_id", liaClass.id)
-            .or("status.is.null,status.neq.removed")
+            .or("status.is.null,status.eq.active")
             .order("enrolled_at", { ascending: false }),
     ]);
 
@@ -294,10 +294,7 @@ export default async function StaffClassDetailsPage({
                     enrollment.committee,
                 ),
                 tier: formatStudentTier(enrollment.tier),
-                status:
-                    enrollment.status === "inactive"
-                        ? "Inactive"
-                        : "Active",
+                status: "Active",
                 enrolledAt: enrollment.enrolled_at ?? "",
             },
         ];

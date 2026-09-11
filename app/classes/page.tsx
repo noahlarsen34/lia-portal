@@ -180,11 +180,35 @@ export default async function StaffClassesPage({
                       .in("id", teacherProfileIds)
                 : Promise.resolve({ data: [], error: null }),
             classIds.length > 0
-                ? supabase
-                      .from("lia_class_students")
-                      .select("lia_class_id, student_id, status")
-                      .in("lia_class_id", classIds)
-                      .or("status.is.null,status.neq.removed")
+                ? (async () => {
+                      const pageSize = 1000;
+                      const enrollments: Array<{
+                          lia_class_id: string;
+                          student_id: string;
+                          status: string | null;
+                      }> = [];
+
+                      for (let offset = 0; ; offset += pageSize) {
+                          const result = await supabase
+                              .from("lia_class_students")
+                              .select("lia_class_id, student_id, status")
+                              .in("lia_class_id", classIds)
+                              .or("status.is.null,status.eq.active")
+                              .order("lia_class_id")
+                              .order("student_id")
+                              .range(offset, offset + pageSize - 1);
+
+                          if (result.error) {
+                              return { data: null, error: result.error };
+                          }
+
+                          enrollments.push(...(result.data ?? []));
+
+                          if ((result.data?.length ?? 0) < pageSize) {
+                              return { data: enrollments, error: null };
+                          }
+                      }
+                  })()
                 : Promise.resolve({ data: [], error: null }),
         ]);
 
