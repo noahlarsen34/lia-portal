@@ -22,7 +22,7 @@ type ReviewData = {
 type ReviewAndNextActionProps = {
     review: ReviewData;
     staff: StaffMember[];
-    initalEditing?: boolean;
+    initialEditing?: boolean;
 };
 
 const pipelineStages = [
@@ -48,14 +48,14 @@ const statusLabels: Record<string, string> = {
 };
 
 const fieldClass =
-    "mt-2 h-11 w-full rounded-md border broder-zinc-300 bg-white px-3 text-sm outline-none focus:border-[#c8102e] focus:ring-2 focus:ring-red-100";
+    "mt-2 h-11 w-full rounded-md border border-zinc-300 bg-white px-3 text-sm outline-none focus:border-[#c8102e] focus:ring-2 focus:ring-red-100";
 
 export function ReviewAndNextAction({
     review,
     staff,
-    initalEditing = false,
+    initialEditing = false,
 }: ReviewAndNextActionProps) {
-    const [isEditing, setIsEditing] = useState(initalEditing);
+    const [isEditing, setIsEditing] = useState(initialEditing);
 
     if (isEditing) {
         return (
@@ -98,9 +98,9 @@ export function ReviewAndNextAction({
                     </label>
 
                     <label className="block text-sm font-medium text-zinc-700">
-                        Pipleline stage *
+                        Pipeline stage *
                         <select
-                            name="pipleline_stage"
+                            name="pipeline_stage"
                             defaultValue={review.pipelineStage}
                             className={fieldClass}
                             required
@@ -158,7 +158,7 @@ export function ReviewAndNextAction({
 
                     <div className="flex flex-col-reverse gap-3 border-t border-zinc-100 pt-5 sm:flex-row sm:justify-end">
                         <button
-                            type="submit"
+                            type="button"
                             onClick={() => setIsEditing(false)}
                             className="h-11 rounded-md border border-zinc-300 bg-white px-5 text-sm font-semibold text-zinc-700 hover:bg-zinc-50"
                         >
@@ -218,7 +218,7 @@ export function ReviewAndNextAction({
                             : "rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-zinc-700"
                     }
                 >
-                    {statusLabels[review.status ?? review.status]}
+                    {statusLabels[review.status] ?? review.status}
                 </span>
             </div>
 

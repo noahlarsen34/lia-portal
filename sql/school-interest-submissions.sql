@@ -5,6 +5,7 @@ create table if not exists public.school_interest_submissions (
     id uuid primary key default gen_random_uuid(),
     school_name text not null,
     district_name text,
+    -- Matches the legacy schools.city column, which stores the full address.
     city text not null,
     state text not null,
     website text,
@@ -14,6 +15,8 @@ create table if not exists public.school_interest_submissions (
     contact_email text not null,
     contact_phone text,
     is_decision_maker boolean not null default false,
+    principal_name text,
+    principal_email text,
     signer_name text,
     signer_email text,
     billing_email text,

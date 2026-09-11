@@ -107,15 +107,19 @@ export default async function SubmissionPage({
                                     value={submission.district_name}
                                 />
                                 <Info
-                                    label="Location"
-                                    value={`${submission.city}, ${submission.state}`}
+                                    label="Address"
+                                    value={submission.city}
+                                />
+                                <Info
+                                    label="State"
+                                    value={submission.state}
                                 />
                                 <Info
                                     label="Website"
                                     value={submission.website}
                                 />
                                 <Info
-                                    label="Primary Contact"
+                                    label="Applicant"
                                     value={`${submission.contact_first_name} ${submission.contact_last_name}`}
                                 />
                                 <Info
@@ -129,6 +133,14 @@ export default async function SubmissionPage({
                                 <Info
                                 label="Phone"
                                 value={submission.contact_phone}
+                                />
+                                <Info
+                                label="Principal"
+                                value={submission.principal_name}
+                                />
+                                <Info
+                                label="Principal email"
+                                value={submission.principal_email}
                                 />
                                 <Info
                                 label="Decision-maker"
@@ -161,11 +173,11 @@ export default async function SubmissionPage({
                                 value={submission.referral_source}
                                 />
                                 <Info
-                                label="Authorized signer"
+                                label="Authorized MOU signer"
                                 value={submission.signer_name}
                                 />
                                 <Info
-                                label="Signer email"
+                                label="MOU signer email"
                                 value={submission.signer_email}
                                 />
                                 <Info
@@ -188,7 +200,7 @@ export default async function SubmissionPage({
                         </section>
 
                         <ReviewAndNextAction
-                            initalEditing={Boolean(error)}
+                            initialEditing={Boolean(error)}
                             review={{
                                 id: submission.id,
                                 assignedTo: submission.assigned_to,

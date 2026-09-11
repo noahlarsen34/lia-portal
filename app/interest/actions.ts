@@ -1,6 +1,7 @@
 "use server";
 
 import { createAdminClient } from "@/utils/supabase/admin";
+import { US_STATE_SET } from "@/utils/us-states";
 
 export type InterestFormState = {
   status: "idle" | "error" | "success";
@@ -24,12 +25,14 @@ export async function submitSchoolInterest(
   formData: FormData,
 ): Promise<InterestFormState> {
   const schoolName = text(formData, "school_name");
-  const city = text(formData, "city", 120);
-  const state = text(formData, "state", 2).toUpperCase();
+  const address = text(formData, "address", 500);
+  const state = text(formData, "state", 100);
   const firstName = text(formData, "contact_first_name", 100);
   const lastName = text(formData, "contact_last_name", 100);
   const title = text(formData, "contact_title", 150);
   const email = text(formData, "contact_email", 254).toLowerCase();
+  const principalName = text(formData, "principal_name", 200);
+  const principalEmail = text(formData, "principal_email", 254).toLowerCase();
   const desiredStartTerm = text(formData, "desired_start_term", 100);
   const fundingStatus = text(formData, "funding_status", 40);
   const consentToContact = formData.get("consent_to_contact") === "yes";
@@ -44,12 +47,14 @@ export async function submitSchoolInterest(
 
   if (
     !schoolName ||
-    !city ||
-    !/^[A-Z]{2}$/.test(state) ||
+    !address ||
+    !US_STATE_SET.has(state) ||
     !firstName ||
     !lastName ||
     !title ||
     !EMAIL_PATTERN.test(email) ||
+    !principalName ||
+    !EMAIL_PATTERN.test(principalEmail) ||
     !desiredStartTerm ||
     !VALID_FUNDING_STATUSES.has(fundingStatus) ||
     gradeLevels.length === 0 ||
@@ -89,7 +94,8 @@ export async function submitSchoolInterest(
   const { error } = await supabase.from("school_interest_submissions").insert({
     school_name: schoolName,
     district_name: text(formData, "district_name") || null,
-    city,
+    // The existing schools schema stores its user-facing address in `city`.
+    city: address,
     state,
     website: text(formData, "website", 500) || null,
     contact_first_name: firstName,
@@ -98,6 +104,8 @@ export async function submitSchoolInterest(
     contact_email: email,
     contact_phone: text(formData, "contact_phone", 40) || null,
     is_decision_maker: formData.get("is_decision_maker") === "yes",
+    principal_name: principalName,
+    principal_email: principalEmail,
     signer_name: text(formData, "signer_name") || null,
     signer_email: text(formData, "signer_email", 254).toLowerCase() || null,
     billing_email: text(formData, "billing_email", 254).toLowerCase() || null,

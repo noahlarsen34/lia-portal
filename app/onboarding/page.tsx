@@ -142,7 +142,7 @@ export default async function OnboardingPage({
                                     <thead className="bg-zinc-100 text-xs uppercase tracking-wide text-zinc-600">
                                         <tr>
                                             <th className="px-5 py-4">School</th>
-                                            <th className="px-5 py-4">Contact</th>
+                                            <th className="px-5 py-4">Applicant</th>
                                             <th className="px-5 py-4">Stage</th>
                                             <th className="px-5 py-4">Assigned to</th>
                                             <th className="px-5 py-4">Next action</th>
@@ -171,7 +171,7 @@ export default async function OnboardingPage({
                                                         </div>
 
                                                         <div className="mt-1 text-xs text-zinc-500">
-                                                            {submission.city}, {submission.state}
+                                                            {submission.city} · {submission.state}
                                                         </div>
                                                     </td>
 
