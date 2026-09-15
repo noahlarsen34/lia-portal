@@ -97,9 +97,16 @@ export async function submitSchoolInterest(
     .maybeSingle();
 
   if (existing) {
+    console.info("Skipped duplicate school interest submission", {
+      existingSubmissionId: existing.id,
+      schoolName,
+      email,
+    });
+
     return {
       status: "success",
-      message: "Thank you. We already received this interest form and will be in touch.",
+      message:
+        "We already received this interest form within the last 24 hours, so no duplicate emails were sent. Our team will be in touch.",
     };
   }
 
@@ -186,6 +193,12 @@ export async function submitSchoolInterest(
 
   const subject = "Schedule your Latinos In Action introduction";
 
+  console.info("Sending school interest scheduling email", {
+    submissionId: submission.id,
+    recipient: email,
+    assignedRpm: rpm.email,
+  });
+
   const emailResult = await sendEmail({
     to: email,
     subject,
@@ -269,6 +282,13 @@ export async function submitSchoolInterest(
   // routing intact, but deliver the internal notification to Noah.
   const rpmNotificationRecipient = "noah@latinosinaction.org";
   const internalSubject = `New school interest: ${schoolName.replace(/[\r\n]+/g, " ")}`;
+
+  console.info("Sending school interest RPM notification", {
+    submissionId: submission.id,
+    recipient: rpmNotificationRecipient,
+    assignedRpm: rpm.email,
+  });
+
   const rpmEmailResult = await sendEmail({
     to: rpmNotificationRecipient,
     subject: internalSubject,
