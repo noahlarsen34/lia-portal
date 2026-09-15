@@ -2,6 +2,12 @@
 
 import { createAdminClient } from "@/utils/supabase/admin";
 import { US_STATE_SET } from "@/utils/us-states";
+import {
+  escapeHtml,
+  renderBrandedEmail,
+  sendEmail,
+} from "@/utils/email";
+import { getOnboardingRpm } from "@/utils/onboarding-routing";
 
 export type InterestFormState = {
   status: "idle" | "error" | "success";
@@ -95,45 +101,193 @@ export async function submitSchoolInterest(
     };
   }
 
-  const { error } = await supabase.from("school_interest_submissions").insert({
-    school_name: schoolName,
-    district_name: text(formData, "district_name") || null,
-    // The existing schools schema stores its user-facing address in `city`.
-    city: address,
+    const rpm = getOnboardingRpm(
     state,
-    region: requiresRegion ? region : null,
-    website: text(formData, "website", 500) || null,
-    contact_first_name: firstName,
-    contact_last_name: lastName,
-    contact_title: title,
-    contact_email: email,
-    contact_phone: text(formData, "contact_phone", 40) || null,
-    is_decision_maker: formData.get("is_decision_maker") === "yes",
-    principal_name: principalName,
-    principal_email: principalEmail,
-    signer_name: text(formData, "signer_name") || null,
-    signer_email: text(formData, "signer_email", 254).toLowerCase() || null,
-    billing_email: text(formData, "billing_email", 254).toLowerCase() || null,
-    grade_levels: gradeLevels,
-    estimated_student_count: estimatedStudentCount,
-    desired_start_term: desiredStartTerm,
-    funding_status: fundingStatus,
-    referral_source: text(formData, "referral_source") || null,
-    notes: text(formData, "notes", 2000) || null,
-    consent_to_contact: consentToContact,
-    source: text(formData, "source", 80) || "direct",
-  });
+    requiresRegion ? region : null,
+  );
 
-  if (error) {
-    console.error("Could not save school interest submission", { message: error.message });
+  const { data: rpmProfile, error: rpmError } = await supabase
+    .from("profiles")
+    .select("id")
+    .ilike("email", rpm.email)
+    .in("role", ["admin", "rpm"])
+    .limit(1)
+    .maybeSingle();
+
+  if (rpmError) {
+    console.error("Could not find onboarding RPM", {
+      rpm: rpm.email,
+      message: rpmError.message,
+    });
+  }
+
+  const { data: submission, error } = await supabase
+    .from("school_interest_submissions")
+    .insert({
+      school_name: schoolName,
+      district_name: text(formData, "district_name") || null,
+      city: address,
+      state,
+      region: requiresRegion ? region : null,
+      website: text(formData, "website", 500) || null,
+      contact_first_name: firstName,
+      contact_last_name: lastName,
+      contact_title: title,
+      contact_email: email,
+      contact_phone: text(formData, "contact_phone", 40) || null,
+      is_decision_maker:
+        formData.get("is_decision_maker") === "yes",
+      principal_name: principalName,
+      principal_email: principalEmail,
+      signer_name: text(formData, "signer_name") || null,
+      signer_email:
+        text(formData, "signer_email", 254).toLowerCase() || null,
+      billing_email:
+        text(formData, "billing_email", 254).toLowerCase() || null,
+      grade_levels: gradeLevels,
+      estimated_student_count: estimatedStudentCount,
+      desired_start_term: desiredStartTerm,
+      funding_status: fundingStatus,
+      referral_source:
+        text(formData, "referral_source") || null,
+      notes: text(formData, "notes", 2000) || null,
+      consent_to_contact: consentToContact,
+      source: text(formData, "source", 80) || "direct",
+      assigned_to: rpmProfile?.id ?? null,
+      pipeline_stage: "new_interest",
+      next_action: "Send or retry scheduling email",
+    })
+    .select("id")
+    .single();
+
+  if (error || !submission) {
+    console.error("Could not save school interest submission", {
+      message: error?.message,
+    });
+
     return {
       status: "error",
-      message: "We could not submit the form. Please try again in a moment.",
+      message:
+        "We could not submit the form. Please try again in a moment.",
     };
+  }
+
+  const appUrl = (
+    process.env.NEXT_PUBLIC_APP_URL ??
+    "https://lia-portal-seven.vercel.app"
+  ).replace(/\/$/, "");
+
+  const programOverviewUrl =
+    `${appUrl}/onboarding-assets/lia-program-overview.pdf`;
+  const whoWeAreUrl =
+    `${appUrl}/onboarding-assets/lia-who-we-are.pdf`;
+
+  const subject = "Schedule your Latinos In Action introduction";
+
+  const emailResult = await sendEmail({
+    to: email,
+    subject,
+    idempotencyKey: `school-interest-scheduling-${submission.id}`,
+    attachments: [
+      {
+        filename: "Latinos In Action Program Overview.pdf",
+        path: programOverviewUrl,
+      },
+      {
+        filename: "LIA Who We Are.pdf",
+        path: whoWeAreUrl,
+      },
+    ],
+    html: renderBrandedEmail({
+      preheader:
+        "Thank you for your interest in bringing Latinos In Action to your school.",
+      eyebrow: "School onboarding",
+      title: "Let’s schedule your introduction",
+      body: `
+        <p style="margin:0; color:#3f3f46; font-size:15px; line-height:1.7;">
+          Hi ${escapeHtml(firstName)},
+        </p>
+
+        <p style="margin:16px 0 0; color:#3f3f46; font-size:15px; line-height:1.7;">
+          Thank you for your interest in bringing Latinos In Action to
+          ${escapeHtml(schoolName)}. Your Regional Program Manager is
+          ${escapeHtml(rpm.name)}.
+        </p>
+
+        <p style="margin:16px 0 0; color:#3f3f46; font-size:15px; line-height:1.7;">
+          Please use the button below to schedule an introductory meeting.
+        </p>
+
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin-top:24px;">
+          <tr>
+            <td style="border-radius:6px; background-color:#c4122f;">
+              <a
+                href="${rpm.calendarUrl}"
+                style="display:inline-block; padding:13px 22px; color:#ffffff; font-size:15px; font-weight:700; text-decoration:none;"
+              >
+                Schedule a Meeting
+              </a>
+            </td>
+          </tr>
+        </table>
+
+        <p style="margin:24px 0 0; color:#3f3f46; font-size:15px; line-height:1.7;">
+          We have attached our Program Overview and Who We Are documents.
+          If your email provider removes the attachments, you can download
+          them here:
+        </p>
+
+        <ul style="margin:12px 0 0; padding-left:22px; color:#3f3f46; font-size:15px; line-height:1.8;">
+          <li><a href="${programOverviewUrl}" style="color:#c4122f;">Program Overview</a></li>
+          <li><a href="${whoWeAreUrl}" style="color:#c4122f;">Who We Are</a></li>
+        </ul>
+
+        <p style="margin:20px 0 0; color:#71717a; font-size:13px; line-height:1.6;">
+          If you have questions, contact ${escapeHtml(rpm.name)} at
+          <a href="mailto:${rpm.email}" style="color:#c4122f;">
+            ${escapeHtml(rpm.email)}
+          </a>.
+        </p>
+      `,
+    }),
+  });
+
+  await supabase.from("email_deliveries").insert({
+    resend_email_id: emailResult.id,
+    recipient: email,
+    subject,
+    email_kind: "school_onboarding_scheduling",
+    status: emailResult.error ? "failed" : "sent",
+    status_message: emailResult.error,
+    event_at: new Date().toISOString(),
+  });
+
+  const { error: workflowError } = await supabase
+    .from("school_interest_submissions")
+    .update(
+      emailResult.error
+        ? {
+            next_action: "Retry scheduling email",
+            updated_at: new Date().toISOString(),
+          }
+        : {
+            pipeline_stage: "scheduling",
+            next_action: "Applicant schedules introductory meeting",
+            updated_at: new Date().toISOString(),
+          },
+    )
+    .eq("id", submission.id);
+
+  if (workflowError) {
+    console.error("Could not update onboarding email status", {
+      submissionId: submission.id,
+      message: workflowError.message,
+    });
   }
 
   return {
     status: "success",
-    message: "Thank you! Our team will review your information and contact you with the next step.",
+    message:
+      "Thank you! Check your email for program information and a link to schedule your introductory meeting.",
   };
 }

@@ -7,7 +7,8 @@ const fromEmail =
 
 type EmailAttachment = {
   filename: string;
-  content: Buffer | string;
+  content?: Buffer | string;
+  path?: string;
   contentType?: string;
 };
 
