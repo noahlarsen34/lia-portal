@@ -15,6 +15,7 @@ const VALID_FUNDING_STATUSES = new Set([
   "needs_support",
   "unknown",
 ]);
+const VALID_REGIONS = new Set(["North", "Central", "South"]);
 
 function text(formData: FormData, name: string, maxLength = 250) {
   return String(formData.get(name) ?? "").trim().slice(0, maxLength);
@@ -27,6 +28,8 @@ export async function submitSchoolInterest(
   const schoolName = text(formData, "school_name");
   const address = text(formData, "address", 500);
   const state = text(formData, "state", 100);
+  const region = text(formData, "region", 20);
+  const requiresRegion = state === "Utah" || state === "Florida";
   const firstName = text(formData, "contact_first_name", 100);
   const lastName = text(formData, "contact_last_name", 100);
   const title = text(formData, "contact_title", 150);
@@ -49,6 +52,7 @@ export async function submitSchoolInterest(
     !schoolName ||
     !address ||
     !US_STATE_SET.has(state) ||
+    (requiresRegion && !VALID_REGIONS.has(region)) ||
     !firstName ||
     !lastName ||
     !title ||
@@ -97,6 +101,7 @@ export async function submitSchoolInterest(
     // The existing schools schema stores its user-facing address in `city`.
     city: address,
     state,
+    region: requiresRegion ? region : null,
     website: text(formData, "website", 500) || null,
     contact_first_name: firstName,
     contact_last_name: lastName,

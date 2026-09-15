@@ -8,6 +8,7 @@ create table if not exists public.school_interest_submissions (
     -- Matches the legacy schools.city column, which stores the full address.
     city text not null,
     state text not null,
+    region text,
     website text,
     contact_first_name text not null,
     contact_last_name text not null,
@@ -58,6 +59,9 @@ create table if not exists public.school_interest_submissions (
     ),
     constraint school_interest_student_count_check check (
         estimated_student_count is null or estimated_student_count > 0
+    ),
+    constraint school_interest_region_check check (
+        region is null or region in ('North', 'Central', 'South')
     ),
     constraint school_interest_archive_reason_check check (
         archive_reason is null or archive_reason in (

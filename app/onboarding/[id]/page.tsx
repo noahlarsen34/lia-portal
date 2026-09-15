@@ -128,6 +128,10 @@ export default async function SubmissionPage({
                                     value={submission.state}
                                 />
                                 <Info
+                                    label="Region"
+                                    value={submission.region}
+                                />
+                                <Info
                                     label="Website"
                                     value={submission.website}
                                 />

@@ -9,6 +9,7 @@ const inputClass = "mt-2 h-11 w-full rounded-md border border-zinc-300 bg-white 
 
 export function InterestForm({ source }: { source: string }) {
   const [state, formAction, pending] = useActionState(submitSchoolInterest, initialState);
+  const [selectedState, setSelectedState] = useState("");
   const [applicantFirstName, setApplicantFirstName] = useState("");
   const [applicantLastName, setApplicantLastName] = useState("");
   const [applicantEmail, setApplicantEmail] = useState("");
@@ -56,7 +57,13 @@ export function InterestForm({ source }: { source: string }) {
           <Field label="Address" name="address" autoComplete="street-address" required />
           <label className="text-sm font-medium text-zinc-700">
             State *
-            <select className={inputClass} name="state" defaultValue="" required>
+            <select
+              className={inputClass}
+              name="state"
+              value={selectedState}
+              onChange={(event) => setSelectedState(event.target.value)}
+              required
+            >
               <option value="" disabled>Select state</option>
               {US_STATES.map((stateName) => (
                 <option key={stateName} value={stateName}>
@@ -65,6 +72,17 @@ export function InterestForm({ source }: { source: string }) {
               ))}
             </select>
           </label>
+          {selectedState === "Utah" || selectedState === "Florida" ? (
+            <label className="text-sm font-medium text-zinc-700">
+              Region *
+              <select className={inputClass} name="region" defaultValue="" required>
+                <option value="" disabled>Select region</option>
+                <option value="North">North</option>
+                <option value="Central">Central</option>
+                <option value="South">South</option>
+              </select>
+            </label>
+          ) : null}
           <Field label="School website" name="website" type="url" placeholder="https://" />
           <Field label="Desired start term" name="desired_start_term" placeholder="Fall 2027" required />
         </div>
