@@ -32,6 +32,7 @@ export async function submitSchoolInterest(
   formData: FormData,
 ): Promise<InterestFormState> {
   const schoolName = text(formData, "school_name");
+  const districtName = text(formData, "district_name");
   const address = text(formData, "address", 500);
   const state = text(formData, "state", 100);
   const region = text(formData, "region", 20);
@@ -40,6 +41,7 @@ export async function submitSchoolInterest(
   const lastName = text(formData, "contact_last_name", 100);
   const title = text(formData, "contact_title", 150);
   const email = text(formData, "contact_email", 254).toLowerCase();
+  const phone = text(formData, "contact_phone", 40);
   const principalName = text(formData, "principal_name", 200);
   const principalEmail = text(formData, "principal_email", 254).toLowerCase();
   const desiredStartTerm = text(formData, "desired_start_term", 100);
@@ -125,7 +127,7 @@ export async function submitSchoolInterest(
     .from("school_interest_submissions")
     .insert({
       school_name: schoolName,
-      district_name: text(formData, "district_name") || null,
+      district_name: districtName || null,
       city: address,
       state,
       region: requiresRegion ? region : null,
@@ -134,7 +136,7 @@ export async function submitSchoolInterest(
       contact_last_name: lastName,
       contact_title: title,
       contact_email: email,
-      contact_phone: text(formData, "contact_phone", 40) || null,
+      contact_phone: phone || null,
       is_decision_maker:
         formData.get("is_decision_maker") === "yes",
       principal_name: principalName,
@@ -262,6 +264,71 @@ export async function submitSchoolInterest(
     event_at: new Date().toISOString(),
   });
 
+  const reviewUrl = `${appUrl}/onboarding/${submission.id}`;
+  // Temporary testing override: keep the real RPM assignment and calendar
+  // routing intact, but deliver the internal notification to Noah.
+  const rpmNotificationRecipient = "noah@latinosinaction.org";
+  const internalSubject = `New school interest: ${schoolName.replace(/[\r\n]+/g, " ")}`;
+  const rpmEmailResult = await sendEmail({
+    to: rpmNotificationRecipient,
+    subject: internalSubject,
+    idempotencyKey: `school-interest-rpm-notification-${submission.id}`,
+    html: renderBrandedEmail({
+      preheader: `${schoolName} submitted a school interest form.`,
+      eyebrow: "New school interest",
+      title: `${schoolName} is interested in LIA`,
+      body: `
+        <p style="margin:0; color:#3f3f46; font-size:15px; line-height:1.7;">
+          Hi ${escapeHtml(rpm.name.split(" ")[0])},
+        </p>
+
+        <p style="margin:16px 0 0; color:#3f3f46; font-size:15px; line-height:1.7;">
+          A new school interest form has been assigned to you.
+          ${
+            emailResult.error
+              ? "The applicant scheduling email did not send, so manual follow-up is needed."
+              : "The applicant received your scheduling link and should be scheduling an introductory meeting soon."
+          }
+        </p>
+
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%; margin-top:24px; background:#fafafa; border:1px solid #e4e4e7; border-radius:6px;">
+          <tr><td style="padding:18px; color:#3f3f46; font-size:14px; line-height:1.8;">
+            <strong>School:</strong> ${escapeHtml(schoolName)}<br>
+            <strong>District:</strong> ${escapeHtml(districtName || "Not provided")}<br>
+            <strong>Location:</strong> ${escapeHtml([region, state].filter(Boolean).join(", "))}<br>
+            <strong>Applicant:</strong> ${escapeHtml(`${firstName} ${lastName}`)}<br>
+            <strong>Title:</strong> ${escapeHtml(title)}<br>
+            <strong>Email:</strong> <a href="mailto:${escapeHtml(email)}" style="color:#c4122f;">${escapeHtml(email)}</a><br>
+            <strong>Phone:</strong> ${escapeHtml(phone || "Not provided")}<br>
+            <strong>Desired start:</strong> ${escapeHtml(desiredStartTerm)}<br>
+            <strong>Estimated students:</strong> ${escapeHtml(estimatedStudentCount?.toString() ?? "Not provided")}<br>
+            <strong>Funding:</strong> ${escapeHtml(fundingStatus)}
+          </td></tr>
+        </table>
+
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin-top:24px;">
+          <tr>
+            <td style="border-radius:6px; background-color:#c4122f;">
+              <a href="${reviewUrl}" style="display:inline-block; padding:13px 22px; color:#ffffff; font-size:15px; font-weight:700; text-decoration:none;">
+                Review Submission
+              </a>
+            </td>
+          </tr>
+        </table>
+      `,
+    }),
+  });
+
+  await supabase.from("email_deliveries").insert({
+    resend_email_id: rpmEmailResult.id,
+    recipient: rpmNotificationRecipient,
+    subject: internalSubject,
+    email_kind: "school_onboarding_rpm_notification",
+    status: rpmEmailResult.error ? "failed" : "sent",
+    status_message: rpmEmailResult.error,
+    event_at: new Date().toISOString(),
+  });
+
   const { error: workflowError } = await supabase
     .from("school_interest_submissions")
     .update(
@@ -270,7 +337,13 @@ export async function submitSchoolInterest(
             next_action: "Retry scheduling email",
             updated_at: new Date().toISOString(),
           }
-        : {
+        : rpmEmailResult.error
+          ? {
+              pipeline_stage: "scheduling",
+              next_action: "Applicant schedules meeting; notify assigned RPM manually",
+              updated_at: new Date().toISOString(),
+            }
+          : {
             pipeline_stage: "scheduling",
             next_action: "Applicant schedules introductory meeting",
             updated_at: new Date().toISOString(),
