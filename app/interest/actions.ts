@@ -278,19 +278,16 @@ export async function submitSchoolInterest(
   });
 
   const reviewUrl = `${appUrl}/onboarding/${submission.id}`;
-  // Temporary testing override: keep the real RPM assignment and calendar
-  // routing intact, but deliver the internal notification to Noah.
-  const rpmNotificationRecipient = "noah@latinosinaction.org";
   const internalSubject = `New school interest: ${schoolName.replace(/[\r\n]+/g, " ")}`;
 
   console.info("Sending school interest RPM notification", {
     submissionId: submission.id,
-    recipient: rpmNotificationRecipient,
+    recipient: rpm.email,
     assignedRpm: rpm.email,
   });
 
   const rpmEmailResult = await sendEmail({
-    to: rpmNotificationRecipient,
+    to: rpm.email,
     subject: internalSubject,
     idempotencyKey: `school-interest-rpm-notification-${submission.id}`,
     html: renderBrandedEmail({
@@ -341,7 +338,7 @@ export async function submitSchoolInterest(
 
   await supabase.from("email_deliveries").insert({
     resend_email_id: rpmEmailResult.id,
-    recipient: rpmNotificationRecipient,
+    recipient: rpm.email,
     subject: internalSubject,
     email_kind: "school_onboarding_rpm_notification",
     status: rpmEmailResult.error ? "failed" : "sent",
