@@ -816,8 +816,17 @@ function parseDocumentAccordion(html: string, pageTitle: string): CurriculumBook
     };
 }
 
+function correctKnownResourceLinks(html: string) {
+    return html.replace(
+        /(<a\b[^>]*href=")https:\/\/drive\.latinosinaction\.org\/drive\/s\/BXDT43TamWIm0uXHQROTgfpaHPzSSs("[^>]*>(?:(?!<\/a>)[\s\S])*Making a Good First Impression(?:(?!<\/a>)[\s\S])*<\/a>)/gi,
+        "$1https://drive.latinosinaction.org/drive/s/etrMhkVguv8EGqzSY1Gy1TYiDwNfWx$2",
+    );
+}
+
 function prepareWordPressHtml(html: string, pageTitle: string) {
-    const normalizedHtml = normalizeWordPressContent(html);
+    const normalizedHtml = correctKnownResourceLinks(
+        normalizeWordPressContent(html),
+    );
     const normalizedPageTitle = normalizeTitleForComparison(pageTitle);
     const portalLinkedHtml = removeDuplicateFirstHeading(
         preparePortalLinks(normalizedHtml),
