@@ -28,6 +28,76 @@ type CurriculumBook = {
     units: CurriculumUnit[];
 };
 
+type LessonMaterial = {
+    title: string;
+    href: string;
+};
+
+const middleSchoolLessonDestinations: Record<string, string> = {
+    "5-08-building-trust-and-relationships": "/teacher/resources/page/6614",
+    "5-09-servant-leadership": "/teacher/resources/page/6617",
+    "5-10-communication-in-leadership": "/teacher/resources/page/6619",
+    "5-11-professionalism": "/resources/middle-school/leadership-toolkit/5-11-tattooed-doctor.pdf",
+    "5-12-delegating": "/teacher/resources/page/6623",
+    "5-13-running-a-committee-meeting": "/resources/middle-school/leadership-toolkit/5-13-group-roles.pdf",
+    "5-14-using-an-agenda": "/resources/middle-school/leadership-toolkit/5-14-disneyland-activity.pdf",
+};
+
+const middleSchoolLessonMaterials: Record<string, LessonMaterial[]> = {
+    "6614": [
+        {
+            title: "The 13 Essential Traits of Good Friends",
+            href: "/resources/middle-school/leadership-toolkit/5-08-essential-traits-of-good-friends.pdf",
+        },
+        {
+            title: "Dale Carnegie Quote",
+            href: "/resources/middle-school/leadership-toolkit/5-08-dale-carnegie-quote.pdf",
+        },
+        {
+            title: "Vulnerability Quote",
+            href: "/resources/middle-school/leadership-toolkit/5-08-vulnerability-quote.pdf",
+        },
+        {
+            title: "Why Vulnerability Is Your Biggest Strength",
+            href: "/resources/middle-school/leadership-toolkit/5-08-why-vulnerability-is-your-biggest-strength.pdf",
+        },
+    ],
+    "6617": [
+        {
+            title: "Birds Activity",
+            href: "/resources/middle-school/leadership-toolkit/5-09-birds-activity.pdf",
+        },
+        {
+            title: "Heroes of the Taj Hotel: Why They Risked Their Lives",
+            href: "/resources/middle-school/leadership-toolkit/5-09-heroes-of-the-taj-hotel.pdf",
+        },
+        {
+            title: "Karambir Kang and the Taj Hotel",
+            href: "/resources/middle-school/leadership-toolkit/5-09-karambir-kang-taj-hotel.pdf",
+        },
+    ],
+    "6619": [
+        {
+            title: "How Your Body Language Can Tell People You're a Leader - or Not",
+            href: "/resources/middle-school/leadership-toolkit/5-10-body-language-and-leadership.pdf",
+        },
+        {
+            title: "Negotiation and Conflict Resolution Activities",
+            href: "/resources/middle-school/leadership-toolkit/5-10-negotiation-and-conflict-resolution.pdf",
+        },
+    ],
+    "6623": [
+        {
+            title: "5 Ways to Give Effective Praise to Motivate Your Team",
+            href: "/resources/middle-school/leadership-toolkit/5-12-effective-praise.pdf",
+        },
+        {
+            title: "Delegating Activity",
+            href: "/resources/middle-school/leadership-toolkit/5-12-delegating-activity.pdf",
+        },
+    ],
+};
+
 function isWordPressContentType(type: string): type is WordPressContentType {
     return type === "page" || type === "post";
 }
@@ -118,6 +188,14 @@ function getPortalResourceHref(href: string) {
 
     if (slug === "module-5-completion-quiz") {
         return "/teacher/modules/completion-quiz";
+    }
+
+    if (pathParts[0] === "lia-middle-school" && slug) {
+        const lessonDestination = middleSchoolLessonDestinations[slug];
+
+        if (lessonDestination) {
+            return lessonDestination;
+        }
     }
 
     const importedPage = getImportedCurriculumPage(slug);
@@ -942,6 +1020,8 @@ export default async function WordPressResourcesPage({
     const curriculumBook =
         parseCurriculumBook(page.content.rendered, page.title.rendered) ??
         parseDocumentAccordion(page.content.rendered, page.title.rendered);
+
+    const lessonMaterials = middleSchoolLessonMaterials[String(page.id)];
     
     const isLiaDocumentsPage =
         String(page.id) === "6769" ||
@@ -1038,7 +1118,33 @@ export default async function WordPressResourcesPage({
                     }}
                 />
 
-                {curriculumBook ? (
+                {lessonMaterials ? (
+                    <section className="mt-8 rounded-md border border-zinc-200 bg-zinc-50 p-5 sm:p-6">
+                        <h2 className="text-xl font-semibold text-zinc-900">
+                            Lesson materials
+                        </h2>
+                        <p className="mt-2 text-sm leading-6 text-zinc-600">
+                            Open or download each resource for this lesson.
+                        </p>
+
+                        <div className="mt-5 grid gap-3">
+                            {lessonMaterials.map((material) => (
+                                <a
+                                    key={material.href}
+                                    href={material.href}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="flex items-center justify-between gap-4 rounded-md border border-red-100 bg-white px-4 py-4 font-semibold text-[#c4122f] shadow-sm transition hover:border-red-200 hover:bg-red-50 hover:text-[#a70d25]"
+                                >
+                                    <span>{material.title}</span>
+                                    <span className="shrink-0 text-sm" aria-hidden>
+                                        Open PDF
+                                    </span>
+                                </a>
+                            ))}
+                        </div>
+                    </section>
+                ) : curriculumBook ? (
                     <div className="mt-8 overflow-hidden rounded-md border border-zinc-200 bg-zinc-100">
                         {curriculumBook.units.map((unit, index) => (
                             <details
