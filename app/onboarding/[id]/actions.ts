@@ -194,3 +194,60 @@ export async function deleteInterestSubmission(formData: FormData) {
     revalidatePath("/onboarding");
     redirect("/onboarding?visibility=active&deleted=true");
 }
+
+export async function completeLaunchMeeting(formData: FormData) {
+    const { supabase, profile } = await requireStaff();
+    const submissionId = getText(formData, "submission_id", 100);
+
+    if (!submissionId) redirect("/onboarding");
+
+    const { error } = await supabase
+        .from("school_interest_submissions")
+        .update({
+            launch_meeting_completed_at: new Date().toISOString(),
+            launch_meeting_completed_by: profile.id,
+            pipeline_stage: "qualified",
+            next_action: "Preview and prepare MOU",
+            updated_at: new Date().toISOString(),
+        })
+        .eq("id", submissionId);
+
+    if (error) {
+        console.error("Could not complete launch meeting", {
+            submissionId,
+            message: error.message,
+        });
+        redirect(`/onboarding/${submissionId}?error=launch-meeting-failed`);
+    }
+
+    revalidatePath("/onboarding");
+    revalidatePath(`/onboarding/${submissionId}`);
+    redirect(`/onboarding/${submissionId}?meeting=completed`);
+}
+
+export async function reopenLaunchMeeting(formData: FormData) {
+    const { supabase } = await requireStaff();
+    const submissionId = getText(formData, "submission_id", 100);
+
+    if (!submissionId) redirect("/onboarding");
+
+    const { error } = await supabase
+        .from("school_interest_submissions")
+        .update({
+            launch_meeting_completed_at: null,
+            launch_meeting_completed_by: null,
+            updated_at: new Date().toISOString(),
+        })
+        .eq("id", submissionId);
+
+    if (error) {
+        console.error("Could not reopen launch meeting", {
+            submissionId,
+            message: error.message,
+        });
+        redirect(`/onboarding/${submissionId}?error=launch-meeting-failed`);
+    }
+
+    revalidatePath(`/onboarding/${submissionId}`);
+    redirect(`/onboarding/${submissionId}?meeting=reopened`);
+}

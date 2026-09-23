@@ -4,12 +4,14 @@ import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { requireStaff } from "@/utils/role-guards";
 import type { ReactNode } from "react";
 import { ReviewAndNextAction } from "./review-and-next-action";
+import { completeLaunchMeeting, reopenLaunchMeeting } from "./actions";
 
 type SubmissionPageProps = {
     params: Promise<{id: string }>;
     searchParams: Promise<{
         saved?: string;
         restored?: string;
+        meeting?: string;
         error?: string;
     }>;
 };
@@ -19,7 +21,7 @@ export default async function SubmissionPage({
     searchParams,
 }: SubmissionPageProps) {
     const { id } = await params;
-    const { saved, restored, error } = await searchParams;
+    const { saved, restored, meeting, error } = await searchParams;
     const { supabase, profile } = await requireStaff();
 
     const [{ data: submission }, { data: staff }] =
@@ -70,13 +72,17 @@ export default async function SubmissionPage({
                         </p>
                     </div>
 
-                    {saved || restored ? (
+                    {saved || restored || meeting ? (
                         <p
                             role="status"
                             className="mt-5 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800"
                         >
                             {restored
                                 ? "The onboarding record was restored."
+                                : meeting === "completed"
+                                    ? "Launch meeting marked complete. The MOU preview is now available."
+                                    : meeting === "reopened"
+                                        ? "Launch meeting reopened."
                                 : "Onboarding record updated."}
                         </p>
                     ) : null}
@@ -88,6 +94,10 @@ export default async function SubmissionPage({
                         >
                             {error === "missing-fields"
                                 ? "Complete the stage, status, and next action."
+                                : error === "complete-meeting-first"
+                                    ? "Mark the launch meeting complete before previewing the MOU."
+                                    : error === "launch-meeting-failed"
+                                        ? "The launch meeting could not be updated. Run the MOU interface SQL migration if you have not already."
                                 : error === "invalid-assignee"
                                     ? "Select a valid staff member."
                                     : error === "invalid-archive"
@@ -103,6 +113,36 @@ export default async function SubmissionPage({
                                     : "The record could not be updated."}
                         </p>
                     ) : null}
+
+                    <section className="mt-6 rounded-lg border border-red-100 bg-white p-5 shadow-sm sm:p-6">
+                        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+                            <div>
+                                <p className="text-sm font-semibold uppercase tracking-wide text-[#c8102e]">MOU workflow</p>
+                                <h2 className="mt-1 text-xl font-semibold">1. Launch meeting</h2>
+                                <p className="mt-1 text-sm text-zinc-600">
+                                    {submission.launch_meeting_completed_at
+                                        ? `Completed ${new Date(submission.launch_meeting_completed_at).toLocaleDateString("en-US")}`
+                                        : "Complete the launch meeting to unlock the MOU preview."}
+                                </p>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                                {submission.launch_meeting_completed_at ? (
+                                    <>
+                                        <form action={reopenLaunchMeeting}>
+                                            <input type="hidden" name="submission_id" value={submission.id} />
+                                            <button type="submit" className="h-11 rounded-md border border-zinc-300 bg-white px-4 text-sm font-semibold text-zinc-700 hover:bg-zinc-50">Reopen meeting</button>
+                                        </form>
+                                        <Link href={`/onboarding/${submission.id}/mou`} className="inline-flex h-11 items-center rounded-md bg-[#c8102e] px-5 text-sm font-semibold text-white hover:bg-[#a70d25]">Preview MOU</Link>
+                                    </>
+                                ) : (
+                                    <form action={completeLaunchMeeting}>
+                                        <input type="hidden" name="submission_id" value={submission.id} />
+                                        <button type="submit" className="h-11 rounded-md bg-[#c8102e] px-5 text-sm font-semibold text-white hover:bg-[#a70d25]">Mark launch meeting complete</button>
+                                    </form>
+                                )}
+                            </div>
+                        </div>
+                    </section>
 
                     <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_0.9fr]">
                         <section className="rounded-lg border border-red-100 bg-white p-5 shadow-sm sm:p-6">
