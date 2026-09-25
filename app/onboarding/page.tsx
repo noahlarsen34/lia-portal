@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { requireStaff } from "@/utils/role-guards";
+import { ONBOARDING_STAGES, ONBOARDING_STAGE_LABELS } from "@/utils/onboarding-stages";
 
 type OnboardingPageProps = {
     searchParams: Promise<{
@@ -9,20 +10,6 @@ type OnboardingPageProps = {
         archived?: string;
         deleted?: string;
     }>;
-};
-
-const stageLabels: Record<string, string> = {
-    new_interest: "New Interest",
-    scheduling: "Scheduling",
-    meeting_scheduled: "Meeting Scheduled",
-    qualified: "Qualified",
-    awaiting_school_signature: "Awaiting School Signature",
-    awaiting_lia_signature: "Awaiting LIA Signature",
-    fully_executed: "Fully Executed",
-    active: "Active",
-    unqualified: "Unqualified",
-    unresponsive: "Unresponsive",
-    declined: "Declined",
 };
 
 export default async function OnboardingPage({
@@ -152,7 +139,7 @@ export default async function OnboardingPage({
                         >
                             <option value="all">All stages</option>
 
-                            {Object.entries(stageLabels).map(
+                            {ONBOARDING_STAGES.map(
                                 ([value, label]) => (
                                     <option key={value} value={value}>
                                         {label}
@@ -232,8 +219,8 @@ export default async function OnboardingPage({
 
                                                     <td className="px-5 py-4">
                                                         <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-700">
-                                                            {stageLabels[
-                                                                submission.pipeline_stage
+                                                            {ONBOARDING_STAGE_LABELS[
+                                                                submission.pipeline_stage as keyof typeof ONBOARDING_STAGE_LABELS
                                                             ] ?? submission.pipeline_stage}
                                                         </span>
                                                     </td>

@@ -93,13 +93,21 @@ export function InterestForm({ source }: { source: string }) {
         <div className="grid gap-4 md:grid-cols-2">
           <Field label="First name" name="contact_first_name" autoComplete="given-name" value={applicantFirstName} onChange={(event) => setApplicantFirstName(event.target.value)} required />
           <Field label="Last name" name="contact_last_name" autoComplete="family-name" value={applicantLastName} onChange={(event) => setApplicantLastName(event.target.value)} required />
-          <Field label="Job title" name="contact_title" required />
-          <Field label="Work email" name="contact_email" type="email" autoComplete="email" value={applicantEmail} onChange={(event) => setApplicantEmail(event.target.value)} required />
-          <Field label="Phone" name="contact_phone" type="tel" autoComplete="tel" />
-          <label className="flex min-h-11 items-start gap-3 self-end rounded-md bg-zinc-50 px-4 py-3 text-sm leading-5 text-zinc-700 md:items-center">
-            <input className="mt-0.5 shrink-0 md:mt-0" type="checkbox" name="is_decision_maker" value="yes" />
-            I am authorized to make or approve decisions about bringing LIA to this school.
+          <label className="text-sm font-medium text-zinc-700">
+            Job title *
+            <select className={inputClass} name="contact_title" defaultValue="" required>
+              <option value="" disabled>Select job title</option>
+              <option value="Student">Student</option>
+              <option value="Principal">Principal</option>
+              <option value="Assistant Principal">Assistant Principal</option>
+              <option value="Administrator">Administrator</option>
+              <option value="Teacher">Teacher</option>
+            </select>
           </label>
+          <Field label="Work email" name="contact_email" type="email" autoComplete="email" value={applicantEmail} onChange={(event) => setApplicantEmail(event.target.value)} required />
+          <div className="md:col-span-2">
+            <Field label="Phone" name="contact_phone" type="tel" autoComplete="tel" />
+          </div>
         </div>
       </fieldset>
 
@@ -126,34 +134,21 @@ export function InterestForm({ source }: { source: string }) {
       <fieldset className="space-y-4">
         <legend className="text-lg font-semibold">Program fit</legend>
         <div>
-          <p className="text-sm font-medium text-zinc-700">Grades served by the proposed program *</p>
+          <p className="text-sm font-medium text-zinc-700">School level *</p>
           <div className="mt-3 flex flex-wrap gap-4">
-            {["6", "7", "8", "9", "10", "11", "12"].map((grade) => (
-              <label key={grade} className="flex items-center gap-2 text-sm">
-                <input type="checkbox" name="grade_levels" value={grade} /> Grade {grade}
+            {["Elementary", "Middle", "High"].map((schoolLevel) => (
+              <label key={schoolLevel} className="flex items-center gap-2 text-sm">
+                <input type="checkbox" name="grade_levels" value={schoolLevel} /> {schoolLevel} school
               </label>
             ))}
           </div>
-        </div>
-        <div className="grid gap-4 md:grid-cols-2">
-          <Field label="Estimated student count" name="estimated_student_count" type="number" min={1} max={10000} />
-          <label className="text-sm font-medium text-zinc-700">
-            Funding status *
-            <select className={inputClass} name="funding_status" defaultValue="" required>
-              <option value="" disabled>Select one</option>
-              <option value="identified">Funding identified</option>
-              <option value="exploring">Exploring funding options</option>
-              <option value="needs_support">Need help identifying funding</option>
-              <option value="unknown">Not sure yet</option>
-            </select>
-          </label>
         </div>
       </fieldset>
 
       <fieldset className="space-y-4">
         <legend className="text-lg font-semibold">Additional contacts and context</legend>
         <p className="text-sm leading-6 text-zinc-600">
-          MOU signer and billing information may be left blank if you do not know it yet.
+          MOU signer information may be left blank if you do not know it yet.
         </p>
         <div className="grid gap-3 md:grid-cols-2">
           <label className="flex items-start gap-3 rounded-md bg-zinc-50 px-4 py-3 text-sm leading-5 text-zinc-700">
@@ -178,8 +173,9 @@ export function InterestForm({ source }: { source: string }) {
         <div className="grid gap-4 md:grid-cols-2">
           <Field label="Authorized MOU signer name" name="signer_name" value={effectiveMouSignerName} onChange={(event) => setMouSignerName(event.target.value)} readOnly={mouSignerSource !== "manual"} />
           <Field label="Authorized MOU signer email" name="signer_email" type="email" value={effectiveMouSignerEmail} onChange={(event) => setMouSignerEmail(event.target.value)} readOnly={mouSignerSource !== "manual"} />
-          <Field label="Billing contact email" name="billing_email" type="email" />
-          <Field label="How did you hear about LIA?" name="referral_source" />
+          <div className="md:col-span-2">
+            <Field label="How did you hear about LIA?" name="referral_source" />
+          </div>
         </div>
         <label className="block text-sm font-medium text-zinc-700">
           Anything else we should know?

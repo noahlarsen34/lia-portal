@@ -3,22 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin, requireStaff } from "@/utils/role-guards";
+import { ONBOARDING_STAGE_VALUES } from "@/utils/onboarding-stages";
 
-const VALID_STAGES = new Set([
-    "new_interest",
-    "scheduling",
-    "meeting_scheduled",
-    "qualified",
-    "awaiting_school_signature",
-    "awaiting_lia_signature",
-    "fully_executed",
-    "active",
-    "unqualified",
-    "unresponsive",
-    "declined",
-]);
+const VALID_STAGES = ONBOARDING_STAGE_VALUES;
 
-const VALID_STATUSES = new Set(["open", "completed", "closed"]);
 const VALID_ARCHIVE_REASONS = new Set([
     "onboarding_completed",
     "school_declined",
@@ -39,16 +27,13 @@ export async function updateInterestSubmission(formData: FormData) {
 
     const submissionId = getText(formData, "submission_id", 100);
     const pipelineStage = getText(formData, "pipeline_stage", 100);
-    const status = getText(formData, "status", 40);
     const assignedTo = getText(formData, "assigned_to", 100);
     const nextAction = getText(formData, "next_action", 500);
-    const nextActionDueAt = getText(formData, "next_action_due_at", 20);
     const internalNotes = getText(formData, "internal_notes");
 
     if (
         !submissionId ||
         !VALID_STAGES.has(pipelineStage) ||
-        !VALID_STATUSES.has(status) ||
         !nextAction
     ) {
         redirect(
@@ -72,7 +57,7 @@ export async function updateInterestSubmission(formData: FormData) {
     }
 
     const isReviewDecision = [
-        "qualified",
+        "mou_preparation",
         "unqualified",
         "declined",
     ].includes(pipelineStage);
@@ -81,10 +66,8 @@ export async function updateInterestSubmission(formData: FormData) {
         .from("school_interest_submissions")
         .update({
             pipeline_stage: pipelineStage,
-            status,
             assigned_to: assignedTo || null,
             next_action: nextAction,
-            next_action_due_at: nextActionDueAt || null,
             internal_notes: internalNotes || null,
             reviewed_at: isReviewDecision
                 ? new Date().toISOString()
@@ -206,7 +189,7 @@ export async function completeLaunchMeeting(formData: FormData) {
         .update({
             launch_meeting_completed_at: new Date().toISOString(),
             launch_meeting_completed_by: profile.id,
-            pipeline_stage: "qualified",
+            pipeline_stage: "mou_preparation",
             next_action: "Preview and prepare MOU",
             updated_at: new Date().toISOString(),
         })

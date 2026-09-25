@@ -7,6 +7,7 @@ import {
     restoreInterestSubmission,
     updateInterestSubmission,
 } from "./actions";
+import { ONBOARDING_STAGES, ONBOARDING_STAGE_LABELS } from "@/utils/onboarding-stages";
 
 type StaffMember = {
     id: string;
@@ -44,22 +45,6 @@ const archiveReasons = [
 ] as const;
 
 const archiveReasonLabels = Object.fromEntries(archiveReasons);
-
-const pipelineStages = [
-    ["new_interest", "New Interest"],
-    ["scheduling", "Scheduling"],
-    ["meeting_scheduled", "Meeting Scheduled"],
-    ["qualified", "Qualified"],
-    ["awaiting_school_signature", "Awaiting School Signature"],
-    ["awaiting_lia_signature", "Awating LIA Signature"],
-    ["fully_executed", "Fully Executed"],
-    ["active", "Active"],
-    ["unqualified", "Unqualified"],
-    ["unresponsive", "Unresponsive"],
-    ["declined", "Declined"],
-] as const;
-
-const stageLabels = Object.fromEntries(pipelineStages);
 
 const statusLabels: Record<string, string> = {
     open: "Open",
@@ -120,35 +105,29 @@ export function ReviewAndNextAction({
                         </select>
                     </label>
 
-                    <label className="block text-sm font-medium text-zinc-700">
-                        Pipeline stage *
-                        <select
-                            name="pipeline_stage"
-                            defaultValue={review.pipelineStage}
-                            className={fieldClass}
-                            required
-                        >
-                            {pipelineStages.map(([value, label]) => (
-                                <option key={value} value={value}>
+                    <fieldset>
+                        <legend className="text-sm font-medium text-zinc-700">
+                            Pipeline stage *
+                        </legend>
+                        <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                            {ONBOARDING_STAGES.map(([value, label]) => (
+                                <label
+                                    key={value}
+                                    className="flex min-h-11 cursor-pointer items-center gap-3 rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-700 transition hover:border-red-200 hover:bg-red-50 has-[:checked]:border-[#c8102e] has-[:checked]:bg-red-50 has-[:checked]:font-semibold has-[:checked]:text-[#c8102e]"
+                                >
+                                    <input
+                                        type="radio"
+                                        name="pipeline_stage"
+                                        value={value}
+                                        defaultChecked={review.pipelineStage === value}
+                                        required
+                                        className="h-4 w-4 accent-[#c8102e]"
+                                    />
                                     {label}
-                                </option>
+                                </label>
                             ))}
-                        </select>
-                    </label>
-
-                    <label className="block text-sm font-medium text-zinc-700">
-                        Record status *
-                        <select
-                            name="status"
-                            defaultValue={review.status}
-                            className={fieldClass}
-                            required
-                        >
-                            <option value="open">Open</option>
-                            <option value="completed">Completed</option>
-                            <option value="closed">Closed</option>
-                        </select>                   
-                    </label>
+                        </div>
+                    </fieldset>
 
                     <label className="block text-sm font-medium text-zinc-700">
                         Next action *
@@ -157,16 +136,6 @@ export function ReviewAndNextAction({
                             defaultValue={review.nextAction}
                             className={fieldClass}
                             required
-                        />
-                    </label>
-
-                    <label className="block text-sm font-medium text-zinc-700">
-                        Next-action due date
-                        <input
-                            name="next_action_due_at"
-                            type="date"
-                            defaultValue={review.nextActionDueAt ?? ""}
-                            className={fieldClass}
                         />
                     </label>
 
@@ -284,7 +253,7 @@ export function ReviewAndNextAction({
 
             <div className="mt-6 flex flex-wrap gap-2">
                 <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-[#c8102e]">
-                    {stageLabels[review.pipelineStage] ??
+                    {ONBOARDING_STAGE_LABELS[review.pipelineStage as keyof typeof ONBOARDING_STAGE_LABELS] ??
                         review.pipelineStage}
                 </span>
 

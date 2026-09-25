@@ -5,7 +5,10 @@ import {
     getWordPressContent,
     type WordPressContentType,
 } from "@/utils/wordpress";
-import { getImportedCurriculumPage } from "@/utils/imported-curriculum";
+import {
+    getImportedCurriculumPage,
+    getImportedCurriculumPageByLink,
+} from "@/utils/imported-curriculum";
 import { canViewCurriculumPage } from "@/utils/teacher-curriculum-access";
 
 type WordPressResourcePageProps = {
@@ -138,28 +141,8 @@ function preparePortalLinks(html: string) {
     return html.replace(
         /href="https?:\/\/program\.latinosinaction\.org\/([^"#?]+)\/?"/g,
         (_match, path: string) => {
-            const pathParts = path.split("/").filter(Boolean);
-            const slug = pathParts.at(-1);
-
-            if (!slug || path.startsWith("wp-content")) {
-                return `href="https://program.latinosinaction.org/${path}`;
-            }
-
-            if (slug === "new-teacher-modules") {
-                return 'href="/teacher/modules"';
-            }
-
-            if (slug === "module-5-completion-quiz") {
-                return 'href="/teacher/modules/completion-quiz"';
-            }
-
-            const importedPage = getImportedCurriculumPage(slug);
-
-            if (!importedPage) {
-                return `href="https://program.latinosinaction.org/${path}`;
-            }
-
-            return `href="/teacher/resources/page/${importedPage.slug}"`;
+            const originalHref = `https://program.latinosinaction.org/${path}`;
+            return `href="${getPortalResourceHref(originalHref)}"`;
         },
     );
 }
@@ -198,13 +181,22 @@ function getPortalResourceHref(href: string) {
         }
     }
 
+    // Many Middle and High School curriculum pages intentionally share a
+    // slug. Resolve the complete source URL first so a Middle School link
+    // cannot accidentally open the High School page with the same slug.
+    const exactImportedPage = getImportedCurriculumPageByLink(href);
+
+    if (exactImportedPage) {
+        return `/teacher/resources/page/${exactImportedPage.id}`;
+    }
+
     const importedPage = getImportedCurriculumPage(slug);
 
     if (!importedPage) {
         return href;
     }
 
-    return `/teacher/resources/page/${importedPage.slug}`;
+    return `/teacher/resources/page/${importedPage.id}`;
 }
 
 function shouldOpenInNewTab(href: string) {

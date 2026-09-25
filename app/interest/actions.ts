@@ -15,12 +15,14 @@ export type InterestFormState = {
 };
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const VALID_FUNDING_STATUSES = new Set([
-  "identified",
-  "exploring",
-  "needs_support",
-  "unknown",
+const VALID_JOB_TITLES = new Set([
+  "Student",
+  "Principal",
+  "Assistant Principal",
+  "Administrator",
+  "Teacher",
 ]);
+const VALID_SCHOOL_LEVELS = new Set(["Elementary", "Middle", "High"]);
 const VALID_REGIONS = new Set(["North", "Central", "South"]);
 
 function text(formData: FormData, name: string, maxLength = 250) {
@@ -45,16 +47,11 @@ export async function submitSchoolInterest(
   const principalName = text(formData, "principal_name", 200);
   const principalEmail = text(formData, "principal_email", 254).toLowerCase();
   const desiredStartTerm = text(formData, "desired_start_term", 100);
-  const fundingStatus = text(formData, "funding_status", 40);
   const consentToContact = formData.get("consent_to_contact") === "yes";
-  const estimatedStudentCountRaw = text(formData, "estimated_student_count", 8);
-  const estimatedStudentCount = estimatedStudentCountRaw
-    ? Number.parseInt(estimatedStudentCountRaw, 10)
-    : null;
   const gradeLevels = formData
     .getAll("grade_levels")
     .map(String)
-    .filter((value) => /^(6|7|8|9|10|11|12)$/.test(value));
+    .filter((value) => VALID_SCHOOL_LEVELS.has(value));
 
   if (
     !schoolName ||
@@ -63,12 +60,11 @@ export async function submitSchoolInterest(
     (requiresRegion && !VALID_REGIONS.has(region)) ||
     !firstName ||
     !lastName ||
-    !title ||
+    !VALID_JOB_TITLES.has(title) ||
     !EMAIL_PATTERN.test(email) ||
     !principalName ||
     !EMAIL_PATTERN.test(principalEmail) ||
     !desiredStartTerm ||
-    !VALID_FUNDING_STATUSES.has(fundingStatus) ||
     gradeLevels.length === 0 ||
     !consentToContact
   ) {
@@ -76,13 +72,6 @@ export async function submitSchoolInterest(
       status: "error",
       message: "Please complete every required field and confirm we may contact you.",
     };
-  }
-
-  if (
-    estimatedStudentCount !== null &&
-    (!Number.isFinite(estimatedStudentCount) || estimatedStudentCount < 1 || estimatedStudentCount > 10000)
-  ) {
-    return { status: "error", message: "Enter a valid estimated student count." };
   }
 
   const supabase = createAdminClient();
@@ -144,26 +133,26 @@ export async function submitSchoolInterest(
       contact_title: title,
       contact_email: email,
       contact_phone: phone || null,
-      is_decision_maker:
-        formData.get("is_decision_maker") === "yes",
+      is_decision_maker: false,
       principal_name: principalName,
       principal_email: principalEmail,
       signer_name: text(formData, "signer_name") || null,
       signer_email:
         text(formData, "signer_email", 254).toLowerCase() || null,
-      billing_email:
-        text(formData, "billing_email", 254).toLowerCase() || null,
+      billing_email: null,
       grade_levels: gradeLevels,
-      estimated_student_count: estimatedStudentCount,
+      estimated_student_count: null,
       desired_start_term: desiredStartTerm,
-      funding_status: fundingStatus,
+      // Retained for compatibility with the existing non-null database column.
+      // This value is not collected from or shown to the applicant.
+      funding_status: "not_collected",
       referral_source:
         text(formData, "referral_source") || null,
       notes: text(formData, "notes", 2000) || null,
       consent_to_contact: consentToContact,
       source: text(formData, "source", 80) || "direct",
       assigned_to: rpmProfile?.id ?? null,
-      pipeline_stage: "new_interest",
+      pipeline_stage: "interest_received",
       next_action: "Send or retry scheduling email",
     })
     .select("id")
@@ -318,8 +307,7 @@ export async function submitSchoolInterest(
             <strong>Email:</strong> <a href="mailto:${escapeHtml(email)}" style="color:#c4122f;">${escapeHtml(email)}</a><br>
             <strong>Phone:</strong> ${escapeHtml(phone || "Not provided")}<br>
             <strong>Desired start:</strong> ${escapeHtml(desiredStartTerm)}<br>
-            <strong>Estimated students:</strong> ${escapeHtml(estimatedStudentCount?.toString() ?? "Not provided")}<br>
-            <strong>Funding:</strong> ${escapeHtml(fundingStatus)}
+            <strong>School level:</strong> ${escapeHtml(gradeLevels.join(", "))}
           </td></tr>
         </table>
 
@@ -356,12 +344,12 @@ export async function submitSchoolInterest(
           }
         : rpmEmailResult.error
           ? {
-              pipeline_stage: "scheduling",
+              pipeline_stage: "launch_meeting",
               next_action: "Applicant schedules meeting; notify assigned RPM manually",
               updated_at: new Date().toISOString(),
             }
           : {
-            pipeline_stage: "scheduling",
+            pipeline_stage: "launch_meeting",
             next_action: "Applicant schedules introductory meeting",
             updated_at: new Date().toISOString(),
           },

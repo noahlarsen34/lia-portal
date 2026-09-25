@@ -93,7 +93,7 @@ export default async function SubmissionPage({
                             className="mt-5 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
                         >
                             {error === "missing-fields"
-                                ? "Complete the stage, status, and next action."
+                                ? "Select a pipeline stage and enter the next action."
                                 : error === "complete-meeting-first"
                                     ? "Mark the launch meeting complete before previewing the MOU."
                                     : error === "launch-meeting-failed"
@@ -200,30 +200,12 @@ export default async function SubmissionPage({
                                 value={submission.principal_email}
                                 />
                                 <Info
-                                label="Decision-maker"
-                                value={
-                                    submission.is_decision_maker
-                                    ? "Yes"
-                                    : "No or not confirmed"
-                                }
-                                />
-                                <Info
-                                label="Grades"
+                                label="School level"
                                 value={submission.grade_levels?.join(", ")}
-                                />
-                                <Info
-                                label="Estimated students"
-                                value={
-                                    submission.estimated_student_count?.toString()
-                                }
                                 />
                                 <Info
                                 label="Desired start"
                                 value={submission.desired_start_term}
-                                />
-                                <Info
-                                label="Funding"
-                                value={submission.funding_status}
                                 />
                                 <Info
                                 label="Referral source"
@@ -236,10 +218,6 @@ export default async function SubmissionPage({
                                 <Info
                                 label="MOU signer email"
                                 value={submission.signer_email}
-                                />
-                                <Info
-                                label="Billing email"
-                                value={submission.billing_email}
                                 />
                             </dl>
 

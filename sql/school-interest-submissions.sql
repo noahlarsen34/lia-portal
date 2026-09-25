@@ -29,7 +29,7 @@ create table if not exists public.school_interest_submissions (
     notes text,
     consent_to_contact boolean not null,
     source text not null default 'direct',
-    pipeline_stage text not null default 'new_interest',
+    pipeline_stage text not null default 'interest_received',
     next_action text not null default 'Review and qualify submission',
     status text not null default 'open',
     assigned_to uuid references public.profiles(id) on delete set null,
@@ -41,17 +41,16 @@ create table if not exists public.school_interest_submissions (
     updated_at timestamptz not null default now(),
     constraint school_interest_pipeline_stage_check check (
         pipeline_stage in (
-            'new_interest',
-            'scheduling',
-            'meeting_scheduled',
-            'qualified',
+            'interest_received',
+            'launch_meeting',
+            'mou_preparation',
             'awaiting_school_signature',
-            'awaiting_lia_signature',
-            'fully_executed',
-            'active',
+            'mou_signed',
+            'onboarding',
+            'program_active',
+            'declined',
             'unqualified',
-            'unresponsive',
-            'declined'
+            'unresponsive'
         )
     ),
     constraint school_interest_status_check check (

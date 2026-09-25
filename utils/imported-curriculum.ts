@@ -14,8 +14,24 @@ type ImportedCurriculumPage = {
 
 const importedPages = pages as ImportedCurriculumPage[];
 
+function normalizePageLink(link: string) {
+    return link
+        .trim()
+        .replace(/[?#].*$/, "")
+        .replace(/\/+$/, "")
+        .toLowerCase();
+}
+
+const importedPagesByLink = new Map(
+    importedPages.map((page) => [normalizePageLink(page.link), page]),
+);
+
 export function getImportedCurriculumPage(idOrSlug: string) {
     return importedPages.find(
         (page) => String(page.id) === idOrSlug || page.slug === idOrSlug,
     ) ?? null;
+}
+
+export function getImportedCurriculumPageByLink(link: string) {
+    return importedPagesByLink.get(normalizePageLink(link)) ?? null;
 }
