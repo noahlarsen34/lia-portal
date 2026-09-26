@@ -22,6 +22,16 @@ function getString(formData: FormData, key: string) {
     return typeof value === "string" ? value.trim() : "";
 }
 
+function logTutoringRejection(
+    reason: string,
+    context: Record<string, unknown> = {},
+) {
+    console.warn("Tutoring log submission rejected", {
+        reason,
+        ...context,
+    });
+}
+
 function tutoringReturnUrl(
     token: string,
     studentEnrollmentId: string,
@@ -116,10 +126,11 @@ export async function submitTutoringLog(
         .maybeSingle();
 
     if (!liaClass) {
+        logTutoringRejection("invalid-class-token");
         redirect(
             tutoringReturnUrl(token, studentEnrollmentId, {
                 view: "submit",
-                error: "invalid-time",
+                error: "invalid-class",
             }),
         );
     }
@@ -131,12 +142,26 @@ export async function submitTutoringLog(
     const departureTime = getString(formData, "departureTime");
 
     if (!studentEnrollmentId) {
+        logTutoringRejection("missing-student");
         redirect(
-        tutoringReturnUrl(token, studentEnrollmentId, {
-            view: "submit",
-            error: "invalid-time",
-        }),
-    );
+            tutoringReturnUrl(token, studentEnrollmentId, {
+                view: "submit",
+                error: "missing-student",
+            }),
+        );
+    }
+
+    if (!sessionDate || !arrivalTime || !departureTime) {
+        logTutoringRejection("missing-session-fields", {
+            classId: liaClass.id,
+            enrollmentId: studentEnrollmentId,
+        });
+        redirect(
+            tutoringReturnUrl(token, studentEnrollmentId, {
+                view: "submit",
+                error: "missing-fields",
+            }),
+        );
     }
 
     const durationMinutes = getDurationMinutes(
@@ -145,6 +170,12 @@ export async function submitTutoringLog(
     );
 
     if (!durationMinutes || durationMinutes <= 0) {
+        logTutoringRejection("invalid-time", {
+            classId: liaClass.id,
+            enrollmentId: studentEnrollmentId,
+            arrivalTime,
+            departureTime,
+        });
         redirect(
             tutoringReturnUrl(token, studentEnrollmentId, {
                 view: "submit",
@@ -159,10 +190,14 @@ export async function submitTutoringLog(
         !(proofFileValue instanceof File) ||
         proofFileValue.size === 0
     ) {
+        logTutoringRejection("missing-proof", {
+            classId: liaClass.id,
+            enrollmentId: studentEnrollmentId,
+        });
         redirect(
             tutoringReturnUrl(token, studentEnrollmentId, {
                 view: "submit",
-                error: "invalid-time",
+                error: "missing-proof",
             }),
         );
     }
@@ -170,19 +205,29 @@ export async function submitTutoringLog(
     const proofFile = proofFileValue;
 
     if (proofFile.size > MAX_PROOF_FILE_SIZE) {
+        logTutoringRejection("proof-too-large", {
+            classId: liaClass.id,
+            enrollmentId: studentEnrollmentId,
+            fileSize: proofFile.size,
+        });
         redirect(
             tutoringReturnUrl(token, studentEnrollmentId, {
                 view: "submit",
-                error: "invalid-time",
+                error: "proof-too-large",
             }),
         );
     }
 
     if (!ALLOWED_PROOF_TYPES.has(proofFile.type)) {
+        logTutoringRejection("invalid-proof-type", {
+            classId: liaClass.id,
+            enrollmentId: studentEnrollmentId,
+            contentType: proofFile.type || "missing",
+        });
         redirect(
             tutoringReturnUrl(token, studentEnrollmentId, {
                 view: "submit",
-                error: "invalid-time",
+                error: "invalid-proof-type",
             }),
         );
     }
@@ -204,12 +249,16 @@ export async function submitTutoringLog(
         .maybeSingle();
 
     if (!enrollment) {
+        logTutoringRejection("enrollment-mismatch", {
+            classId: liaClass.id,
+            enrollmentId: studentEnrollmentId,
+        });
         redirect(
-        tutoringReturnUrl(token, studentEnrollmentId, {
-            view: "submit",
-            error: "invalid-time",
-        }),
-    );
+            tutoringReturnUrl(token, studentEnrollmentId, {
+                view: "submit",
+                error: "enrollment-mismatch",
+            }),
+        );
     }
 
     const student = Array.isArray(enrollment.students)
@@ -233,10 +282,18 @@ export async function submitTutoringLog(
         .maybeSingle();
 
     if (existingLog) {
+        logTutoringRejection("duplicate-log", {
+            classId: liaClass.id,
+            enrollmentId: studentEnrollmentId,
+            existingLogId: existingLog.id,
+            sessionDate,
+            arrivalTime,
+            departureTime,
+        });
         redirect(
             tutoringReturnUrl(token, studentEnrollmentId, {
                 view: "submit",
-                error: "invalid-time",
+                error: "duplicate-log",
             }),
         );
     }
@@ -279,7 +336,7 @@ export async function submitTutoringLog(
         redirect(
             tutoringReturnUrl(token, studentEnrollmentId, {
                 view: "submit",
-                error: "invalid-time",
+                error: "proof-upload-failed",
             }),
         );
     }
@@ -339,6 +396,13 @@ export async function submitTutoringLog(
 
     if (insertError) {
         if (insertError.code === "23505") {
+            logTutoringRejection("duplicate-log", {
+                classId: liaClass.id,
+                enrollmentId: studentEnrollmentId,
+                logId,
+                source: "database-constraint",
+            });
+
             await admin.storage
                 .from(TUTORING_PROOF_BUCKET)
                 .remove([proofFilePath]);
@@ -346,7 +410,7 @@ export async function submitTutoringLog(
             redirect(
                 tutoringReturnUrl(token, studentEnrollmentId, {
                     view: "submit",
-                    error: "invalid-time",
+                    error: "duplicate-log",
                 }),
             );
         }
@@ -354,7 +418,10 @@ export async function submitTutoringLog(
         console.error("Tutoring log insert failed", {
             classId: liaClass.id,
             enrollmentId: studentEnrollmentId,
+            code: insertError.code,
             message: insertError.message,
+            details: insertError.details,
+            hint: insertError.hint,
         });
 
         await admin.storage
@@ -362,11 +429,11 @@ export async function submitTutoringLog(
             .remove([proofFilePath]);
 
         redirect(
-        tutoringReturnUrl(token, studentEnrollmentId, {
-            view: "submit",
-            error: "invalid-time",
-        }),
-    );
+            tutoringReturnUrl(token, studentEnrollmentId, {
+                view: "submit",
+                error: "submit-failed",
+            }),
+        );
     }
 
     redirect(

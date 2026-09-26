@@ -21,6 +21,38 @@ type StudentTutoringFormPageProps = {
 const fieldClasses =
     "mt-1 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-zinc-900 placeholder:text-zinc-500 shadow-sm focus:border-[#c4122f] focus:outline-none focus:ring-2 focus:ring-red-100";
 
+const tutoringErrorMessages: Record<string, string> = {
+    "invalid-time": "Departure time must be after arrival time.",
+    "missing-fields":
+        "Please enter the session date, arrival time, and departure time.",
+    "missing-student": "Please choose your name from the roster.",
+    "missing-proof":
+        "Please upload proof of this tutoring or service session.",
+    "invalid-proof-type":
+        "Please upload a JPG, PNG, WebP, HEIC, PDF, DOC, or DOCX file.",
+    "proof-too-large": "The proof file must be 8 MB or smaller.",
+    "proof-upload-failed":
+        "The proof file could not be uploaded. Please try again.",
+    "duplicate-log":
+        "This session has already been submitted. Please do not submit it again.",
+    "enrollment-mismatch":
+        "Your roster selection no longer matches this class. Please choose your name again.",
+    "invalid-class":
+        "This tutoring form is no longer available. Please ask your teacher for the current link.",
+    "submit-failed":
+        "Your tutoring log could not be saved. Please try again or contact your teacher.",
+};
+
+const errorsThatRequireProofReselection = new Set([
+    "invalid-time",
+    "missing-fields",
+    "missing-proof",
+    "invalid-proof-type",
+    "proof-too-large",
+    "proof-upload-failed",
+    "submit-failed",
+]);
+
 export default async function StudentTutoringFormPage({
     params,
     searchParams,
@@ -168,23 +200,10 @@ export default async function StudentTutoringFormPage({
                         tabIndex={-1}
                         className="mt-5 scroll-mt-6 rounded-md border border-red-200 bg-red-50 p-4 text-sm font-medium text-[#c4122f] outline-none focus:ring-2 focus:ring-red-300"
                     >
-                        {query.error === "invalid-time"
-                            ? "Departure time must be after arrival time."
-                            : query.error === "missing-student"
-                                ? "Please choose your name from the roster."
-                                : query.error === "missing-proof"
-                                    ? "Please upload proof of this tutoring or service session."
-                                    : query.error === "invalid-proof-type"
-                                        ? "Please upload a JPG, PNG, WebP, HEIC, PDF, DOC, or DOCX file."
-                                        : query.error === "proof-too-large"
-                                            ? "The proof file must be 8 MB or smaller."
-                                            : query.error === "proof-upload-failed"
-                                                ? "The proof file could not be uploaded. Please try again."
-                                                : query.error === "duplicate-log"
-                                                    ? "This session has already been submitted. Please do not submit it again."
-                                                    : "Something went wrong. Please try again."}
+                        {tutoringErrorMessages[query.error] ??
+                            "Something went wrong. Please try again."}
 
-                        {query.error !== "duplicate-log" ? (
+                        {errorsThatRequireProofReselection.has(query.error) ? (
                             <span className="mt-2 block font-normal text-red-700">
                                 Your other answers were restored. For security,
                                 please select the proof file again before submitting.
