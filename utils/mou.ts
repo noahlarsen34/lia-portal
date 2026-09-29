@@ -23,3 +23,36 @@ export function formatMouCurrency(value: number | string | null | undefined) {
     maximumFractionDigits: 2,
   }).format(Number.isFinite(amount) ? amount : 0);
 }
+
+export const MOU_STANDARD_PRICING = {
+  startupTraining: 2500,
+  startupTravel: 2000,
+  startupTotal: 4500,
+  firstYearTotal: 6000,
+  renewalTotal: 6000,
+} as const;
+
+export const MOU_PROGRAM_SERVICES = [
+  { label: "LIA Portal Access", amount: 2000 },
+  { label: "Access to Online Curriculum", amount: 1000 },
+  {
+    label:
+      "Personalized Teacher Support throughout the school year — unlimited emails, calls, and meetings",
+    amount: 1400,
+  },
+  { label: "LIA Youth Leadership Conference", amount: 800 },
+  { label: "LIA Leadership Boot Camp", amount: 500 },
+  { label: "Educator Institute", amount: 200 },
+  { label: "Masterminds", amount: 100 },
+] as const;
+
+export function calculatePercentageDiscount(
+  basePrice: number,
+  percentage: number,
+) {
+  const safePercentage = Number.isFinite(percentage)
+    ? Math.min(100, Math.max(0, percentage))
+    : 0;
+
+  return Math.round(basePrice * safePercentage) / 100;
+}

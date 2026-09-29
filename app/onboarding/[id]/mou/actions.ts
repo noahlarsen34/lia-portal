@@ -4,13 +4,17 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireStaff } from "@/utils/role-guards";
 import { getStateCode } from "@/utils/us-states";
-import { deriveMouSchoolYears } from "@/utils/mou";
+import {
+  calculatePercentageDiscount,
+  deriveMouSchoolYears,
+  MOU_STANDARD_PRICING,
+} from "@/utils/mou";
 
 function getText(formData: FormData, name: string, maximum = 300) {
   return String(formData.get(name) ?? "").trim().slice(0, maximum);
 }
 
-function getDiscount(formData: FormData, name: string) {
+function getPercentage(formData: FormData, name: string) {
   const raw = getText(formData, name, 30);
   if (raw === "") return 0;
   const value = Number(raw);
@@ -57,22 +61,44 @@ export async function saveMouDraft(submissionId: string, formData: FormData) {
 
   if (!pricing) redirect(`/onboarding/${submissionId}/mou?error=pricing-missing`);
 
-  const launchDiscountName = getText(formData, "launch_discount_name");
+  const startupDiscountName = getText(formData, "startup_discount_name");
+  const firstYearDiscountName = getText(formData, "first_year_discount_name");
   const renewalDiscountName = getText(formData, "renewal_discount_name");
-  const launchDiscountAmount = getDiscount(formData, "launch_discount_amount");
-  const renewalDiscountAmount = getDiscount(formData, "renewal_discount_amount");
-  const launchBasePrice = Number(pricing.launch_base_price);
-  const renewalBasePrice = Number(pricing.renewal_base_price);
+  const startupDiscountPercent = getPercentage(formData, "startup_discount_percent");
+  const firstYearDiscountPercent = getPercentage(formData, "first_year_discount_percent");
+  const renewalDiscountPercent = getPercentage(formData, "renewal_discount_percent");
+  const startupBasePrice = MOU_STANDARD_PRICING.startupTotal;
+  const firstYearBasePrice = MOU_STANDARD_PRICING.firstYearTotal;
+  const renewalBasePrice = MOU_STANDARD_PRICING.renewalTotal;
+  const startupDiscountAmount = calculatePercentageDiscount(
+    startupBasePrice,
+    startupDiscountPercent,
+  );
+  const firstYearDiscountAmount = calculatePercentageDiscount(
+    firstYearBasePrice,
+    firstYearDiscountPercent,
+  );
+  const renewalDiscountAmount = calculatePercentageDiscount(
+    renewalBasePrice,
+    renewalDiscountPercent,
+  );
+  const launchBasePrice = startupBasePrice + firstYearBasePrice;
+  const launchDiscountAmount = startupDiscountAmount + firstYearDiscountAmount;
+  const launchDiscountName = [startupDiscountName, firstYearDiscountName]
+    .filter(Boolean)
+    .join("; ")
+    .slice(0, 300);
 
   const invalidDiscount =
-    !Number.isFinite(launchDiscountAmount) ||
-    !Number.isFinite(renewalDiscountAmount) ||
-    launchDiscountAmount < 0 ||
-    renewalDiscountAmount < 0 ||
-    launchDiscountAmount > launchBasePrice ||
-    renewalDiscountAmount > renewalBasePrice ||
-    (launchDiscountAmount > 0 && !launchDiscountName) ||
-    (renewalDiscountAmount > 0 && !renewalDiscountName);
+    !Number.isFinite(startupDiscountPercent) ||
+    !Number.isFinite(firstYearDiscountPercent) ||
+    !Number.isFinite(renewalDiscountPercent) ||
+    startupDiscountPercent < 0 || startupDiscountPercent > 100 ||
+    firstYearDiscountPercent < 0 || firstYearDiscountPercent > 100 ||
+    renewalDiscountPercent < 0 || renewalDiscountPercent > 100 ||
+    (startupDiscountPercent > 0 && !startupDiscountName) ||
+    (firstYearDiscountPercent > 0 && !firstYearDiscountName) ||
+    (renewalDiscountPercent > 0 && !renewalDiscountName);
 
   if (invalidDiscount) {
     redirect(`/onboarding/${submissionId}/mou?error=invalid-discount`);
@@ -99,9 +125,22 @@ export async function saveMouDraft(submissionId: string, formData: FormData) {
     launch_base_price: launchBasePrice,
     launch_discount_name: launchDiscountAmount > 0 ? launchDiscountName : null,
     launch_discount_amount: launchDiscountAmount,
+    startup_base_price: startupBasePrice,
+    startup_discount_name: startupDiscountPercent > 0 ? startupDiscountName : null,
+    startup_discount_percent: startupDiscountPercent,
+    startup_discount_amount: startupDiscountAmount,
+    startup_final_price: startupBasePrice - startupDiscountAmount,
+    first_year_base_price: firstYearBasePrice,
+    first_year_discount_name: firstYearDiscountPercent > 0 ? firstYearDiscountName : null,
+    first_year_discount_percent: firstYearDiscountPercent,
+    first_year_discount_amount: firstYearDiscountAmount,
+    first_year_final_price: firstYearBasePrice - firstYearDiscountAmount,
     renewal_base_price: renewalBasePrice,
     renewal_discount_name: renewalDiscountAmount > 0 ? renewalDiscountName : null,
     renewal_discount_amount: renewalDiscountAmount,
+    renewal_program_base_price: renewalBasePrice,
+    renewal_discount_percent: renewalDiscountPercent,
+    renewal_program_final_price: renewalBasePrice - renewalDiscountAmount,
     updated_by: profile.id,
     updated_at: now,
   };

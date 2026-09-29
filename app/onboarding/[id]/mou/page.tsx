@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { requireStaff } from "@/utils/role-guards";
 import { getStateCode } from "@/utils/us-states";
-import { deriveMouSchoolYears } from "@/utils/mou";
+import { deriveMouSchoolYears, MOU_STANDARD_PRICING } from "@/utils/mou";
 import { MouDraftForm } from "./mou-draft-form";
 
 type MouPageProps = {
@@ -14,8 +14,8 @@ type MouPageProps = {
 const errorMessages: Record<string, string> = {
   "invalid-state": "The submission does not contain a valid U.S. state.",
   "pricing-missing": "Standard pricing has not been configured for this state. Add the state price before creating the MOU.",
-  "invalid-discount": "Each discount must be between zero and its base price, and discounts above zero need a name.",
-  "save-failed": "The MOU draft could not be saved. Confirm both MOU SQL files were run in Supabase.",
+  "invalid-discount": "Each discount must be between 0% and 100%, and discounts above 0% need a name.",
+  "save-failed": "The MOU draft could not be saved. Confirm all MOU SQL migrations were run in Supabase.",
   "draft-locked": "This MOU can no longer be edited because it has moved beyond draft status.",
 };
 
@@ -60,8 +60,15 @@ export default async function MouPage({ params, searchParams }: MouPageProps) {
     submission.desired_start_term,
     pricing?.effective_school_year ?? "2026-2027",
   );
-  const launchBasePrice = Number(draft?.launch_base_price ?? pricing?.launch_base_price ?? 0);
-  const renewalBasePrice = Number(draft?.renewal_base_price ?? pricing?.renewal_base_price ?? 0);
+  const startupBasePrice = Number(
+    draft?.startup_base_price ?? MOU_STANDARD_PRICING.startupTotal,
+  );
+  const firstYearBasePrice = Number(
+    draft?.first_year_base_price ?? MOU_STANDARD_PRICING.firstYearTotal,
+  );
+  const renewalBasePrice = Number(
+    draft?.renewal_program_base_price ?? MOU_STANDARD_PRICING.renewalTotal,
+  );
 
   return (
     <main className="min-h-screen bg-[#f8f4f4] text-zinc-950">
@@ -89,12 +96,15 @@ export default async function MouPage({ params, searchParams }: MouPageProps) {
           {pricing && !setupError ? (
             <MouDraftForm
               submissionId={id}
-              launchBasePrice={launchBasePrice}
+              startupBasePrice={startupBasePrice}
+              firstYearBasePrice={firstYearBasePrice}
               renewalBasePrice={renewalBasePrice}
-              launchDiscountName={draft?.launch_discount_name ?? ""}
-              launchDiscountAmount={Number(draft?.launch_discount_amount ?? 0)}
+              startupDiscountName={draft?.startup_discount_name ?? ""}
+              startupDiscountPercent={Number(draft?.startup_discount_percent ?? 0)}
+              firstYearDiscountName={draft?.first_year_discount_name ?? ""}
+              firstYearDiscountPercent={Number(draft?.first_year_discount_percent ?? 0)}
               renewalDiscountName={draft?.renewal_discount_name ?? ""}
-              renewalDiscountAmount={Number(draft?.renewal_discount_amount ?? 0)}
+              renewalDiscountPercent={Number(draft?.renewal_discount_percent ?? 0)}
               agreement={{
                 contractingPartyName: draft?.contracting_party_name || submission.district_name?.trim() || submission.school_name,
                 schoolName: draft?.school_name ?? submission.school_name,
