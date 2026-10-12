@@ -7,7 +7,10 @@ const nextConfig = {
   },
 
   outputFileTracingIncludes: {
-    "/*": ["./assets/certificates/**/*"],
+    "/*": [
+      "./assets/certificates/**/*",
+      "./templates/mou/lia-mou-automation-template.docx",
+    ],
   },
 };
 

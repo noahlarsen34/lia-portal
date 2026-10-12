@@ -123,7 +123,7 @@ export async function POST(request: Request) {
 
     const { data: existingByEmailId } = await admin
         .from("email_deliveries")
-        .select("id, event_at")
+        .select("id, event_at, email_kind")
         .eq("resend_email_id", event.data.email_id)
         .maybeSingle();
 
@@ -162,7 +162,7 @@ export async function POST(request: Request) {
         teacher_id: teacher?.id ?? null,
         recipient,
         subject: event.data.subject,
-        email_kind: getEmailKind(event.data.subject),
+        email_kind: existingByEmailId?.email_kind ?? getEmailKind(event.data.subject),
         status,
         status_message:
             bounce?.message ?? failed?.reason ?? suppressed?.message ?? null,
@@ -191,6 +191,33 @@ export async function POST(request: Request) {
             { error: "Could not store delivery event." },
             { status: 500 },
         );
+    }
+
+    const { data: mouSend } = await admin
+        .from("mou_send_events")
+        .select("id, mou_draft_id, event_at")
+        .eq("resend_message_id", event.data.email_id)
+        .maybeSingle();
+
+    if (
+        mouSend &&
+        (!mouSend.event_at || new Date(mouSend.event_at).getTime() <= new Date(eventAt).getTime())
+    ) {
+        const { error: mouSendError } = await admin
+            .from("mou_send_events")
+            .update({
+                delivery_status: status,
+                status_message: delivery.status_message,
+                event_at: eventAt,
+            })
+            .eq("id", mouSend.id);
+
+        if (mouSendError) {
+            console.error("Could not update MOU delivery status", {
+                emailId: event.data.email_id,
+                message: mouSendError.message,
+            });
+        }
     }
 
     return NextResponse.json({ received: true });

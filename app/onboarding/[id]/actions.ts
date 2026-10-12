@@ -184,6 +184,35 @@ export async function completeLaunchMeeting(formData: FormData) {
 
     if (!submissionId) redirect("/onboarding");
 
+    const [{ data: submission }, { data: currentMouDraft }] = await Promise.all([
+        supabase
+            .from("school_interest_submissions")
+            .select("pipeline_stage, launch_meeting_completed_at")
+            .eq("id", submissionId)
+            .maybeSingle(),
+        supabase
+            .from("school_mou_drafts")
+            .select("status")
+            .eq("interest_submission_id", submissionId)
+            .eq("is_current", true)
+            .maybeSingle(),
+    ]);
+
+    const canChangeMeeting =
+        submission &&
+        ["launch_meeting", "mou_preparation"].includes(
+            submission.pipeline_stage,
+        ) &&
+        (!currentMouDraft || currentMouDraft.status === "draft");
+
+    if (!canChangeMeeting) {
+        redirect(`/onboarding/${submissionId}?error=meeting-locked`);
+    }
+
+    if (submission.launch_meeting_completed_at) {
+        redirect(`/onboarding/${submissionId}?meeting=completed`);
+    }
+
     const { error } = await supabase
         .from("school_interest_submissions")
         .update({
@@ -213,6 +242,31 @@ export async function reopenLaunchMeeting(formData: FormData) {
     const submissionId = getText(formData, "submission_id", 100);
 
     if (!submissionId) redirect("/onboarding");
+
+    const [{ data: submission }, { data: currentMouDraft }] = await Promise.all([
+        supabase
+            .from("school_interest_submissions")
+            .select("pipeline_stage, launch_meeting_completed_at")
+            .eq("id", submissionId)
+            .maybeSingle(),
+        supabase
+            .from("school_mou_drafts")
+            .select("status")
+            .eq("interest_submission_id", submissionId)
+            .eq("is_current", true)
+            .maybeSingle(),
+    ]);
+
+    const canChangeMeeting =
+        submission?.launch_meeting_completed_at &&
+        ["launch_meeting", "mou_preparation"].includes(
+            submission.pipeline_stage,
+        ) &&
+        (!currentMouDraft || currentMouDraft.status === "draft");
+
+    if (!canChangeMeeting) {
+        redirect(`/onboarding/${submissionId}?error=meeting-locked`);
+    }
 
     const { error } = await supabase
         .from("school_interest_submissions")

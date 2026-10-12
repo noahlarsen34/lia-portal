@@ -81,6 +81,22 @@ def set_table_borders(table) -> None:
         border.set(qn("w:color"), "D9D9D9")
 
 
+def remove_table_borders(table) -> None:
+    table_properties = table._tbl.tblPr
+    borders = table_properties.first_child_found_in("w:tblBorders")
+
+    if borders is None:
+        borders = OxmlElement("w:tblBorders")
+        table_properties.append(borders)
+
+    for border_name in ("top", "left", "bottom", "right", "insideH", "insideV"):
+        border = borders.find(qn(f"w:{border_name}"))
+        if border is None:
+            border = OxmlElement(f"w:{border_name}")
+            borders.append(border)
+        border.set(qn("w:val"), "nil")
+
+
 def set_table_width(table, width_dxa: int, first_column_dxa: int = 7900) -> None:
     table_properties = table._tbl.tblPr
     table_width = table_properties.first_child_found_in("w:tblW")
@@ -119,8 +135,16 @@ def set_cell_text(cell, text: str, *, bold=False, color="222222", align=None) ->
     fonts.set(qn("w:hAnsi"), "Arimo")
 
 
+def find_pricing_table(document: Document):
+    for table in document.tables:
+        table_text = " ".join(cell.text for row in table.rows for cell in row.cells)
+        if "INITIAL START-UP COSTS" in table_text or "Initial Start-up Costs" in table_text:
+            return table
+    raise RuntimeError("The MOU pricing table could not be located.")
+
+
 def build_pricing_table(document: Document) -> None:
-    old_table = document.tables[0]
+    old_table = find_pricing_table(document)
     new_table = document.add_table(rows=27, cols=2)
     new_table.autofit = False
     set_table_width(new_table, 10725)
@@ -256,7 +280,7 @@ def add_form_field(table, row_index: int, label: str, *, response_lines=1) -> No
 
 
 def rebuild_post_pricing_sections(document: Document) -> None:
-    pricing_table = document.tables[0]
+    pricing_table = find_pricing_table(document)
     body = document.element.body
     sibling = pricing_table._tbl.getnext()
     while sibling is not None and sibling.tag != qn("w:sectPr"):
@@ -379,6 +403,115 @@ def remove_legacy_page_footer(document: Document) -> None:
                         paragraph._p.remove(child)
 
 
+def rebuild_cover_header(document: Document) -> None:
+    """Use balanced columns so Word and browser renderers share the same center."""
+    for table in document.tables:
+        table_text = " ".join(cell.text for row in table.rows for cell in row.cells)
+        if "MEMORANDUM OF UNDERSTANDING" in table_text:
+            return
+
+    first_paragraphs = document.paragraphs[:5]
+    if len(first_paragraphs) < 5:
+        raise RuntimeError("The MOU cover header could not be located.")
+
+    logo_blob = None
+    for relationship in document.part.rels.values():
+        if "image" in relationship.reltype and relationship.target_ref.endswith("image3.png"):
+            logo_blob = relationship.target_part.blob
+            break
+
+    header_table = document.add_table(rows=1, cols=3)
+    header_table.autofit = False
+    set_table_width(header_table, 10725, first_column_dxa=1300)
+    remove_table_borders(header_table)
+
+    column_widths = (1300, 8125, 1300)
+    grid_columns = header_table._tbl.tblGrid.findall(qn("w:gridCol"))
+    for grid_column, width in zip(grid_columns, column_widths):
+        grid_column.set(qn("w:w"), str(width))
+
+    for cell, width in zip(header_table.rows[0].cells, column_widths):
+        cell.width = Inches(width / 1440)
+        cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.CENTER
+        set_cell_margins(cell, top=0, start=0, bottom=0, end=0)
+        cell_properties = cell._tc.get_or_add_tcPr()
+        cell_width = cell_properties.find(qn("w:tcW"))
+        if cell_width is None:
+            cell_width = OxmlElement("w:tcW")
+            cell_properties.append(cell_width)
+        cell_width.set(qn("w:w"), str(width))
+        cell_width.set(qn("w:type"), "dxa")
+
+    logo_cell = header_table.cell(0, 0)
+    logo_cell.text = ""
+    logo_paragraph = logo_cell.paragraphs[0]
+    logo_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    logo_paragraph.paragraph_format.space_before = Pt(0)
+    logo_paragraph.paragraph_format.space_after = Pt(0)
+    if logo_blob:
+        logo_paragraph.add_run().add_picture(BytesIO(logo_blob), width=Inches(0.82))
+
+    title_cell = header_table.cell(0, 1)
+    title_cell.text = ""
+    title_paragraph = title_cell.paragraphs[0]
+    title_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    title_paragraph.paragraph_format.space_before = Pt(0)
+    title_paragraph.paragraph_format.space_after = Pt(2)
+    title_run = title_paragraph.add_run("MEMORANDUM OF UNDERSTANDING")
+    title_run.font.name = "Arimo"
+    title_run.font.size = Pt(18)
+    title_run.font.color.rgb = RGBColor.from_string("000000")
+
+    subtitle_paragraph = title_cell.add_paragraph()
+    subtitle_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    subtitle_paragraph.paragraph_format.space_before = Pt(0)
+    subtitle_paragraph.paragraph_format.space_after = Pt(0)
+    subtitle_paragraph.add_run("Between ")
+    party_run = subtitle_paragraph.add_run(PARTY_PLACEHOLDER)
+    party_run.bold = True
+    subtitle_paragraph.add_run(" and Latinos In Action")
+    set_paragraph_font(subtitle_paragraph, size=12)
+    party_run.bold = True
+
+    first_paragraphs[0]._p.addprevious(header_table._tbl)
+    for paragraph in first_paragraphs:
+        paragraph._element.getparent().remove(paragraph._element)
+
+
+def normalize_responsibilities_and_implementation(document: Document) -> None:
+    """Clean up the district-responsibility heading and implementation spacing."""
+    paragraphs = document.paragraphs
+
+    responsibilities_heading = paragraphs[60]
+    replace_in_runs(
+        responsibilities_heading,
+        PARTY_PLACEHOLDER,
+        "SCHOOL / DISTRICT RESPONSIBILITIES",
+    )
+    responsibilities_heading.paragraph_format.left_indent = Inches(0)
+    responsibilities_heading.paragraph_format.space_before = Pt(8)
+    responsibilities_heading.paragraph_format.space_after = Pt(6)
+    responsibilities_heading.paragraph_format.keep_with_next = True
+    set_paragraph_font(responsibilities_heading, size=14, bold=True)
+
+    responsibilities_intro = paragraphs[61]
+    responsibilities_intro.paragraph_format.space_before = Pt(0)
+    responsibilities_intro.paragraph_format.space_after = Pt(8)
+
+    school_name = paragraphs[74]
+    school_name.paragraph_format.space_before = Pt(0)
+    school_name.paragraph_format.space_after = Pt(4)
+    school_name.paragraph_format.keep_with_next = True
+
+    blank_after_school = paragraphs[75]
+    if not blank_after_school.text.strip():
+        blank_after_school._element.getparent().remove(blank_after_school._element)
+
+    implementation_followup = document.paragraphs[75]
+    implementation_followup.paragraph_format.space_before = Pt(0)
+    implementation_followup.paragraph_format.space_after = Pt(12)
+
+
 def build_template() -> None:
     if not SOURCE.exists():
         raise FileNotFoundError(f"Source template not found: {SOURCE}")
@@ -430,9 +563,11 @@ def build_template() -> None:
             f"party={party_replacements}, school={school_replacements}"
         )
 
+    normalize_responsibilities_and_implementation(document)
     build_pricing_table(document)
     rebuild_post_pricing_sections(document)
     remove_legacy_page_footer(document)
+    rebuild_cover_header(document)
 
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     document.save(OUTPUT)

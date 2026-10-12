@@ -20,6 +20,7 @@ type MouDraftFormProps = {
   firstYearDiscountPercent: number;
   renewalDiscountName: string;
   renewalDiscountPercent: number;
+  hasGeneratedDocument: boolean;
   agreement: {
     contractingPartyName: string;
     schoolName: string;
@@ -110,7 +111,7 @@ export function MouDraftForm(props: MouDraftFormProps) {
         />
 
         <button type="submit" className="mt-6 h-12 w-full rounded-md bg-[#c8102e] px-5 text-sm font-semibold text-white hover:bg-[#a70d25]">
-          Save MOU draft
+          {props.hasGeneratedDocument ? "Save and update MOU draft" : "Save MOU draft"}
         </button>
         <p className="mt-3 text-center text-xs text-zinc-500">
           Saving creates an internal draft only. Nothing is emailed or sent for signature.

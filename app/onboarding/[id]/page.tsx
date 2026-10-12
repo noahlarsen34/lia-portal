@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
+import { ONBOARDING_STAGE_LABELS } from "@/utils/onboarding-stages";
 import { requireStaff } from "@/utils/role-guards";
 import type { ReactNode } from "react";
 import { ReviewAndNextAction } from "./review-and-next-action";
@@ -24,7 +25,7 @@ export default async function SubmissionPage({
     const { saved, restored, meeting, error } = await searchParams;
     const { supabase, profile } = await requireStaff();
 
-    const [{ data: submission }, { data: staff }] =
+    const [{ data: submission }, { data: staff }, { data: currentMouDraft }] =
         await Promise.all([
             supabase
                 .from("school_interest_submissions")
@@ -36,11 +37,22 @@ export default async function SubmissionPage({
                 .select("id, full_name, email, role")
                 .in("role", ["admin", "rpm"])
                 .order("full_name"),
+            supabase
+                .from("school_mou_drafts")
+                .select("status")
+                .eq("interest_submission_id", id)
+                .eq("is_current", true)
+                .maybeSingle(),
         ]);
     
     if (!submission) {
         notFound();
     }
+
+    const launchMeetingCanChange =
+        ["launch_meeting", "mou_preparation"].includes(
+            submission.pipeline_stage,
+        ) && (!currentMouDraft || currentMouDraft.status === "draft");
 
     return (
         <main className="min-h-screen bg-[#f8f4f4] text-zinc-950">
@@ -98,6 +110,8 @@ export default async function SubmissionPage({
                                     ? "Mark the launch meeting complete before previewing the MOU."
                                     : error === "launch-meeting-failed"
                                         ? "The launch meeting could not be updated. Run the MOU interface SQL migration if you have not already."
+                                    : error === "meeting-locked"
+                                        ? "The launch meeting can no longer be changed because the MOU workflow has advanced."
                                 : error === "invalid-assignee"
                                     ? "Select a valid staff member."
                                     : error === "invalid-archive"
@@ -118,28 +132,34 @@ export default async function SubmissionPage({
                         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
                             <div>
                                 <p className="text-sm font-semibold uppercase tracking-wide text-[#c8102e]">MOU workflow</p>
-                                <h2 className="mt-1 text-xl font-semibold">1. Launch meeting</h2>
+                                <h2 className="mt-1 text-xl font-semibold">
+                                    {submission.next_action || "Review onboarding progress"}
+                                </h2>
                                 <p className="mt-1 text-sm text-zinc-600">
-                                    {submission.launch_meeting_completed_at
+                                    {submission.pipeline_stage === "launch_meeting"
+                                        ? submission.launch_meeting_completed_at
                                         ? `Completed ${new Date(submission.launch_meeting_completed_at).toLocaleDateString("en-US")}`
-                                        : "Complete the launch meeting to unlock the MOU preview."}
+                                            : "Complete the launch meeting to unlock the MOU preview."
+                                        : `Current stage: ${ONBOARDING_STAGE_LABELS[submission.pipeline_stage as keyof typeof ONBOARDING_STAGE_LABELS] ?? submission.pipeline_stage}`}
                                 </p>
                             </div>
                             <div className="flex flex-wrap gap-2">
                                 {submission.launch_meeting_completed_at ? (
                                     <>
-                                        <form action={reopenLaunchMeeting}>
-                                            <input type="hidden" name="submission_id" value={submission.id} />
-                                            <button type="submit" className="h-11 rounded-md border border-zinc-300 bg-white px-4 text-sm font-semibold text-zinc-700 hover:bg-zinc-50">Reopen meeting</button>
-                                        </form>
+                                        {launchMeetingCanChange ? (
+                                            <form action={reopenLaunchMeeting}>
+                                                <input type="hidden" name="submission_id" value={submission.id} />
+                                                <button type="submit" className="h-11 rounded-md border border-zinc-300 bg-white px-4 text-sm font-semibold text-zinc-700 hover:bg-zinc-50">Reopen meeting</button>
+                                            </form>
+                                        ) : null}
                                         <Link href={`/onboarding/${submission.id}/mou`} className="inline-flex h-11 items-center rounded-md bg-[#c8102e] px-5 text-sm font-semibold text-white hover:bg-[#a70d25]">Preview MOU</Link>
                                     </>
-                                ) : (
+                                ) : launchMeetingCanChange ? (
                                     <form action={completeLaunchMeeting}>
                                         <input type="hidden" name="submission_id" value={submission.id} />
                                         <button type="submit" className="h-11 rounded-md bg-[#c8102e] px-5 text-sm font-semibold text-white hover:bg-[#a70d25]">Mark launch meeting complete</button>
                                     </form>
-                                )}
+                                ) : null}
                             </div>
                         </div>
                     </section>
