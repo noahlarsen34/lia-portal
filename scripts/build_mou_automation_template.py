@@ -288,14 +288,6 @@ def rebuild_post_pricing_sections(document: Document) -> None:
         body.remove(sibling)
         sibling = next_sibling
 
-    note = document.add_paragraph(
-        "*After the second-year renewal, future renewal pricing will be based on "
-        "the second-year renewal amount plus the applicable inflation percentage."
-    )
-    note.paragraph_format.space_before = Pt(10)
-    note.paragraph_format.space_after = Pt(0)
-    set_paragraph_font(note, size=9)
-
     page_break = document.add_paragraph()
     page_break.add_run().add_break(WD_BREAK.PAGE)
     add_section_heading(document, "AUTHORIZED SIGNATORIES")
