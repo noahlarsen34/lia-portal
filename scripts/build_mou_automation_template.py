@@ -13,8 +13,8 @@ ORIGINAL_SOURCE = Path("/Users/noahlarsen/Downloads/New MOU Template.docx")
 OUTPUT = Path("templates/mou/lia-mou-automation-template.docx")
 SOURCE = ORIGINAL_SOURCE if ORIGINAL_SOURCE.exists() else OUTPUT
 
-PARTY_PLACEHOLDER = "{{contracting_party_name}}"
 SCHOOL_PLACEHOLDER = "{{school_name}}"
+PARTY_PLACEHOLDER = SCHOOL_PLACEHOLDER
 
 
 def replace_in_runs(paragraph, old: str, new: str) -> int:
