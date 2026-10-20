@@ -27,7 +27,47 @@ function formatDateTime(value: string | null | undefined) {
     }).format(new Date(value));
 }
 
-export async function exportTutoringToGoogleSheet(classId: string, studentEnrollmentId?: string, committee?: string) {
+type TutoringExportFilters = {
+    classId: string;
+    studentEnrollmentId?: string;
+    committee?: string;
+    activity?: "tutoring" | "service";
+    dateFrom?: string;
+    dateTo?: string;
+};
+
+function isValidDateFilter(value: string) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+
+    const date = new Date(`${value}T00:00:00.000Z`);
+
+    return !Number.isNaN(date.getTime()) &&
+        date.toISOString().slice(0, 10) === value;
+}
+
+export async function exportTutoringToGoogleSheet({
+    classId,
+    studentEnrollmentId,
+    committee,
+    activity,
+    dateFrom,
+    dateTo,
+}: TutoringExportFilters) {
+    if (activity && activity !== "tutoring" && activity !== "service") {
+        throw new Error("The selected activity filter is invalid.");
+    }
+
+    if (
+        (dateFrom && !isValidDateFilter(dateFrom)) ||
+        (dateTo && !isValidDateFilter(dateTo))
+    ) {
+        throw new Error("The selected date filter is invalid.");
+    }
+
+    if (dateFrom && dateTo && dateFrom > dateTo) {
+        throw new Error("The From date must be on or before the To date.");
+    }
+
     const { supabase, profile, user } = await requireTeacher();
     const exporterEmail = profile.email ?? user.email;
 
@@ -179,20 +219,32 @@ export async function exportTutoringToGoogleSheet(classId: string, studentEnroll
             submitted_at,
             approved_at
         `)
-        .eq("lia_class_id", liaClass.id)
+        .eq("lia_class_id", liaClass.id);
     
     if (exportEnrollmentIds) {
-    logsQuery = logsQuery.in(
-        "student_enrollment_id",
-        exportEnrollmentIds.length > 0
-            ? exportEnrollmentIds
-            : ["00000000-0000-0000-0000-000000000000"],
-    );
-}
+        logsQuery = logsQuery.in(
+            "student_enrollment_id",
+            exportEnrollmentIds.length > 0
+                ? exportEnrollmentIds
+                : ["00000000-0000-0000-0000-000000000000"],
+        );
+    }
+
+    if (activity) {
+        logsQuery = logsQuery.eq("activity_type", activity);
+    }
+
+    if (dateFrom) {
+        logsQuery = logsQuery.gte("session_date", dateFrom);
+    }
+
+    if (dateTo) {
+        logsQuery = logsQuery.lte("session_date", dateTo);
+    }
 
     const { data: logs, error: logsError } = await logsQuery
-        .order("session_date", {ascending: false})
-        .order("submitted_at", {ascending: false});
+        .order("session_date", { ascending: false })
+        .order("submitted_at", { ascending: false });
 
     if (logsError) {
         throw new Error("The tutoring logs could not be loaded.");
@@ -230,6 +282,12 @@ export async function exportTutoringToGoogleSheet(classId: string, studentEnroll
     const exportLabels = [
         selectedStudentName,
         selectedCommitteeName,
+        activity
+            ? `${activity.charAt(0).toUpperCase()}${activity.slice(1)}`
+            : null,
+        dateFrom || dateTo
+            ? `${dateFrom ?? "Beginning"} to ${dateTo ?? "Present"}`
+            : null,
     ].filter(Boolean);
 
     const exportSubject =

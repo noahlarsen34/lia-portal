@@ -23,6 +23,9 @@ type TutoringPageProps = {
         error?: string;
         student?: string;
         committee?: string;
+        activity?: string;
+        dateFrom?: string;
+        dateTo?: string;
     }>;
 };
 
@@ -30,7 +33,7 @@ const fieldClasses =
     "mt-2 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-[#c4122f] focus:ring-4 focus:ring-red-100";
 
 function formatHours(minutes: number) {
-    return (minutes /60).toFixed(2);
+    return (minutes / 60).toFixed(2);
 }
 
 function formatTimeForInput(value: string | null | undefined) {
@@ -43,12 +46,38 @@ function formatStatus(status: string | null | undefined) {
         : "Pending";
 }
 
+function normalizeDateFilter(value: string | undefined) {
+    if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return undefined;
+
+    const date = new Date(`${value}T00:00:00.000Z`);
+
+    return !Number.isNaN(date.getTime()) &&
+        date.toISOString().slice(0, 10) === value
+        ? value
+        : undefined;
+}
+
+function formatFilterDate(value: string) {
+    return new Intl.DateTimeFormat("en-US", {
+        dateStyle: "medium",
+        timeZone: "UTC",
+    }).format(new Date(`${value}T00:00:00.000Z`));
+}
+
 export default async function ClassTutoringPage({
     params,
     searchParams,
 }: TutoringPageProps) {
     const { classId } = await params;
-    const { editLogId, error, student, committee } = await searchParams;
+    const {
+        editLogId,
+        error,
+        student,
+        committee,
+        activity,
+        dateFrom,
+        dateTo,
+    } = await searchParams;
     const { supabase, profile } = await requireTeacher();
 
     const { data: liaClass } = await supabase
@@ -102,6 +131,18 @@ export default async function ClassTutoringPage({
         committee === "none"
             ? "none"
             : selectedCommittee?.value ?? "all";
+
+    const activityFilter =
+        activity === "tutoring" || activity === "service"
+            ? activity
+            : "all";
+    const fromDateFilter = normalizeDateFilter(dateFrom);
+    const toDateFilter = normalizeDateFilter(dateTo);
+    const hasInvalidDateRange = Boolean(
+        fromDateFilter &&
+        toDateFilter &&
+        fromDateFilter > toDateFilter,
+    );
     
     const studentOptions = (enrollments ?? [])
             .map((enrollment) => {
@@ -475,6 +516,18 @@ export default async function ClassTutoringPage({
         );
     }
 
+    if (activityFilter !== "all") {
+        logsQuery = logsQuery.eq("activity_type", activityFilter);
+    }
+
+    if (fromDateFilter) {
+        logsQuery = logsQuery.gte("session_date", fromDateFilter);
+    }
+
+    if (toDateFilter) {
+        logsQuery = logsQuery.lte("session_date", toDateFilter);
+    }
+
     const { data: logs, error: logsError } = await logsQuery
         .order("session_date", { ascending: false })
         .order("submitted_at", { ascending: false });
@@ -580,8 +633,8 @@ export default async function ClassTutoringPage({
                     method="get"
                     className="mt-6 rounded-md border border-zinc-200 bg-zinc-50 p-4"
                 >
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
-                        <label className="block flex-1">
+                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-[repeat(5,minmax(0,1fr))_auto] xl:items-end">
+                        <label className="block">
                             <span className="text-sm font-semibold text-zinc-800">
                                 Filter by student
                             </span>
@@ -601,7 +654,7 @@ export default async function ClassTutoringPage({
                             </select>
                         </label>
 
-                        <label className="block flex-1">
+                        <label className="block">
                             <span className="text-sm font-semibold text-zinc-800">
                                 Filter by committee
                             </span>
@@ -623,26 +676,88 @@ export default async function ClassTutoringPage({
                             </select>
                         </label>
 
-                        <div className="flex gap-2">
+                        <label className="block">
+                            <span className="text-sm font-semibold text-zinc-800">
+                                Filter by activity
+                            </span>
+
+                            <select
+                                name="activity"
+                                defaultValue={activityFilter}
+                                className={fieldClasses}
+                            >
+                                <option value="all">All activities</option>
+                                <option value="tutoring">Tutoring</option>
+                                <option value="service">Service</option>
+                            </select>
+                        </label>
+
+                        <label className="block">
+                            <span className="text-sm font-semibold text-zinc-800">
+                                From date
+                            </span>
+
+                            <input
+                                type="date"
+                                name="dateFrom"
+                                defaultValue={fromDateFilter}
+                                className={fieldClasses}
+                            />
+                        </label>
+
+                        <label className="block">
+                            <span className="text-sm font-semibold text-zinc-800">
+                                To date
+                            </span>
+
+                            <input
+                                type="date"
+                                name="dateTo"
+                                defaultValue={toDateFilter}
+                                className={fieldClasses}
+                            />
+                        </label>
+
+                        <div className="flex gap-2 sm:col-span-2 xl:col-span-1">
                             <button
                                 type="submit"
-                                className="inline-flex h-10 items-center justify-center rounded-md bg-[#c4122f] px-5 text-sm font-semibold text-white hover:bg-[#a70d25]"
+                                className="inline-flex h-10 flex-1 items-center justify-center whitespace-nowrap rounded-md bg-[#c4122f] px-5 text-sm font-semibold text-white hover:bg-[#a70d25] xl:flex-none"
                             >
-                                Apply Filter
+                                Apply Filters
                             </button>
 
                             <Link
                                 href={`/teacher/classes/${classId}/tutoring`}
-                                className="inline-flex h-10 items-center justify-center rounded-md border border-zinc-300 bg-white px-5 text-sm font-semibold text-zinc-700 hover:bg-zinc-50"
+                                className="inline-flex h-10 flex-1 items-center justify-center rounded-md border border-zinc-300 bg-white px-5 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 xl:flex-none"
                             >
                                 Clear
                             </Link>
                         </div>
                     </div>
 
-                    {selectedStudent || committeeFilter !== "all" ? (
+                    {hasInvalidDateRange ? (
+                        <p className="mt-3 text-sm font-medium text-red-700">
+                            The From date is after the To date. Adjust the date
+                            range to view matching logs.
+                        </p>
+                    ) : null}
+
+                    {selectedStudent ||
+                    committeeFilter !== "all" ||
+                    activityFilter !== "all" ||
+                    fromDateFilter ||
+                    toDateFilter ? (
                         <p className="mt-3 text-sm text-zinc-600">
-                            Showing Activity
+                            Showing
+                            {activityFilter !== "all" ? (
+                                <>
+                                    {" "}
+                                    <span className="font-semibold capitalize text-zinc-900">
+                                        {activityFilter}
+                                    </span>
+                                </>
+                            ) : null}
+                            {" activity"}
                             {selectedStudent ? (
                                 <>
                                     {" "}for{" "}
@@ -659,6 +774,24 @@ export default async function ClassTutoringPage({
                                         {committeeFilter === "none"
                                             ? "No committee"
                                             : selectedCommittee?.name}
+                                    </span>
+                                </>
+                            ) : null}
+
+                            {fromDateFilter ? (
+                                <>
+                                    {" "}from{" "}
+                                    <span className="font-semibold text-zinc-900">
+                                        {formatFilterDate(fromDateFilter)}
+                                    </span>
+                                </>
+                            ) : null}
+
+                            {toDateFilter ? (
+                                <>
+                                    {" "}through{" "}
+                                    <span className="font-semibold text-zinc-900">
+                                        {formatFilterDate(toDateFilter)}
                                     </span>
                                 </>
                             ) : null}
@@ -738,7 +871,11 @@ export default async function ClassTutoringPage({
                             Tutoring and Service Logs
                         </h2>
                         <p className="mt-1 text-sm text-zinc-600">
-                            {selectedStudent || committeeFilter !== "all"
+                            {selectedStudent ||
+                            committeeFilter !== "all" ||
+                            activityFilter !== "all" ||
+                            fromDateFilter ||
+                            toDateFilter
                                 ? "Export the currently filtered timesheet to Google Sheets."
                                 : "Export the complete class timesheet to Google Sheets."}
                         </p>
@@ -752,6 +889,13 @@ export default async function ClassTutoringPage({
                                 ? undefined
                                 : committeeFilter
                         }
+                        activity={
+                            activityFilter === "all"
+                                ? undefined
+                                : activityFilter
+                        }
+                        dateFrom={fromDateFilter}
+                        dateTo={toDateFilter}
                         disabled={!logs?.length}
                     />
                 </div>
