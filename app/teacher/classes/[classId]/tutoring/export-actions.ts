@@ -3,6 +3,8 @@
 import { google } from "googleapis";
 import { requireTeacher } from "@/utils/role-guards";
 import { toLeadershipOptionValue } from "@/utils/class-leadership-options";
+import { getClassAccess } from "@/utils/class-access";
+import { createAdminClient } from "@/utils/supabase/admin";
 
 function formatHours(minutes: number | null | undefined) {
     return (Number(minutes ?? 0) / 60).toFixed(2);
@@ -68,7 +70,12 @@ export async function exportTutoringToGoogleSheet({
         throw new Error("The From date must be on or before the To date.");
     }
 
-    const { supabase, profile, user } = await requireTeacher();
+    const { profile, user } = await requireTeacher();
+    const access = await getClassAccess(classId, profile.id);
+
+    if (!access) throw new Error("This class could not be found.");
+
+    const supabase = createAdminClient();
     const exporterEmail = profile.email ?? user.email;
 
     if (!exporterEmail) {
@@ -81,7 +88,6 @@ export async function exportTutoringToGoogleSheet({
         .from("lia_classes")
         .select("id, name")
         .eq("id", classId)
-        .eq("teacher_profile_id", profile.id)
         .maybeSingle();
 
     if (classError || !liaClass) {

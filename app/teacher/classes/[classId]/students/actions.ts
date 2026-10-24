@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { requireTeacher } from "@/utils/role-guards";
 import { getValidStudentTier } from "@/utils/student-tier";
 import { toLeadershipOptionValue } from "@/utils/class-leadership-options";
+import { getClassAccess } from "@/utils/class-access";
+import { createAdminClient } from "@/utils/supabase/admin";
 
 async function resolveLeadershipSelection(
     supabase: Awaited<ReturnType<typeof requireTeacher>>["supabase"],
@@ -86,7 +88,12 @@ async function findOfficerRoleConflict(
 }
 
 export async function addStudentToClass(classId: string, formData: FormData) {
-    const { supabase, profile } = await requireTeacher();
+    const { profile } = await requireTeacher();
+    const access = await getClassAccess(classId, profile.id);
+
+    if (!access?.isPrimaryTeacher) redirect("/teacher/classes");
+
+    const supabase = createAdminClient();
 
     const firstName = String(formData.get("first_name") ?? "").trim();
     const lastName = String(formData.get("last_name") ?? "").trim();
@@ -128,7 +135,6 @@ export async function addStudentToClass(classId: string, formData: FormData) {
         .from("lia_classes")
         .select("id, school_id")
         .eq("id", classId)
-        .eq("teacher_profile_id", profile.id)
         .maybeSingle();
 
     if (!liaClass) {
@@ -238,7 +244,14 @@ export async function updateClassStudent(
     enrollmentId: string,
     formData: FormData,
 ) {
-    const { supabase, profile } = await requireTeacher();
+    const { profile } = await requireTeacher();
+    const access = await getClassAccess(classId, profile.id);
+
+    if (!access?.isPrimaryTeacher) {
+        redirect(`/teacher/classes/${classId}/students?error=not-found`);
+    }
+
+    const supabase = createAdminClient();
 
     const firstName = String(formData.get("first_name") ?? "").trim();
     const lastName = String(formData.get("last_name") ?? "").trim();
@@ -304,7 +317,7 @@ export async function updateClassStudent(
             ? enrollment?.lia_classes[0]
             : enrollment?.lia_classes;
         
-    if (!enrollment || liaClass?.teacher_profile_id !== profile.id) {
+    if (!enrollment || !liaClass) {
         redirect(`/teacher/classes/${classId}/students?error=not-found`);
     }
 
@@ -376,7 +389,14 @@ export async function removeStudentFromClass(
     classId: string,
     enrollmentId: string,
 ) {
-    const { supabase, profile } = await requireTeacher();
+    const { profile } = await requireTeacher();
+    const access = await getClassAccess(classId, profile.id);
+
+    if (!access?.isPrimaryTeacher) {
+        redirect(`/teacher/classes/${classId}/students?error=not-found`);
+    }
+
+    const supabase = createAdminClient();
 
     const { data: enrollment } = await supabase
         .from("lia_class_students")
@@ -396,7 +416,7 @@ export async function removeStudentFromClass(
             ? enrollment?.lia_classes[0]
             : enrollment?.lia_classes;
         
-    if (!enrollment || liaClass?.teacher_profile_id !== profile.id) {
+    if (!enrollment || !liaClass) {
         redirect(`/teacher/classes/${classId}/students?error=not-found`);
     }
 

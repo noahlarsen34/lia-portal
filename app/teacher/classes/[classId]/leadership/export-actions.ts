@@ -3,6 +3,8 @@
 import { google } from "googleapis";
 import { requireTeacher } from "@/utils/role-guards";
 import { formatStudentTier } from "@/utils/student-tier";
+import { getClassAccess } from "@/utils/class-access";
+import { createAdminClient } from "@/utils/supabase/admin";
 
 type LeadershipFilters = {
     role: string;
@@ -40,7 +42,12 @@ export async function exportLeadershipToGoogleSheet(
     classId: string,
     filters: LeadershipFilters,
 ) {
-    const { supabase, profile, user } = await requireTeacher();
+    const { profile, user } = await requireTeacher();
+    const access = await getClassAccess(classId, profile.id);
+
+    if (!access) throw new Error("This class could not be found.");
+
+    const supabase = createAdminClient();
     const exporterEmail = profile.email ?? user.email;
 
     if (!exporterEmail) {
@@ -53,7 +60,6 @@ export async function exportLeadershipToGoogleSheet(
         .from("lia_classes")
         .select("id, name")
         .eq("id", classId)
-        .eq("teacher_profile_id", profile.id)
         .maybeSingle();
 
     if (classError || !liaClass) {

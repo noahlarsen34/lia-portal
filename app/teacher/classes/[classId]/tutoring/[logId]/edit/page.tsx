@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { requireTeacher } from "@/utils/role-guards";
 import { updateTutoringLog } from "../../actions";
+import { getClassAccess } from "@/utils/class-access";
+import { createAdminClient } from "@/utils/supabase/admin";
 
 type EditTutoringLogPageProps = {
     params: Promise<{
@@ -56,13 +58,25 @@ export default async function EditTutoringLogPage({
 }: EditTutoringLogPageProps) {
     const { classId, logId } = await params;
     const { error } = await searchParams;
-    const { supabase, profile } = await requireTeacher();
+    const { profile } = await requireTeacher();
+    const access = await getClassAccess(classId, profile.id);
+
+    if (!access?.isPrimaryTeacher) {
+        return (
+            <EditLogError
+                classId={classId}
+                title="Class not found"
+                message="This class could not be found, or it is not assigned to your teacher account."
+            />
+        );
+    }
+
+    const supabase = createAdminClient();
 
     const { data: liaClass } = await supabase
         .from("lia_classes")
         .select("id, name, teacher_profile_id")
         .eq("id", classId)
-        .eq("teacher_profile_id", profile.id)
         .maybeSingle();
 
     if (!liaClass) {

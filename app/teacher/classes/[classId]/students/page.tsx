@@ -5,6 +5,9 @@ import { requireTeacher } from "@/utils/role-guards";
 import { addStudentToClass, removeStudentFromClass } from "./actions";
 import { studentTierOptions, formatStudentTier } from "@/utils/student-tier";
 import { toLeadershipOptionValue } from "@/utils/class-leadership-options";
+import { getClassAccess } from "@/utils/class-access";
+import { createAdminClient } from "@/utils/supabase/admin";
+import { ReadOnlyBanner } from "../read-only-banner";
 
 type StudentsPageProps = {
     params: Promise<{
@@ -55,13 +58,17 @@ export default async function StudentsPage({
 }: StudentsPageProps) {
     const { classId } = await params;
     const { error } = await searchParams;
-    const { supabase, profile } = await requireTeacher();
+    const { profile } = await requireTeacher();
+    const access = await getClassAccess(classId, profile.id);
+
+    if (!access) notFound();
+
+    const supabase = createAdminClient();
 
     const { data: liaClass } = await supabase
         .from("lia_classes")
         .select("id, name")
         .eq("id", classId)
-        .eq("teacher_profile_id", profile.id)
         .maybeSingle();
 
     if (!liaClass) {
@@ -135,6 +142,8 @@ export default async function StudentsPage({
                     </p>
                 </div>
 
+                {!access.isPrimaryTeacher ? <ReadOnlyBanner /> : null}
+
                 {error ? (
                     <div className="mt-5 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                         {error === "missing-fields"
@@ -157,6 +166,7 @@ export default async function StudentsPage({
                     </div>
                 ) : null}
 
+                {access.isPrimaryTeacher ? (
                 <form
                     action={addStudent}
                     className="mt-6 space-y-5 border-t border-zinc-100 pt-6"
@@ -292,6 +302,7 @@ export default async function StudentsPage({
                         </button>
                     </div>
                 </form>
+                ) : null}
             </section>
 
             <section className="mt-5 overflow-hidden rounded-md border border-red-100 bg-white shadow-sm">
@@ -386,6 +397,7 @@ export default async function StudentsPage({
                                                     >
                                                         <Eye className="size-4" aria-hidden="true" />
                                                     </Link>
+                                                    {access.isPrimaryTeacher ? (
                                                     <Link
                                                         href={`/teacher/classes/${liaClass.id}/students/${enrollment.id}/edit`}
                                                         prefetch={false}
@@ -395,6 +407,8 @@ export default async function StudentsPage({
                                                     >
                                                         <Pencil className="size-4" aria-hidden="true" />
                                                     </Link>
+                                                    ) : null}
+                                                    {access.isPrimaryTeacher ? (
                                                     <form action={removeStudent} className="m-0">
                                                         <button
                                                             type="submit"
@@ -405,6 +419,7 @@ export default async function StudentsPage({
                                                             <UserMinus className="size-4" aria-hidden="true" />
                                                         </button>
                                                     </form>
+                                                    ) : null}
                                                 </div>
                                             </td>
                                         </tr>

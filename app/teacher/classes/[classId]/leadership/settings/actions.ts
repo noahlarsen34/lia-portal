@@ -3,20 +3,16 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireTeacher } from "@/utils/role-guards";
+import { getClassAccess } from "@/utils/class-access";
+import { createAdminClient } from "@/utils/supabase/admin";
 
-async function teacherOwnsClass(
-    classId: string,
-    supabase: Awaited<ReturnType<typeof requireTeacher>>["supabase"],
-    teacherProfileId: string,
-) {
-    const { data } = await supabase
-        .from("lia_classes")
-        .select("id")
-        .eq("id", classId)
-        .eq("teacher_profile_id", teacherProfileId)
-        .maybeSingle();
+async function requireClassManager(classId: string) {
+    const { profile } = await requireTeacher();
+    const access = await getClassAccess(classId, profile.id);
 
-    return Boolean(data);
+    if (!access?.isPrimaryTeacher) redirect("/teacher/classes");
+
+    return createAdminClient();
 }
 
 function settingsPath(classId: string, query?: string) {
@@ -35,11 +31,7 @@ export async function createCommittee(
     classId: string,
     formData: FormData,
 ) {
-    const { supabase, profile } = await requireTeacher();
-
-    if (!(await teacherOwnsClass(classId, supabase, profile.id))) {
-        redirect("/teacher/classes");
-    }
+    const supabase = await requireClassManager(classId);
 
     const name = String(formData.get("name") ?? "").trim();
 
@@ -80,11 +72,7 @@ export async function createCommittee(
 }
 
 export async function createRole(classId: string, formData: FormData) {
-    const { supabase, profile } = await requireTeacher();
-
-    if (!(await teacherOwnsClass(classId, supabase, profile.id))) {
-        redirect("/teacher/classes");
-    }
+    const supabase = await requireClassManager(classId);
 
     const name = String(formData.get("name") ?? "").trim();
     const requestedScope = String(
@@ -136,11 +124,7 @@ export async function archiveCommittee(
     classId: string,
     committeeId: string,
 ) {
-    const { supabase, profile } = await requireTeacher();
-
-    if (!(await teacherOwnsClass(classId, supabase, profile.id))) {
-        redirect("/teacher/classes");
-    }
+    const supabase = await requireClassManager(classId);
 
     const { error } = await supabase
         .from("lia_class_committees")
@@ -160,11 +144,7 @@ export async function archiveCommittee(
 }
 
 export async function archiveRole(classId: string, roleId: string) {
-    const { supabase, profile } = await requireTeacher();
-
-    if (!(await teacherOwnsClass(classId, supabase, profile.id))) {
-        redirect("/teacher/classes");
-    }
+    const supabase = await requireClassManager(classId);
 
     const { error } = await supabase
         .from("lia_class_roles")

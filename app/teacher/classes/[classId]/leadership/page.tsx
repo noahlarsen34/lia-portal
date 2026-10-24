@@ -4,6 +4,9 @@ import { requireTeacher } from "@/utils/role-guards";
 import { formatStudentTier } from "@/utils/student-tier";
 import { toLeadershipOptionValue } from "@/utils/class-leadership-options";
 import { LeadershipExportButton } from "./leadership-export-button";
+import { getClassAccess } from "@/utils/class-access";
+import { createAdminClient } from "@/utils/supabase/admin";
+import { ReadOnlyBanner } from "../read-only-banner";
 
 type LeadershipPageProps = {
     params: Promise<{
@@ -43,13 +46,17 @@ export default async function LeadershipPage({
 }: LeadershipPageProps) {
     const { classId } = await params;
     const filters = await searchParams;
-    const { supabase, profile} = await requireTeacher();
+    const { profile } = await requireTeacher();
+    const access = await getClassAccess(classId, profile.id);
+
+    if (!access) notFound();
+
+    const supabase = createAdminClient();
 
     const { data: liaClass } = await supabase
         .from("lia_classes")
         .select("id, name")
         .eq("id", classId)
-        .eq("teacher_profile_id", profile.id)
         .maybeSingle();
 
     if (!liaClass) {
@@ -254,11 +261,14 @@ export default async function LeadershipPage({
                 <p className="mt-1 text-sm text-zinc-600">
                     View class officers, committee members, and leadership assignments.
                 </p>
+                {!access.isPrimaryTeacher ? <ReadOnlyBanner /> : null}
                 <Link
                     href={`/teacher/classes/${liaClass.id}/leadership/settings`}
                     className="mt-4 inline-flex h-10 items-center rounded-md border border-red-200 px-4 text-sm font-semibold text-[#c4122f] transition hover:bg-red-50"
                 >
-                    Manage Committees &amp; Roles
+                    {access.isPrimaryTeacher
+                        ? "Manage Committees & Roles"
+                        : "View Committees & Roles"}
                 </Link>
 
                 <form

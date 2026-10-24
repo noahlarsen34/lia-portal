@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { requireTeacher } from "@/utils/role-guards";
 import { updateLiaClass } from "./actions";
 import { ClassScheduleFields } from "../../class-schedule-fields";
+import { getClassAccess } from "@/utils/class-access";
+import { createAdminClient } from "@/utils/supabase/admin";
 
 type EditTeacherClassPageProps = {
     params: Promise<{
@@ -19,7 +21,12 @@ export default async function EditTeacherClassPage({
 }: EditTeacherClassPageProps) {
     const { classId } = await params;
     const { error } = await searchParams;
-    const { supabase, profile } = await requireTeacher();
+    const { profile } = await requireTeacher();
+    const access = await getClassAccess(classId, profile.id);
+
+    if (!access?.isPrimaryTeacher) notFound();
+
+    const supabase = createAdminClient();
 
     const { data: liaClass } = await supabase
         .from("lia_classes")
@@ -44,7 +51,6 @@ export default async function EditTeacherClassPage({
             `,
         )
         .eq("id", classId)
-        .eq("teacher_profile_id", profile.id)
         .maybeSingle();
     
     if (!liaClass) {

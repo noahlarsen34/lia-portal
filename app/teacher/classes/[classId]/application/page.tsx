@@ -7,6 +7,9 @@ import {
     ApplicationEditor,
     type EditableApplicationQuestion,
 } from "./application-editor";
+import { getClassAccess } from "@/utils/class-access";
+import { createAdminClient } from "@/utils/supabase/admin";
+import { ReadOnlyBanner } from "../read-only-banner";
 
 type ApplicationBuilderPageProps = {
     params: Promise<{
@@ -220,13 +223,17 @@ export default async function ApplicationBuilderPage({
 }: ApplicationBuilderPageProps) {
     const { classId } = await params;
     const { error, success } = await searchParams;
-    const { supabase, profile } = await requireTeacher();
+    const { profile } = await requireTeacher();
+    const access = await getClassAccess(classId, profile.id);
+
+    if (!access) notFound();
+
+    const supabase = createAdminClient();
     
     const { data: liaClass } = await supabase
         .from("lia_classes")
         .select("id, name, teacher_profile_id")
         .eq("id", classId)
-        .eq("teacher_profile_id", profile.id)
         .maybeSingle();
     
     if (!liaClass) {
@@ -291,6 +298,7 @@ export default async function ApplicationBuilderPage({
             </Link>
 
             <div className="mt-5">
+                {!access.isPrimaryTeacher ? <ReadOnlyBanner /> : null}
                 {success === "saved" ? (
                     <div className="mb-5 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
                         Application draft saved.
@@ -322,6 +330,7 @@ export default async function ApplicationBuilderPage({
                     initialQuestions={questions}
                     currentStatus={latestForm?.status ?? "not saved"}
                     currentVersion={latestForm?.version ?? 1}
+                    readOnly={!access.isPrimaryTeacher}
                 />
             </div>
         </div>

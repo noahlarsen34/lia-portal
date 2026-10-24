@@ -7,6 +7,9 @@ import {
     createCommittee,
     createRole,
 } from "./actions";
+import { getClassAccess } from "@/utils/class-access";
+import { createAdminClient } from "@/utils/supabase/admin";
+import { ReadOnlyBanner } from "../../read-only-banner";
 
 type LeadershipSettingsPageProps = {
     params: Promise<{ classId: string }>;
@@ -38,13 +41,17 @@ export default async function LeadershipSettingsPage({
 }: LeadershipSettingsPageProps) {
     const { classId } = await params;
     const { error, success } = await searchParams;
-    const { supabase, profile } = await requireTeacher();
+    const { profile } = await requireTeacher();
+    const access = await getClassAccess(classId, profile.id);
+
+    if (!access) notFound();
+
+    const supabase = createAdminClient();
 
     const { data: liaClass } = await supabase
         .from("lia_classes")
         .select("id, name")
         .eq("id", classId)
-        .eq("teacher_profile_id", profile.id)
         .maybeSingle();
 
     if (!liaClass) {
@@ -99,6 +106,8 @@ export default async function LeadershipSettingsPage({
                 <p className="mt-2 text-zinc-600">{liaClass.name}</p>
             </header>
 
+            {!access.isPrimaryTeacher ? <ReadOnlyBanner /> : null}
+
             {error ? (
                 <div className="mt-5 rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-800">
                     {errorMessages[error] ?? "Something went wrong."}
@@ -115,6 +124,7 @@ export default async function LeadershipSettingsPage({
                 <section className="rounded-md border border-red-100 bg-white p-6 shadow-sm">
                     <h2 className="text-xl font-semibold">Committees</h2>
 
+                    {access.isPrimaryTeacher ? (
                     <form
                         action={createCommitteeForClass}
                         className="mt-5 flex flex-col gap-3 sm:flex-row"
@@ -133,6 +143,7 @@ export default async function LeadershipSettingsPage({
                             Add committee
                         </button>
                     </form>
+                    ) : null}
 
                     <div className="mt-6 divide-y divide-zinc-100">
                         {(committees ?? []).map((committee) => {
@@ -158,7 +169,7 @@ export default async function LeadershipSettingsPage({
                                         </p>
                                     </div>
 
-                                    {!committee.is_default ? (
+                                    {access.isPrimaryTeacher && !committee.is_default ? (
                                         <form action={archiveAction}>
                                             <button
                                                 type="submit"
@@ -177,6 +188,7 @@ export default async function LeadershipSettingsPage({
                 <section className="rounded-md border border-red-100 bg-white p-6 shadow-sm">
                     <h2 className="text-xl font-semibold">Roles</h2>
 
+                    {access.isPrimaryTeacher ? (
                     <form action={createRoleForClass} className="mt-5 space-y-4">
                         <input
                             name="name"
@@ -220,6 +232,7 @@ export default async function LeadershipSettingsPage({
                             Add role
                         </button>
                     </form>
+                    ) : null}
 
                     <div className="mt-6 divide-y divide-zinc-100">
                         {(roles ?? []).map((role) => {
@@ -249,7 +262,7 @@ export default async function LeadershipSettingsPage({
                                         </p>
                                     </div>
 
-                                    {!role.is_default ? (
+                                    {access.isPrimaryTeacher && !role.is_default ? (
                                         <form action={archiveAction}>
                                             <button
                                                 type="submit"

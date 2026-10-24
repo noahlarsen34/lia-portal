@@ -10,6 +10,8 @@ import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
 import { studentTierOptions } from "@/utils/student-tier";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { isApplicationFileAnswer } from "@/utils/application-form";
+import { getClassAccess } from "@/utils/class-access";
+import { ReadOnlyBanner } from "../../read-only-banner";
 
 type ApplicantDetailPageProps = {
     params: Promise<{
@@ -93,7 +95,12 @@ export default async function ApplicantDetailPage({
 }: ApplicantDetailPageProps) {
     const { classId, applicationId } = await params;
     const { error, success } = await searchParams;
-    const { supabase, profile } = await requireTeacher();
+    const { profile } = await requireTeacher();
+    const access = await getClassAccess(classId, profile.id);
+
+    if (!access) notFound();
+
+    const supabase = createAdminClient();
 
     const { data: application } = await supabase
         .from("lia_class_applications")
@@ -159,7 +166,7 @@ export default async function ApplicantDetailPage({
         ? liaClass?.schools[0]
         : liaClass?.schools;
 
-    if (!application || !liaClass || liaClass.teacher_profile_id !== profile.id) {
+    if (!application || !liaClass) {
         notFound();
     }
 
@@ -329,6 +336,8 @@ export default async function ApplicantDetailPage({
                     <p className="mt-1 text-sm">{banner.message}</p>
                 </div>
 
+                {!access.isPrimaryTeacher ? <ReadOnlyBanner /> : null}
+
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div className="min-w-0">
                         <p className="text-sm font-semibold uppercase tracking-wide text-[#c4122f]">
@@ -348,6 +357,7 @@ export default async function ApplicantDetailPage({
                         </p>
                     </div>
 
+                    {access.isPrimaryTeacher ? (
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                         <form action={markMaybe}>
                             <button
@@ -391,6 +401,7 @@ export default async function ApplicantDetailPage({
                             </ConfirmSubmitButton>
                         </form>
                     </div>
+                    ) : null}
                 </div>
 
                 <div className="mt-6 grid gap-4 border-t border-zinc-100 pt-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -475,6 +486,7 @@ export default async function ApplicantDetailPage({
                     <section className="rounded-md border border-red-100 bg-white p-5 shadow-sm">
                         <h2 className="text-lg font-semibold">Review Checklist</h2>
                         <form action={saveReview} className="mt-5 space-y-4">
+                            <fieldset disabled={!access.isPrimaryTeacher} className="space-y-4">
                             <label className="flex items-start gap-3 rounded-md border border-zinc-100 bg-zinc-50 p-3">
                                 <input
                                     name="recommendation_complete"
@@ -544,6 +556,7 @@ export default async function ApplicantDetailPage({
                             >
                                 Save Review
                             </button>
+                            </fieldset>
                         </form>
                     </section>
                 </aside>

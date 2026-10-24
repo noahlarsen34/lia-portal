@@ -4,6 +4,8 @@ import { requireTeacher } from '@/utils/role-guards';
 import { updateClassStudent } from '../../actions';
 import { studentTierOptions } from '@/utils/student-tier';
 import { toLeadershipOptionValue } from '@/utils/class-leadership-options';
+import { getClassAccess } from '@/utils/class-access';
+import { createAdminClient } from '@/utils/supabase/admin';
 
 type EditStudentPageProps = {
     params: Promise<{
@@ -21,7 +23,12 @@ export default async function EditStudentPage({
 } : EditStudentPageProps) {
     const { classId, enrollmentId } = await params;
     const { error } = await searchParams;
-    const { supabase, profile } = await requireTeacher();
+    const { profile } = await requireTeacher();
+    const access = await getClassAccess(classId, profile.id);
+
+    if (!access?.isPrimaryTeacher) notFound();
+
+    const supabase = createAdminClient();
 
     const { data: enrollment } = await supabase
         .from("lia_class_students")
@@ -58,7 +65,7 @@ export default async function EditStudentPage({
             ? enrollment?.lia_classes[0]
             : enrollment?.lia_classes;
     
-    if (!enrollment || !student || !liaClass || liaClass.teacher_profile_id !== profile.id) {
+    if (!enrollment || !student || !liaClass) {
         notFound();
     }
 

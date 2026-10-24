@@ -8,9 +8,13 @@ import {
 } from 'lucide-react';
 import { notFound } from "next/navigation";
 import { requireTeacher } from "@/utils/role-guards";
+import { getClassAccess } from "@/utils/class-access";
+import { createAdminClient } from "@/utils/supabase/admin";
 import { formatStudentTier } from "@/utils/student-tier";
 import { deleteLiaClass } from "./actions";
 import { RosterExportButton } from "./roster-export-button";
+import { addClassCoTeacher, removeClassCoTeacher } from "./co-teacher-actions";
+import { ReadOnlyBanner } from "./read-only-banner";
 
 type TeacherClassPageProps = {
     params: Promise<{
@@ -18,6 +22,8 @@ type TeacherClassPageProps = {
     }>;
     searchParams: Promise<{
         error?: string;
+        coTeacherError?: string;
+        coTeacherSuccess?: string;
     }>;
 };
 
@@ -67,8 +73,15 @@ export default async function TeacherClassPage({
     searchParams,
 }: TeacherClassPageProps) {
     const { classId } = await params;
-    const { error } = await searchParams;
-    const { supabase, profile } = await requireTeacher();
+    const { error, coTeacherError, coTeacherSuccess } = await searchParams;
+    const { profile } = await requireTeacher();
+    const access = await getClassAccess(classId, profile.id);
+
+    if (!access) {
+        notFound();
+    }
+
+    const supabase = createAdminClient();
 
     const { data: liaClass } = await supabase
         .from("lia_classes")
@@ -90,7 +103,6 @@ export default async function TeacherClassPage({
             `,
         )
         .eq("id", classId)
-        .eq("teacher_profile_id", profile.id)
         .maybeSingle();
     
     if (!liaClass) {
@@ -100,6 +112,43 @@ export default async function TeacherClassPage({
     const school = Array.isArray(liaClass.schools)
         ? liaClass.schools[0]
         : liaClass.schools;
+
+    const [{ data: classTeacherAssignments }, { data: schoolTeachers }] =
+        await Promise.all([
+            supabase
+                .from("lia_class_teachers")
+                .select("teacher_profile_id, role, assigned_at")
+                .eq("class_id", liaClass.id),
+            supabase
+                .from("teachers")
+                .select("profile_id, first_name, last_name, name, email, status")
+                .eq("school_id", liaClass.school_id)
+                .not("profile_id", "is", null)
+                .order("last_name")
+                .order("first_name"),
+        ]);
+
+    const teacherByProfileId = new Map(
+        (schoolTeachers ?? []).map((teacher) => [teacher.profile_id, teacher]),
+    );
+    const coTeachers = (classTeacherAssignments ?? [])
+        .filter((assignment) => assignment.role === "co_teacher")
+        .map((assignment) => ({
+            ...assignment,
+            teacher: teacherByProfileId.get(assignment.teacher_profile_id),
+        }))
+        .filter((assignment) => assignment.teacher);
+    const assignedProfileIds = new Set(
+        (classTeacherAssignments ?? []).map(
+            (assignment) => assignment.teacher_profile_id,
+        ),
+    );
+    assignedProfileIds.add(liaClass.teacher_profile_id);
+    const availableCoTeachers = (schoolTeachers ?? []).filter(
+        (teacher) =>
+            teacher.status !== "inactive" &&
+            !assignedProfileIds.has(teacher.profile_id),
+    );
 
     const { count: studentCount } = await supabase
         .from("lia_class_students")
@@ -216,14 +265,36 @@ export default async function TeacherClassPage({
             <header className="mt-5 rounded-md border border-red-100 bg-white p-5 shadow-sm sm:p-6">
                 {error ? (
                     <div className="mb-5 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                        {error === "class-has-students"
-                            ? "This class has students, so it cannot be deleted. You can edit the class or mark it inactive instead."
+                        {error === "primary-only"
+                            ? "Only the primary teacher can edit or delete this class."
+                            : error === "class-has-students"
+                                ? "This class has students, so it cannot be deleted. You can edit the class or mark it inactive instead."
                             : error === "student-check-failed"
                                 ? "Could not check whether this class has students. Please try again."
                                 : error === "delete-failed"
                                     ? "Could not delete this class. Please try again."
                                     : "Something went wrong. Please try again."
                         }
+                    </div>
+                ) : null}
+
+                {coTeacherError ? (
+                    <div className="mb-5 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                        {coTeacherError === "not-primary"
+                            ? "Only the primary teacher can manage co-teachers."
+                            : coTeacherError === "invalid-teacher"
+                                ? "Choose an active teacher from this school."
+                                : coTeacherError === "remove-failed"
+                                    ? "The co-teacher could not be removed. Please try again."
+                                    : "The co-teacher could not be added. Please try again."}
+                    </div>
+                ) : null}
+
+                {coTeacherSuccess ? (
+                    <div className="mb-5 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+                        {coTeacherSuccess === "removed"
+                            ? "Co-teacher removed."
+                            : "Co-teacher added. They can now access and manage this class."}
                     </div>
                 ) : null}
 
@@ -245,12 +316,19 @@ export default async function TeacherClassPage({
                             >
                                 {liaClass.status}
                             </span>
+                            {!access.isPrimaryTeacher ? (
+                                <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+                                    Co-Teacher
+                                </span>
+                            ) : null}
                         </div>
                         <p className="mt-2 text-sm text-zinc-600">
                             Manage class roster, leadership, assignments, and curriculum.
                         </p>
+                        {!access.isPrimaryTeacher ? <ReadOnlyBanner /> : null}
                     </div>
 
+                    {access.isPrimaryTeacher ? (
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                         <Link
                             href={`/teacher/classes/${liaClass.id}/edit`}
@@ -279,6 +357,7 @@ export default async function TeacherClassPage({
                             </form>
                         )}
                     </div>
+                    ) : null}
                 </div>
 
                 <div className="mt-6 grid gap-4 border-t border-zinc-100 pt-6 sm:grid-cols-2 lg:grid-cols-5">
@@ -304,6 +383,109 @@ export default async function TeacherClassPage({
                         </p>
                     </div>
                 ) : null}
+
+                <div className="mt-6 border-t border-zinc-100 pt-6">
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                        <div>
+                            <h2 className="text-lg font-semibold text-zinc-950">
+                                Teaching Team
+                            </h2>
+                            <p className="mt-1 text-sm text-zinc-600">
+                                Co-teachers can view class and program information. Only the primary teacher can make changes.
+                            </p>
+                        </div>
+
+                        {access.isPrimaryTeacher && availableCoTeachers.length > 0 ? (
+                            <form
+                                action={addClassCoTeacher.bind(null, liaClass.id)}
+                                className="flex w-full flex-col gap-2 sm:flex-row lg:w-auto"
+                            >
+                                <label className="sr-only" htmlFor="teacher_profile_id">
+                                    Select a co-teacher
+                                </label>
+                                <select
+                                    id="teacher_profile_id"
+                                    name="teacher_profile_id"
+                                    required
+                                    defaultValue=""
+                                    className="h-10 min-w-64 rounded-md border border-zinc-300 bg-white px-3 text-sm outline-none focus:border-[#c4122f] focus:ring-4 focus:ring-red-100"
+                                >
+                                    <option value="" disabled>
+                                        Select a teacher
+                                    </option>
+                                    {availableCoTeachers.map((teacher) => (
+                                        <option key={teacher.profile_id} value={teacher.profile_id}>
+                                            {teacher.name || `${teacher.first_name} ${teacher.last_name}`.trim()}
+                                        </option>
+                                    ))}
+                                </select>
+                                <button
+                                    type="submit"
+                                    className="inline-flex h-10 items-center justify-center whitespace-nowrap rounded-md bg-[#c4122f] px-4 text-sm font-semibold text-white hover:bg-[#a70d25]"
+                                >
+                                    Add Co-Teacher
+                                </button>
+                            </form>
+                        ) : null}
+                    </div>
+
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                        <div className="rounded-md border border-red-100 bg-red-50/40 p-4">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-[#c4122f]">
+                                Primary Teacher
+                            </p>
+                            <p className="mt-1 font-semibold text-zinc-950">
+                                {teacherByProfileId.get(liaClass.teacher_profile_id)?.name ||
+                                    "Primary teacher"}
+                            </p>
+                        </div>
+
+                        {coTeachers.map((assignment) => {
+                            const teacher = assignment.teacher!;
+                            const removeAction = removeClassCoTeacher.bind(
+                                null,
+                                liaClass.id,
+                                assignment.teacher_profile_id,
+                            );
+
+                            return (
+                                <div
+                                    key={assignment.teacher_profile_id}
+                                    className="flex items-start justify-between gap-3 rounded-md border border-zinc-200 bg-white p-4"
+                                >
+                                    <div className="min-w-0">
+                                        <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
+                                            Co-Teacher
+                                        </p>
+                                        <p className="mt-1 truncate font-semibold text-zinc-950">
+                                            {teacher.name || `${teacher.first_name} ${teacher.last_name}`.trim()}
+                                        </p>
+                                        <p className="mt-1 truncate text-xs text-zinc-500">
+                                            {teacher.email}
+                                        </p>
+                                    </div>
+
+                                    {access.isPrimaryTeacher ? (
+                                        <form action={removeAction}>
+                                            <button
+                                                type="submit"
+                                                className="text-sm font-semibold text-[#c4122f] hover:text-[#a70d25]"
+                                            >
+                                                Remove
+                                            </button>
+                                        </form>
+                                    ) : null}
+                                </div>
+                            );
+                        })}
+
+                        {coTeachers.length === 0 ? (
+                            <div className="rounded-md border border-dashed border-zinc-300 p-4 text-sm text-zinc-500">
+                                No co-teachers are assigned yet.
+                            </div>
+                        ) : null}
+                    </div>
+                </div>
             </header>
 
             <section className="mt-5 grid gap-5 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">

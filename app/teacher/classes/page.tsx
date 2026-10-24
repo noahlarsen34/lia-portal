@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { requireTeacher } from "@/utils/role-guards";
+import { getAccessibleClassIds } from "@/utils/class-access";
+import { createAdminClient } from "@/utils/supabase/admin";
 
 export default async function TeacherClassesPage() {
     const { supabase, profile } = await requireTeacher();
@@ -47,7 +49,10 @@ export default async function TeacherClassesPage() {
         .eq("id", teacher.school_id)
         .maybeSingle();
 
-    const { data: classes, error } = await supabase
+    const accessibleClassIds = await getAccessibleClassIds(profile.id);
+    const admin = createAdminClient();
+    const { data: classes, error } = accessibleClassIds.length
+        ? await admin
         .from("lia_classes")
         .select(
             `
@@ -57,11 +62,13 @@ export default async function TeacherClassesPage() {
                 period,
                 grade_level,
                 status,
+                teacher_profile_id,
                 updated_at
             `,
         )
-        .eq("teacher_profile_id", profile.id)
-        .order("updated_at", { ascending: false });
+        .in("id", accessibleClassIds)
+        .order("updated_at", { ascending: false })
+        : { data: [], error: null };
     
     return (
         <div className="mx-auto max-w-6xl">
@@ -118,6 +125,7 @@ export default async function TeacherClassesPage() {
                                     <th className="px-4 py-3">Period</th>
                                     <th className="px-4 py-3">Grade</th>
                                     <th className="px-4 py-3">Status</th>
+                                    <th className="px-4 py-3">Teaching Role</th>
                                     <th className="px-4 py-3 text-right">Actions</th>
                                 </tr>
                             </thead>
@@ -145,6 +153,19 @@ export default async function TeacherClassesPage() {
                                         <td className="px-4 py-4">
                                             <span className="rounded-full bg-green-50 px-3 py-1 text-xs font-semibold capitalize text-green-700">
                                                 {liaClass.status}
+                                            </span>
+                                        </td>
+                                        <td className="px-4 py-4">
+                                            <span
+                                                className={
+                                                    liaClass.teacher_profile_id === profile.id
+                                                        ? "rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-[#c4122f]"
+                                                        : "rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700"
+                                                }
+                                            >
+                                                {liaClass.teacher_profile_id === profile.id
+                                                    ? "Primary Teacher"
+                                                    : "Co-Teacher"}
                                             </span>
                                         </td>
                                         <td className="px-4 py-4 text-right">

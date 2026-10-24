@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import { requireRole } from "@/utils/role-guards";
 import { updateTeacherProfile } from "./actions";
 import { SaveProfileButton } from "./save-profile-button";
+import { getAccessibleClassIds } from "@/utils/class-access";
+import { createAdminClient } from "@/utils/supabase/admin";
 
 type TeacherProfilePageProps = {
     searchParams: Promise<{
@@ -137,19 +139,23 @@ export default async function TeacherProfilePage({
             : Promise.resolve({ data: null, error: null }),
     ]);
 
-    const { data: classes, error: classesError } = await supabase
-        .from("lia_classes")
-        .select(`
-            id,
-            name,
-            school_year,
-            period,
-            grade_level,
-            status,
-            updated_at
-        `)
-        .eq("teacher_profile_id", profile.id)
-        .order("updated_at", { ascending: false });
+    const accessibleClassIds = await getAccessibleClassIds(profile.id);
+    const admin = createAdminClient();
+    const { data: classes, error: classesError } = accessibleClassIds.length
+        ? await admin
+            .from("lia_classes")
+            .select(`
+                id,
+                name,
+                school_year,
+                period,
+                grade_level,
+                status,
+                updated_at
+            `)
+            .in("id", accessibleClassIds)
+            .order("updated_at", { ascending: false })
+        : { data: [], error: null };
 
     if (classesError) {
         throw new Error(
@@ -162,7 +168,7 @@ export default async function TeacherProfilePage({
 
     const { data: enrollmentRows, error: enrollmentError } =
         classIds.length > 0
-            ? await supabase
+            ? await admin
                 .from("lia_class_students")
                 .select("student_id")
                 .in("lia_class_id", classIds)

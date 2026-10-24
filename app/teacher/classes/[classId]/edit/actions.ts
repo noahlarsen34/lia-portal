@@ -2,9 +2,18 @@
 
 import { redirect } from "next/navigation";
 import { requireTeacher } from "@/utils/role-guards";
+import { getClassAccess } from "@/utils/class-access";
+import { createAdminClient } from "@/utils/supabase/admin";
 
 export async function updateLiaClass(classId: string, formData: FormData) {
-    const { supabase, profile } = await requireTeacher();
+    const { profile } = await requireTeacher();
+    const access = await getClassAccess(classId, profile.id);
+
+    if (!access?.isPrimaryTeacher) {
+        redirect(`/teacher/classes/${classId}?error=primary-only`);
+    }
+
+    const supabase = createAdminClient();
 
     const name = String(formData.get("name") ?? "").trim();
     const schoolYear = String(formData.get("school_year") ?? "").trim();
@@ -103,8 +112,7 @@ export async function updateLiaClass(classId: string, formData: FormData) {
                     ? blockDesignation
                     : null,
         })
-        .eq("id", classId)
-        .eq("teacher_profile_id", profile.id);
+        .eq("id", classId);
 
     if (error) {
         redirect(`/teacher/classes/${classId}/edit?error=update-failed`);

@@ -13,6 +13,9 @@ import DeleteLogButton from "./delete-log-button";
 import { TutoringExportButton } from "./tutoring-export-button";
 import { toLeadershipOptionValue } from "@/utils/class-leadership-options";
 import { createAdminClient } from "@/utils/supabase/admin";
+import { getClassAccess } from "@/utils/class-access";
+import { redirect } from "next/navigation";
+import { ReadOnlyBanner } from "../read-only-banner";
 
 type TutoringPageProps = {
     params: Promise<{
@@ -78,13 +81,29 @@ export default async function ClassTutoringPage({
         dateFrom,
         dateTo,
     } = await searchParams;
-    const { supabase, profile } = await requireTeacher();
+    const { profile } = await requireTeacher();
+    const access = await getClassAccess(classId, profile.id);
+
+    if (!access) {
+        return (
+            <div className="mx-auto max-w-4xl">
+                <p className="text-sm font-semibold text-[#c4122f]">
+                    Class not found.
+                </p>
+            </div>
+        );
+    }
+
+    const supabase = createAdminClient();
+
+    if (editLogId && !access.isPrimaryTeacher) {
+        redirect(`/teacher/classes/${classId}/tutoring`);
+    }
 
     const { data: liaClass } = await supabase
         .from("lia_classes")
         .select("id, name, period, school_year, teacher_profile_id, application_token")
         .eq("id", classId)
-        .eq("teacher_profile_id", profile.id)
         .maybeSingle();
     
     if (!liaClass) {
@@ -540,15 +559,13 @@ export default async function ClassTutoringPage({
         });
     }
 
-    const admin = createAdminClient();
-
     const proofUrlEntries = await Promise.all(
         (logs ?? []).map(async (log) => {
             if (!log.proof_file_path) {
                 return [log.id, null] as const;
             }
 
-            const { data, error } = await admin.storage
+            const { data, error } = await supabase.storage
                 .from("tutoring-log-proof")
                 .createSignedUrl(log.proof_file_path, 60 * 10);
 
@@ -615,6 +632,8 @@ export default async function ClassTutoringPage({
             >
                 Back to class
             </Link>
+
+            {!access.isPrimaryTeacher ? <ReadOnlyBanner /> : null}
 
             <section className="mt-5 rounded-md border border-red-100 bg-white p-6 shadow-sm sm:p-8">
                 <p className="text-sm font-semibold uppercase tracking-wide text-[#c4122f]">
@@ -989,6 +1008,7 @@ export default async function ClassTutoringPage({
                                     </td>
                                     <td className="px-4 py-3">
                                         <div className="grid w-[78px] grid-cols-2 gap-1.5">
+                                            {access.isPrimaryTeacher ? (
                                             <Link
                                                 href={`/teacher/classes/${classId}/tutoring?editLogId=${log.id}`}
                                                 prefetch={false}
@@ -998,8 +1018,9 @@ export default async function ClassTutoringPage({
                                             >
                                                 <Pencil aria-hidden="true" className="size-4" />
                                             </Link>
+                                            ) : null}
 
-                                            {log.status === "pending" ? (
+                                            {access.isPrimaryTeacher && log.status === "pending" ? (
                                                 <>
                                                     <form action={approveTutoringLog.bind(null, classId, log.id)}>
                                                         <button
@@ -1025,6 +1046,7 @@ export default async function ClassTutoringPage({
                                                 </>
                                             ) : null}
 
+                                            {access.isPrimaryTeacher ? (
                                             <DeleteLogButton
                                                 deleteAction={deleteTutoringLog.bind(
                                                     null,
@@ -1033,6 +1055,7 @@ export default async function ClassTutoringPage({
                                                 )}
                                                 studentName={log.student_name_snapshot}
                                             />
+                                            ) : null}
                                         </div>
                                     </td>
                                 </tr>

@@ -11,6 +11,9 @@ import {
     archiveApplication,
     updateApplicationStatus,
 } from "./actions";
+import { getClassAccess } from "@/utils/class-access";
+import { createAdminClient } from "@/utils/supabase/admin";
+import { ReadOnlyBanner } from "../read-only-banner";
 
 type ApplicantsPageProps = {
     params: Promise<{
@@ -59,13 +62,17 @@ export default async function ApplicantsPage({
     const statusFilter =
         status && validStatuses.includes(status) ? status : "all";
     const headerList = await headers();
-    const { supabase, profile } = await requireTeacher();
+    const { profile } = await requireTeacher();
+    const access = await getClassAccess(classId, profile.id);
+
+    if (!access) notFound();
+
+    const supabase = createAdminClient();
 
     const { data: liaClass } = await supabase
         .from("lia_classes")
         .select("id, name, application_token, applications_open, teacher_profile_id")
         .eq("id", classId)
-        .eq("teacher_profile_id", profile.id)
         .maybeSingle();
     
     if (!liaClass) {
@@ -119,6 +126,8 @@ export default async function ApplicantsPage({
             >
                 Back to class
             </Link>
+
+            {!access.isPrimaryTeacher ? <ReadOnlyBanner /> : null}
 
             <header className="mt-5 rounded-md border border-red-100 bg-white p-5 shadow-sm sm:p-6">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -337,6 +346,7 @@ export default async function ApplicantsPage({
                                                     >
                                                         View
                                                     </Link>
+                                                    {access.isPrimaryTeacher ? (
                                                     <form action={markMaybe}>
                                                         <button
                                                             type="submit"
@@ -346,6 +356,8 @@ export default async function ApplicantsPage({
                                                             Maybe
                                                         </button> 
                                                     </form>
+                                                    ) : null}
+                                                    {access.isPrimaryTeacher ? (
                                                     <form action={accept} className="flex items-center gap-2">
                                                         <select
                                                             name="tier"
@@ -370,6 +382,8 @@ export default async function ApplicantsPage({
                                                             Accept
                                                         </ConfirmSubmitButton>
                                                     </form>
+                                                    ) : null}
+                                                    {access.isPrimaryTeacher ? (
                                                     <form action={decline}>
                                                         <ConfirmSubmitButton
                                                             message={`Decline ${studentName}'s application? The decision email will be sent to ${application.email || "no email address"}.`}
@@ -379,6 +393,8 @@ export default async function ApplicantsPage({
                                                             Decline
                                                         </ConfirmSubmitButton>
                                                     </form>
+                                                    ) : null}
+                                                    {access.isPrimaryTeacher ? (
                                                     <form action={archive}>
                                                         <ConfirmSubmitButton
                                                             message={`Archive ${studentName}'s application? This will hide it from the applicant tracker.`}
@@ -387,6 +403,7 @@ export default async function ApplicantsPage({
                                                             Archive
                                                         </ConfirmSubmitButton>
                                                     </form>
+                                                    ) : null}
                                                 </div>
                                             </td>
                                         </tr>

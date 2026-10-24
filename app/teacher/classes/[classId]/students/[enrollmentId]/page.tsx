@@ -2,6 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireTeacher } from "@/utils/role-guards";
 import { formatStudentTier } from "@/utils/student-tier";
+import { getClassAccess } from "@/utils/class-access";
+import { createAdminClient } from "@/utils/supabase/admin";
+import { ReadOnlyBanner } from "../../read-only-banner";
 
 type StudentProfilePageProps = {
     params: Promise<{
@@ -56,7 +59,12 @@ export default async function StudentProfilePage({
     params,
 }: StudentProfilePageProps) {
     const { classId, enrollmentId } = await params;
-    const { supabase, profile } = await requireTeacher();
+    const { profile } = await requireTeacher();
+    const access = await getClassAccess(classId, profile.id);
+
+    if (!access) notFound();
+
+    const supabase = createAdminClient();
 
     const { data: enrollment } = await supabase
         .from("lia_class_students")
@@ -111,8 +119,7 @@ export default async function StudentProfilePage({
     if (
         !enrollment ||
         !student ||
-        !liaClass ||
-        liaClass.teacher_profile_id !== profile.id
+        !liaClass
     ) {
         notFound();
     }
@@ -168,13 +175,16 @@ export default async function StudentProfilePage({
                         </p>
                     </div>
 
+                    {access.isPrimaryTeacher ? (
                     <Link
                         href={`/teacher/classes/${classId}/students/${enrollment.id}/edit`}
                         className="inline-flex h-10 items-center justify-center rounded-md bg-[#c4122f] px-4 text-sm font-semibold text-white hover:bg-[#a70d25]"
                     >
                         Edit Student
                     </Link>
+                    ) : null}
                 </div>
+                {!access.isPrimaryTeacher ? <ReadOnlyBanner /> : null}
             </header>
 
             <section className="mt-5 grid gap-5 lg:grid-cols-2">

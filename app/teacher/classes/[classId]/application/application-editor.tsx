@@ -23,6 +23,7 @@ type ApplicationEditorProps = {
     initialQuestions: EditableApplicationQuestion[];
     currentStatus: string;
     currentVersion: number;
+    readOnly?: boolean;
 };
 
 const inputClass = 
@@ -54,6 +55,7 @@ export function ApplicationEditor({
     initialQuestions,
     currentStatus,
     currentVersion,
+    readOnly = false,
 }: ApplicationEditorProps) {
     const [questions, setQuestions] = useState(initialQuestions);
 
@@ -118,6 +120,8 @@ export function ApplicationEditor({
                 name="questions"
                 value={JSON.stringify(serializedQuestions)}
             />
+
+            <fieldset disabled={readOnly} className="contents">
 
             <section className="rounded-md border border-red-100 bg-white p-5 shadow-sm sm:p-6">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -358,6 +362,7 @@ export function ApplicationEditor({
                 ))}
             </section>
 
+            {!readOnly ? (
             <button
                 type="button"
                 onClick={addQuestion}
@@ -366,7 +371,9 @@ export function ApplicationEditor({
                 <Plus className="h-4 w-4" />
                 Add Question
             </button>
+            ) : null}
 
+            {!readOnly ? (
             <div className="sticky bottom-4 mt-6 flex flex-wrap justify-end gap-3 rounded-md border border-zinc-200 bg-white/95 p-4 shadow-lg backdrop-blur">
                 <button
                     type="submit"
@@ -386,6 +393,8 @@ export function ApplicationEditor({
                     Publish Application
                 </button>
             </div>
+            ) : null}
+            </fieldset>
         </form>
     );
 }

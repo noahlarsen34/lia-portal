@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireTeacher } from "@/utils/role-guards";
 import type { ApplicationQuestionType } from "@/utils/application-form";
+import { getClassAccess } from "@/utils/class-access";
+import { createAdminClient } from "@/utils/supabase/admin";
 
 const validQuestionTypes: ApplicationQuestionType[] = [
     "short_text",
@@ -172,13 +174,17 @@ function validateQuestions(
 }
 
 async function getOwnedClass(classId: string) {
-    const { supabase, profile } = await requireTeacher();
+    const { profile } = await requireTeacher();
+    const access = await getClassAccess(classId, profile.id);
+
+    if (!access?.isPrimaryTeacher) redirect("/teacher/classes");
+
+    const supabase = createAdminClient();
 
     const { data: liaClass } = await supabase
         .from("lia_classes")
         .select("id, name, teacher_profile_id")
         .eq("id", classId)
-        .eq("teacher_profile_id", profile.id)
         .maybeSingle();
 
     if (!liaClass) {

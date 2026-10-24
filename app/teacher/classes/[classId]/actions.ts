@@ -3,9 +3,18 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireTeacher } from "@/utils/role-guards";
+import { getClassAccess } from "@/utils/class-access";
+import { createAdminClient } from "@/utils/supabase/admin";
 
 export async function deleteLiaClass(classId: string) {
-    const { supabase, profile } = await requireTeacher();
+    const { profile } = await requireTeacher();
+    const access = await getClassAccess(classId, profile.id);
+
+    if (!access?.isPrimaryTeacher) {
+        redirect(`/teacher/classes/${classId}?error=primary-only`);
+    }
+
+    const supabase = createAdminClient();
 
     const { count, error: countError } = await supabase
         .from("lia_class_students")
@@ -24,8 +33,7 @@ export async function deleteLiaClass(classId: string) {
     const { error } = await supabase
         .from("lia_classes")
         .delete()
-        .eq("id", classId)
-        .eq("teacher_profile_id", profile.id);
+        .eq("id", classId);
 
     if (error) {
         redirect(`/teacher/classes/${classId}?error=delete-failed`);

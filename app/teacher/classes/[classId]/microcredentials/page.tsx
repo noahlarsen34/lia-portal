@@ -4,6 +4,8 @@ import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { requireTeacher } from "@/utils/role-guards";
 import { createAdminClient } from "@/utils/supabase/admin";
+import { getClassAccess } from "@/utils/class-access";
+import { ReadOnlyBanner } from "../read-only-banner";
 import DeleteSubmissionButton from "./delete-submission-button";
 import QRCode from "qrcode";
 import {
@@ -59,13 +61,17 @@ export default async function ClassMicrocredentialsPage({
     const { assignment } = await searchParams;
     const isIntermountainView =
         assignment === INTERMOUNTAIN_ASSIGNMENT_KEY;
-    const { supabase, profile } = await requireTeacher();
+    const { profile } = await requireTeacher();
+    const access = await getClassAccess(classId, profile.id);
+
+    if (!access) notFound();
+
+    const supabase = createAdminClient();
 
     const { data: liaClass } = await supabase
         .from("lia_classes")
         .select("id, name, period, school_year, application_token")
         .eq("id", classId)
-        .eq("teacher_profile_id", profile.id)
         .maybeSingle();
     
     if (!liaClass) notFound();
@@ -98,11 +104,9 @@ export default async function ClassMicrocredentialsPage({
 
     const { data: submissions } = await submissionsQuery;
     
-    const admin = createAdminClient();
-
     const rows = await Promise.all(
         (submissions ?? []).map(async (submission) => {
-            const { data } = await admin.storage
+            const { data } = await supabase.storage
                 .from("microcredential-submissions")
                 .createSignedUrl(submission.file_path, 60 * 10);
             
@@ -166,6 +170,8 @@ export default async function ClassMicrocredentialsPage({
             >
                 Back to Microcredentials
             </Link>
+
+            {!access.isPrimaryTeacher ? <ReadOnlyBanner /> : null}
 
             <header className="mt-5 rounded-md border border-red-100 bg-white p-6 shadow-sm">
                 <p className="text-sm font-semibold uppercase text-[#c4122f]">
@@ -415,7 +421,7 @@ export default async function ClassMicrocredentialsPage({
                                     </td>
                                     <td className="px-3 py-4">
                                         <div className="flex items-start justify-center gap-1.5">
-                                            {submission.status === "pending" ? (
+                                            {access.isPrimaryTeacher && submission.status === "pending" ? (
                                                 <>
                                                     <form action={approveAction}>
                                                         <button
@@ -471,12 +477,14 @@ export default async function ClassMicrocredentialsPage({
                                                 </>
                                             ) : null}
 
+                                            {access.isPrimaryTeacher ? (
                                             <DeleteSubmissionButton
                                                 deleteAction={deleteAction}
                                                 studentName={
                                                     submission.student_name_snapshot
                                                 }
                                             />
+                                            ) : null}
                                         </div>
                                     </td>
                                 </tr>

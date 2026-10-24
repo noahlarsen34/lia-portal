@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { requireTeacher } from "@/utils/role-guards";
 import { escapeHtml, renderBrandedEmail, sendEmail } from "@/utils/email";
 import { getValidStudentTier } from "@/utils/student-tier";
+import { getClassAccess } from "@/utils/class-access";
+import { createAdminClient } from "@/utils/supabase/admin";
 
 type ApplicationStatus = "submitted" | "maybe" | "accepted" | "declined";
 
@@ -16,7 +18,14 @@ async function getTeacherApplication(
     classId: string,
     applicationId: string,
 ) {
-    const { supabase, profile } = await requireTeacher();
+    const { profile } = await requireTeacher();
+    const access = await getClassAccess(classId, profile.id);
+
+    if (!access?.isPrimaryTeacher) {
+        redirect(`/teacher/classes/${classId}/applicants?error=not-found`);
+    }
+
+    const supabase = createAdminClient();
 
     const { data: application } = await supabase
         .from("lia_class_applications")
@@ -50,7 +59,7 @@ async function getTeacherApplication(
         ? application?.lia_classes[0]
         : application?.lia_classes;
     
-    if (!application || !liaClass || liaClass.teacher_profile_id !== profile.id) {
+    if (!application || !liaClass) {
         redirect(`/teacher/classes/${classId}/applicants?error=not-found`);
     }
 

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireTeacher } from "@/utils/role-guards";
 import { createAdminClient } from "@/utils/supabase/admin";
+import { getClassAccess } from "@/utils/class-access";
 
 async function reviewSubmission(
     classId: string,
@@ -10,18 +11,14 @@ async function reviewSubmission(
     status: "approved" | "rejected",
     feedback: string | null,
 ) {
-    const { supabase, profile } = await requireTeacher();
+    const { profile } = await requireTeacher();
+    const access = await getClassAccess(classId, profile.id);
 
-    const { data: liaClass } = await supabase
-        .from("lia_classes")
-        .select("id")
-        .eq("id", classId)
-        .eq("teacher_profile_id", profile.id)
-        .maybeSingle();
-    
-    if (!liaClass){
+    if (!access?.isPrimaryTeacher) {
         throw new Error("You cannot manage this class.");
     }
+
+    const supabase = createAdminClient();
 
     const { error } = await supabase
         .from("microcredential_submissions")
@@ -68,18 +65,14 @@ export async function deleteMicrocredentialSubmission(
     classId: string,
     submissionId: string,
 ) {
-    const { supabase, profile } = await requireTeacher();
+    const { profile } = await requireTeacher();
+    const access = await getClassAccess(classId, profile.id);
 
-    const { data: liaClass } = await supabase
-        .from("lia_classes")
-        .select("id")
-        .eq("id", classId)
-        .eq("teacher_profile_id", profile.id)
-        .maybeSingle();
-    
-    if (!liaClass) {
+    if (!access?.isPrimaryTeacher) {
         throw new Error("You cannot manage this class.");
     }
+
+    const supabase = createAdminClient();
 
     const { data: submission, error: submissionError} = await supabase
         .from("microcredential_submissions")
@@ -92,9 +85,7 @@ export async function deleteMicrocredentialSubmission(
         throw new Error("The submission could not be found.");
     }
 
-    const admin = createAdminClient();
-
-    const { error: storageError } = await admin.storage
+    const { error: storageError } = await supabase.storage
         .from("microcredential-submissions")
         .remove([submission.file_path]);
     
@@ -102,7 +93,7 @@ export async function deleteMicrocredentialSubmission(
         throw new Error("The uploaded document could not be deleted.")
     }
 
-    const { error: deleteError } = await admin
+    const { error: deleteError } = await supabase
         .from("microcredential_submissions")
         .delete()
         .eq("id", submission.id)

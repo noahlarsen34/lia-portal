@@ -5,15 +5,21 @@ import {
     HeartPulse,
 } from "lucide-react";
 import { requireTeacher } from "@/utils/role-guards";
+import { getAccessibleClassIds } from "@/utils/class-access";
+import { createAdminClient } from "@/utils/supabase/admin";
 
 export default async function TeacherMicrocredentialsPage() {
-    const { supabase, profile } = await requireTeacher();
+    const { profile } = await requireTeacher();
+    const accessibleClassIds = await getAccessibleClassIds(profile.id);
+    const supabase = createAdminClient();
 
-    const { data: classes } = await supabase
+    const { data: classes } = accessibleClassIds.length
+        ? await supabase
         .from("lia_classes")
         .select("id, name, period, school_year, status, application_token")
-        .eq("teacher_profile_id", profile.id)
-        .order("name");
+        .in("id", accessibleClassIds)
+        .order("name")
+        : { data: [] };
 
     return (
         <div className="mx-auto max-w-7xl">

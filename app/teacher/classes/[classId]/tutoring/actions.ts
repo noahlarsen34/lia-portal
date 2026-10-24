@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireTeacher } from "@/utils/role-guards";
 import { createAdminClient } from "@/utils/supabase/admin";
+import { getClassAccess } from "@/utils/class-access";
 
 function getString(formData: FormData, key: string) {
     const value = formData.get(key);
@@ -26,25 +27,19 @@ function getDurationMinutes(arrivalTime: string, departureTime: string) {
     return departureHours * 60 + departureMinutes - (arrivalHours * 60 + arrivalMinutes);
 }
 
-async function verifyTeacherOwnsClass(classId: string) {
-    const { supabase, profile } = await requireTeacher();
+async function verifyTeacherCanManageClass(classId: string) {
+    const { profile } = await requireTeacher();
+    const access = await getClassAccess(classId, profile.id);
 
-    const { data: liaClass } = await supabase
-        .from("lia_classes")
-        .select("id")
-        .eq("id", classId)
-        .eq("teacher_profile_id", profile.id)
-        .maybeSingle();
-    
-    if (!liaClass) {
+    if (!access?.isPrimaryTeacher) {
         throw new Error("Class not found");
     }
 
-    return { supabase, profile };
+    return { supabase: createAdminClient(), profile };
 }
 
 export async function approveTutoringLog(classId: string, logId: string) {
-    const { supabase, profile } = await verifyTeacherOwnsClass(classId);
+    const { supabase, profile } = await verifyTeacherCanManageClass(classId);
 
     await supabase
         .from("tutoring_logs")
@@ -60,7 +55,7 @@ export async function approveTutoringLog(classId: string, logId: string) {
 }
 
 export async function rejectTutoringLog(classId: string, logId: string) {
-    const { supabase } = await verifyTeacherOwnsClass(classId);
+    const { supabase } = await verifyTeacherCanManageClass(classId);
 
     await supabase
         .from("tutoring_logs")
@@ -80,7 +75,7 @@ export async function updateTutoringLog(
     logId: string,
     formData: FormData,
 ) {
-    const { supabase, profile } = await verifyTeacherOwnsClass(classId);
+    const { supabase, profile } = await verifyTeacherCanManageClass(classId);
 
     const activityType = getString(formData, "activityType");
     const sessionDate = getString(formData, "sessionDate");
@@ -151,7 +146,7 @@ export async function deleteTutoringLog(
     classId: string,
     logId: string,
 ) {
-    const { supabase } = await verifyTeacherOwnsClass(classId);
+    const { supabase } = await verifyTeacherCanManageClass(classId);
 
     const { data: existingLog } = await supabase
         .from("tutoring_logs")
@@ -177,9 +172,7 @@ export async function deleteTutoringLog(
     }
 
     if (existingLog.proof_file_path) {
-        const admin = createAdminClient();
-
-        const { error: storageError } = await admin.storage
+        const { error: storageError } = await supabase.storage
             .from("tutoring-log-proof")
             .remove([existingLog.proof_file_path]);
 
