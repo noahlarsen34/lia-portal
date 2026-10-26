@@ -185,26 +185,12 @@ export async function submitTutoringLog(
     }
 
     const proofFileValue = formData.get("proofFile");
+    const proofFile =
+        proofFileValue instanceof File && proofFileValue.size > 0
+            ? proofFileValue
+            : null;
 
-    if (
-        !(proofFileValue instanceof File) ||
-        proofFileValue.size === 0
-    ) {
-        logTutoringRejection("missing-proof", {
-            classId: liaClass.id,
-            enrollmentId: studentEnrollmentId,
-        });
-        redirect(
-            tutoringReturnUrl(token, studentEnrollmentId, {
-                view: "submit",
-                error: "missing-proof",
-            }),
-        );
-    }
-
-    const proofFile = proofFileValue;
-
-    if (proofFile.size > MAX_PROOF_FILE_SIZE) {
+    if (proofFile && proofFile.size > MAX_PROOF_FILE_SIZE) {
         logTutoringRejection("proof-too-large", {
             classId: liaClass.id,
             enrollmentId: studentEnrollmentId,
@@ -218,7 +204,7 @@ export async function submitTutoringLog(
         );
     }
 
-    if (!ALLOWED_PROOF_TYPES.has(proofFile.type)) {
+    if (proofFile && !ALLOWED_PROOF_TYPES.has(proofFile.type)) {
         logTutoringRejection("invalid-proof-type", {
             classId: liaClass.id,
             enrollmentId: studentEnrollmentId,
@@ -306,39 +292,43 @@ export async function submitTutoringLog(
         arrivalTime,
         departureTime,
     ]);
-    const safeFileName =
-        cleanFileName(proofFile.name) || "tutoring-proof";
+    let proofFilePath: string | null = null;
 
-    const proofFilePath = [
-        liaClass.id,
-        studentEnrollmentId,
-        logId,
-        `${crypto.randomUUID()}-${safeFileName}`,
-    ].join("/");
+    if (proofFile) {
+        const safeFileName =
+            cleanFileName(proofFile.name) || "tutoring-proof";
 
-    const { error: uploadError } = await admin.storage
-        .from(TUTORING_PROOF_BUCKET)
-        .upload(proofFilePath, proofFile, {
-            cacheControl: "3600",
-            contentType: proofFile.type,
-            upsert: false,
-        });
+        proofFilePath = [
+            liaClass.id,
+            studentEnrollmentId,
+            logId,
+            `${crypto.randomUUID()}-${safeFileName}`,
+        ].join("/");
 
-    if (uploadError) {
-        console.error("Tutoring proof upload failed", {
-            bucket: TUTORING_PROOF_BUCKET,
-            filePath: proofFilePath,
-            contentType: proofFile.type,
-            fileSize: proofFile.size,
-            message: uploadError.message,
-        });
+        const { error: uploadError } = await admin.storage
+            .from(TUTORING_PROOF_BUCKET)
+            .upload(proofFilePath, proofFile, {
+                cacheControl: "3600",
+                contentType: proofFile.type,
+                upsert: false,
+            });
 
-        redirect(
-            tutoringReturnUrl(token, studentEnrollmentId, {
-                view: "submit",
-                error: "proof-upload-failed",
-            }),
-        );
+        if (uploadError) {
+            console.error("Tutoring proof upload failed", {
+                bucket: TUTORING_PROOF_BUCKET,
+                filePath: proofFilePath,
+                contentType: proofFile.type,
+                fileSize: proofFile.size,
+                message: uploadError.message,
+            });
+
+            redirect(
+                tutoringReturnUrl(token, studentEnrollmentId, {
+                    view: "submit",
+                    error: "proof-upload-failed",
+                }),
+            );
+        }
     }
 
     const { error: insertError } = await admin
@@ -387,9 +377,9 @@ export async function submitTutoringLog(
                 ) || null,
 
             proof_file_path: proofFilePath,
-            proof_file_name: proofFile.name.slice(0, 255),
-            proof_content_type: proofFile.type,
-            proof_file_size: proofFile.size,
+            proof_file_name: proofFile?.name.slice(0, 255) ?? null,
+            proof_content_type: proofFile?.type || null,
+            proof_file_size: proofFile?.size ?? null,
 
             status: "pending",
         });
@@ -403,9 +393,11 @@ export async function submitTutoringLog(
                 source: "database-constraint",
             });
 
-            await admin.storage
-                .from(TUTORING_PROOF_BUCKET)
-                .remove([proofFilePath]);
+            if (proofFilePath) {
+                await admin.storage
+                    .from(TUTORING_PROOF_BUCKET)
+                    .remove([proofFilePath]);
+            }
 
             redirect(
                 tutoringReturnUrl(token, studentEnrollmentId, {
@@ -424,9 +416,11 @@ export async function submitTutoringLog(
             hint: insertError.hint,
         });
 
-        await admin.storage
-            .from(TUTORING_PROOF_BUCKET)
-            .remove([proofFilePath]);
+        if (proofFilePath) {
+            await admin.storage
+                .from(TUTORING_PROOF_BUCKET)
+                .remove([proofFilePath]);
+        }
 
         redirect(
             tutoringReturnUrl(token, studentEnrollmentId, {

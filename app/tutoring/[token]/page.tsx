@@ -566,18 +566,19 @@ export default async function StudentTutoringFormPage({
                             <label className="block">
                                 <span className="text-sm font-semibold text-zinc-800">
                                     Proof of Tutoring or Service
-                                    <span className="ml-1 text-[#c4122f]">*</span>
+                                    <span className="ml-1 font-normal text-zinc-500">
+                                        (optional)
+                                    </span>
                                 </span>
 
                                 <span className="mt-1 block text-sm leading-5 text-zinc-600">
-                                    Upload a photo, PDF, or Word document, that verifies this
-                                    tutoring or service session.
+                                    You may upload a photo, PDF, or Word document that verifies
+                                    this tutoring or service session.
                                 </span>
 
                                 <input
                                     type="file"
                                     name="proofFile"
-                                    required
                                     accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.pdf,.doc,.docx"
                                     className={`${fieldClasses} file:mr-4 file:rounded-md file:border-0 file:bg-red-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-[#c4122f] hover:file:bg-red-100`}
                                 />

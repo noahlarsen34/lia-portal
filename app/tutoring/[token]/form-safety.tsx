@@ -122,8 +122,8 @@ export function SubmitTutoringLogButton() {
 
             {pending ? (
                 <p className="mt-2 text-sm font-medium text-zinc-600">
-                    Your proof file is uploading. Do not close this page or
-                    press Submit again.
+                    Your log is submitting. Do not close this page or press
+                    Submit again.
                 </p>
             ) : null}
         </div>
