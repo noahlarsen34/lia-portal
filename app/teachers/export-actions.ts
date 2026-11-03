@@ -1,9 +1,10 @@
 "use server";
 
 import { google } from "googleapis";
-import { createClient } from "@/utils/supabase/server";
+import { requireStaff } from "@/utils/role-guards";
 
 type TeacherExporRow = {
+    id: string;
     firstName: string;
     lastName: string;
     name: string;
@@ -20,18 +21,36 @@ type TeacherExporRow = {
 };
 
 export async function exportTeachersToGoogleSheet(teachers: TeacherExporRow[]) {
-    const supabase = await createClient();
-
-    const {
-        data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-        throw new Error("You must be logged in to export teachers.");
-    }
+    const { supabase } = await requireStaff();
 
     if (teachers.length === 0) {
         throw new Error("There are no teachers to export.");
+    }
+
+    const { data: reportingRows, error: reportingError } = await supabase
+        .from("teachers")
+        .select("id, reporting_role");
+
+    if (reportingError) {
+        console.error("Could not verify teacher reporting roles for export", {
+            code: reportingError.code,
+            message: reportingError.message,
+            details: reportingError.details,
+        });
+        throw new Error("Could not verify teacher reporting roles.");
+    }
+
+    const countedTeacherIds = new Set(
+        (reportingRows ?? [])
+            .filter((teacher) => teacher.reporting_role !== "co_teacher_only")
+            .map((teacher) => teacher.id),
+    );
+    const countedTeachers = teachers.filter((teacher) =>
+        countedTeacherIds.has(teacher.id),
+    );
+
+    if (countedTeachers.length === 0) {
+        throw new Error("There are no counted teachers to export.");
     }
 
     const clientEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
@@ -106,7 +125,7 @@ export async function exportTeachersToGoogleSheet(teachers: TeacherExporRow[]) {
         "Assigned RPM",
     ];
 
-    const rows = teachers.map((teacher) => [
+    const rows = countedTeachers.map((teacher) => [
         teacher.firstName,
         teacher.lastName,
         teacher.name,

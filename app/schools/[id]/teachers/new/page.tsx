@@ -30,6 +30,14 @@ export default async function AddTeacherPage({
         redirect('/login');
     }
 
+    const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .maybeSingle();
+
+    const isAdmin = profile?.role === "admin";
+
     const { data: school } = await supabase
         .from("schools")
         .select("id, name")
@@ -222,6 +230,25 @@ export default async function AddTeacherPage({
                                 supported by someone other than the school&apos;s RPM.
                             </p>
                         </label>
+
+                        {isAdmin ? (
+                            <label className='block min-w-0'>
+                                <span className='text-sm font-medium text-zinc-800'>
+                                    Reporting Role
+                                </span>
+                                <select
+                                    name='reporting_role'
+                                    defaultValue='standard'
+                                    className='mt-2 h-11 w-full rounded-md border border-zinc-300 bg-white px-3 text-sm outline-none focus:border-[#c8102e] focus:ring-4 focus:ring-red-100'
+                                >
+                                    <option value='standard'>Standard teacher — count in teacher data</option>
+                                    <option value='co_teacher_only'>Co-teacher only — exclude from teacher data</option>
+                                </select>
+                                <p className='mt-2 text-xs text-zinc-500'>
+                                    Co-teacher-only records keep their portal and class access but are excluded from teacher reporting and exports.
+                                </p>
+                            </label>
+                        ) : null}
 
                         <label className='block min-w-0'>
                             <span className='text-sm font-medium text-zinc-800'>

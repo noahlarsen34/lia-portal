@@ -82,7 +82,7 @@ export default async function TeacherPage({ params, searchParams, }: TeacherPage
     const { data: teacher } = await supabase
         .from("teachers")
         .select(
-            "id, first_name, last_name, name, email, phone, status, username, program_level, notes, password_status, is_new_teacher, profile_id, portal_access_status, invited_at, activated_at, last_portal_login_at"
+            "id, first_name, last_name, name, email, phone, status, username, program_level, notes, password_status, is_new_teacher, profile_id, portal_access_status, invited_at, activated_at, last_portal_login_at, reporting_role"
         )
         .eq("id", teacherId)
         .eq("school_id", id)
@@ -289,6 +289,17 @@ export default async function TeacherPage({ params, searchParams, }: TeacherPage
                                 </p>
                                 <p className='mt-1 font-semibold'>
                                     {teacher.is_new_teacher ? "Yes": "No"}
+                                </p>
+                            </div>
+
+                            <div>
+                                <p className='text-sm uppercase text-zinc-500'>
+                                    Reporting Role
+                                </p>
+                                <p className='mt-1 font-semibold'>
+                                    {teacher.reporting_role === "co_teacher_only"
+                                        ? "Co-teacher only — excluded from teacher data"
+                                        : "Standard teacher — counted in teacher data"}
                                 </p>
                             </div>
                         </div>

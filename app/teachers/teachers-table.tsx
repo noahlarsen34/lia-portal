@@ -21,6 +21,7 @@ type TeacherRow = {
     invitedAt: string | null;
     activatedAt: string | null;
     isNewTeacher: boolean;
+    reportingRole: string;
     schoolName: string;
     state: string;
     district: string;
@@ -63,6 +64,7 @@ export function TeachersTable({ teachers, userRole }: TeacherTableProps) {
     const [exportError, setExportError] = useState("");
     const [selectedPortalAccess, setSelectedPortalAccess] = useState("all");
     const [selectedProgramLevel, setSelectedProgramLevel] = useState("all");
+    const [selectedReportingRole, setSelectedReportingRole] = useState("all");
 
     const isAdmin = userRole === "admin";
     const statusOptions = ["active", "inactive"];
@@ -124,6 +126,7 @@ export function TeachersTable({ teachers, userRole }: TeacherTableProps) {
         setSelectedNewTeacher("all");
         setSelectedPortalAccess("all");
         setSelectedProgramLevel("all");
+        setSelectedReportingRole("all");
     };
 
     const exportTeachersGoogleSheet = async () => {
@@ -132,7 +135,11 @@ export function TeachersTable({ teachers, userRole }: TeacherTableProps) {
         setExportError("");
 
         try {
-            const result = await exportTeachersToGoogleSheet(filteredTeachers);
+            const result = await exportTeachersToGoogleSheet(
+                filteredTeachers.filter(
+                    (teacher) => teacher.reportingRole !== "co_teacher_only",
+                ),
+            );
             setExportUrl(result.url);
             window.open(result.url, "_blank", "noopener,noreferrer");
         } catch (error) {
@@ -151,7 +158,8 @@ export function TeachersTable({ teachers, userRole }: TeacherTableProps) {
         (isAdmin && selectedRpm !== "all") ||
         selectedNewTeacher !== "all" ||
         selectedPortalAccess !== "all" ||
-        selectedProgramLevel !== "all";
+        selectedProgramLevel !== "all" ||
+        selectedReportingRole !== "all";
     
     const filteredTeachers = (() => {
         const searchTerms = normalizeSearchValue(search)
@@ -199,6 +207,10 @@ export function TeachersTable({ teachers, userRole }: TeacherTableProps) {
                 selectedProgramLevel === "all" ||
                 teacher.programLevel === selectedProgramLevel;
 
+            const matchesReportingRole =
+                selectedReportingRole === "all" ||
+                teacher.reportingRole === selectedReportingRole;
+
             return (
                 matchesSearch &&
                 matchesStatus &&
@@ -206,7 +218,8 @@ export function TeachersTable({ teachers, userRole }: TeacherTableProps) {
                 matchesRpm &&
                 matchesNewTeacher &&
                 matchesPortalAccess &&
-                matchesProgramLevel
+                matchesProgramLevel &&
+                matchesReportingRole
             );
 
         });
@@ -217,8 +230,8 @@ export function TeachersTable({ teachers, userRole }: TeacherTableProps) {
             <div
                 className={
                     isAdmin
-                        ? "mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-8"
-                        : "mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-7"
+                        ? "mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-9"
+                        : "mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-8"
                 }
             >
                 <input
@@ -306,6 +319,17 @@ export function TeachersTable({ teachers, userRole }: TeacherTableProps) {
                     <option value="disabled">Disabled</option>
                 </select>
 
+                <select
+                    value={selectedReportingRole}
+                    onChange={(event) => setSelectedReportingRole(event.target.value)}
+                    aria-label="Filter by reporting role"
+                    className="h-10 w-full rounded-md border border-zinc-200 bg-white px-4 text-sm outline-none hover:bg-red-50 focus:border-[#c8102e] focus:ring-4 focus:ring-red-100"
+                >
+                    <option value="all">All Reporting Roles</option>
+                    <option value="standard">Counted Teachers</option>
+                    <option value="co_teacher_only">Co-teacher Only</option>
+                </select>
+
                 <button
                     type="button"
                     onClick={clearFilters}
@@ -318,13 +342,18 @@ export function TeachersTable({ teachers, userRole }: TeacherTableProps) {
 
             <div className="mb-6 flex flex-col gap-3 border-t border-zinc-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-sm text-zinc-500">
-                    Showing {filteredTeachers.length} teacher records
+                    Showing {filteredTeachers.length} teacher records · {filteredTeachers.filter((teacher) => teacher.reportingRole !== "co_teacher_only").length} counted in teacher data
                 </p>
 
                 <button
                     type="button"
                     onClick={exportTeachersGoogleSheet}
-                    disabled={isExporting || filteredTeachers.length === 0}
+                    disabled={
+                        isExporting ||
+                        filteredTeachers.every(
+                            (teacher) => teacher.reportingRole === "co_teacher_only",
+                        )
+                    }
                     className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-[#c8102e] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#a70d25] disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                 >
                     <Download className="h-4 w-4" aria-hidden />
@@ -364,7 +393,7 @@ export function TeachersTable({ teachers, userRole }: TeacherTableProps) {
                 ) : null}
 
             <div className="hidden overflow-x-auto md:block">
-                <table className="w-full min-w-[1320px] border-collapse text-left text-sm">
+                <table className="w-full min-w-[1440px] border-collapse text-left text-sm">
                     <thead>
                         <tr className="border-b border-zinc-200 text-xs uppercase tracking-wide text-zinc-500">
                             <th className="w-12 px-4 py-3">#</th>
@@ -372,6 +401,7 @@ export function TeachersTable({ teachers, userRole }: TeacherTableProps) {
                             <th className="w-56 px-4 py-3">Email</th>
                             <th className="w-36 px-4 py-3">Phone</th>
                             <th className="w-28 px-4 py-3">Status</th>
+                            <th className="w-40 px-4 py-3">Reporting Role</th>
                             <th className="w-32 px-4 py-3">New Teacher</th>
                             <th className="w-40 px-4 py-3">Portal Access</th>
                             <th className="w-56 px-4 py-3">School</th>
@@ -435,6 +465,20 @@ export function TeachersTable({ teachers, userRole }: TeacherTableProps) {
                                         }
                                     >
                                         {teacher.status}
+                                    </span>
+                                </td>
+
+                                <td className="px-4 py-5">
+                                    <span
+                                        className={
+                                            teacher.reportingRole === "co_teacher_only"
+                                                ? "whitespace-nowrap rounded-full bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-700"
+                                                : "whitespace-nowrap rounded-full bg-zinc-100 px-2 py-1 text-xs font-semibold text-zinc-600"
+                                        }
+                                    >
+                                        {teacher.reportingRole === "co_teacher_only"
+                                            ? "Co-teacher only"
+                                            : "Counted"}
                                     </span>
                                 </td>
 
@@ -531,6 +575,17 @@ export function TeachersTable({ teachers, userRole }: TeacherTableProps) {
                         </div>
 
                         <div className="mt-4 flex flex-wrap gap-2">
+                            <span
+                                className={
+                                    teacher.reportingRole === "co_teacher_only"
+                                        ? "rounded-full bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-700"
+                                        : "rounded-full bg-zinc-100 px-2 py-1 text-xs font-semibold text-zinc-600"
+                                }
+                            >
+                                {teacher.reportingRole === "co_teacher_only"
+                                    ? "Co-teacher only"
+                                    : "Counted in teacher data"}
+                            </span>
                             <span
                                 className={
                                     teacher.isNewTeacher

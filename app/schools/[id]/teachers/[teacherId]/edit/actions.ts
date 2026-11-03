@@ -1,14 +1,14 @@
 "use server";
 
 import { redirect } from 'next/navigation';
-import { createClient } from '@/utils/supabase/server';
+import { requireStaff } from '@/utils/role-guards';
 
 export async function updateTeacher(
     schoolId: string,
     teacherId: string,
     formData: FormData,
 ) {
-    const supabase = await createClient();
+    const { supabase, profile } = await requireStaff();
 
     const firstName = String(formData.get("first_name") ?? "").trim();
     const lastName = String(formData.get("last_name") ?? "").trim();
@@ -21,6 +21,27 @@ export async function updateTeacher(
     const notes = String(formData.get("notes") ?? "").trim();
     const passwordStatus = String(formData.get("password_status") ?? "").trim();
     const isNewTeacher = formData.get("is_new_teacher") === "on";
+
+    const { data: existingTeacher } = await supabase
+        .from("teachers")
+        .select("reporting_role")
+        .eq("id", teacherId)
+        .eq("school_id", schoolId)
+        .maybeSingle();
+
+    if (!existingTeacher) {
+        redirect(`/schools/${schoolId}`);
+    }
+
+    const requestedReportingRole = String(
+        formData.get("reporting_role") ?? "",
+    ).trim();
+    const reportingRole =
+        profile.role === "admin"
+            ? requestedReportingRole === "co_teacher_only"
+                ? "co_teacher_only"
+                : "standard"
+            : existingTeacher.reporting_role ?? "standard";
 
     const requestedAssignedRpmId = String(
         formData.get("assigned_rpm_id") ?? "",
@@ -71,6 +92,7 @@ export async function updateTeacher(
             password_status: passwordStatus || "not invited",
             is_new_teacher: isNewTeacher,
             assigned_rpm_id: assignedRpmId,
+            reporting_role: reportingRole,
         })
         .eq("id", teacherId)
         .eq("school_id", schoolId);

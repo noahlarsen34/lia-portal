@@ -1,11 +1,11 @@
 "use server";
 
 import { redirect } from 'next/navigation';
-import { createClient } from '@/utils/supabase/server';
 import { revalidatePath } from 'next/cache';
+import { requireStaff } from '@/utils/role-guards';
 
 export async function createTeacher(schoolId: string, formData: FormData) {
-    const supabase = await createClient();
+    const { supabase, profile } = await requireStaff();
     const validProgramLevels = new Set([
         "elementary",
         "middle",
@@ -31,6 +31,13 @@ export async function createTeacher(schoolId: string, formData: FormData) {
     const notes = String(formData.get("notes") ?? "").trim();
     const status = String(formData.get("status") ?? "active").trim();
     const isNewTeacher = formData.get("is_new_teacher") === "on";
+    const requestedReportingRole = String(
+        formData.get("reporting_role") ?? "standard",
+    ).trim();
+    const reportingRole =
+        profile.role === "admin" && requestedReportingRole === "co_teacher_only"
+            ? "co_teacher_only"
+            : "standard";
 
     const requestedAssignedRpmId = String(
         formData.get("assigned_rpm_id") ?? "",
@@ -78,6 +85,7 @@ export async function createTeacher(schoolId: string, formData: FormData) {
         notes: notes || null,
         password_status: "not invited",
         is_new_teacher: isNewTeacher,
+        reporting_role: reportingRole,
     });
 
     if (error) {

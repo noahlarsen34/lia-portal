@@ -151,7 +151,7 @@ export default async function SchoolProfilePage({
     
     const { data: teachers } = await supabase
         .from("teachers")
-        .select("id, name, first_name, last_name, email, phone, status, username, program_level, notes, password_status, is_new_teacher")
+        .select("id, name, first_name, last_name, email, phone, status, username, program_level, notes, password_status, is_new_teacher, reporting_role")
         .eq("school_id", id)
         .order("name", { ascending: true });
     
@@ -485,6 +485,12 @@ export default async function SchoolProfilePage({
                                     {teacher.is_new_teacher ? (
                                         <span className="whitespace-nowrap rounded-full bg-red-50 px-2 py-1 text-xs font-semibold text-[#c8102e]">
                                         New Teacher
+                                        </span>
+                                    ) : null}
+
+                                    {teacher.reporting_role === "co_teacher_only" ? (
+                                        <span className="whitespace-nowrap rounded-full bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-700">
+                                            Co-teacher only
                                         </span>
                                     ) : null}
                                     </div>
