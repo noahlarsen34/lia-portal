@@ -20,8 +20,19 @@ type TeacherExporRow = {
     rpm: string;
 };
 
-export async function exportTeachersToGoogleSheet(teachers: TeacherExporRow[]) {
+export async function exportTeachersToGoogleSheet(
+    teachers: TeacherExporRow[],
+    requestedReportingRole: string,
+) {
     const { supabase } = await requireStaff();
+
+    const reportingRoleFilter = new Set([
+        "all",
+        "standard",
+        "co_teacher_only",
+    ]).has(requestedReportingRole)
+        ? requestedReportingRole
+        : "all";
 
     if (teachers.length === 0) {
         throw new Error("There are no teachers to export.");
@@ -40,17 +51,33 @@ export async function exportTeachersToGoogleSheet(teachers: TeacherExporRow[]) {
         throw new Error("Could not verify teacher reporting roles.");
     }
 
-    const countedTeacherIds = new Set(
-        (reportingRows ?? [])
-            .filter((teacher) => teacher.reporting_role !== "co_teacher_only")
-            .map((teacher) => teacher.id),
+    const reportingRoleByTeacherId = new Map(
+        (reportingRows ?? []).map((teacher) => [
+            teacher.id,
+            teacher.reporting_role ?? "standard",
+        ]),
     );
-    const countedTeachers = teachers.filter((teacher) =>
-        countedTeacherIds.has(teacher.id),
-    );
+    const exportTeachers = teachers
+        .filter((teacher) => {
+            const reportingRole = reportingRoleByTeacherId.get(teacher.id);
 
-    if (countedTeachers.length === 0) {
-        throw new Error("There are no counted teachers to export.");
+            if (!reportingRole) {
+                return false;
+            }
+
+            return (
+                reportingRoleFilter === "all" ||
+                reportingRole === reportingRoleFilter
+            );
+        })
+        .map((teacher) => ({
+            ...teacher,
+            reportingRole:
+                reportingRoleByTeacherId.get(teacher.id) ?? "standard",
+        }));
+
+    if (exportTeachers.length === 0) {
+        throw new Error("There are no teachers matching the selected filters to export.");
     }
 
     const clientEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
@@ -116,6 +143,7 @@ export async function exportTeachersToGoogleSheet(teachers: TeacherExporRow[]) {
         "Email",
         "Phone",
         "Status",
+        "Reporting Role",
         "Username",
         "Password Status",
         "New Teacher",
@@ -125,13 +153,16 @@ export async function exportTeachersToGoogleSheet(teachers: TeacherExporRow[]) {
         "Assigned RPM",
     ];
 
-    const rows = countedTeachers.map((teacher) => [
+    const rows = exportTeachers.map((teacher) => [
         teacher.firstName,
         teacher.lastName,
         teacher.name,
         teacher.email,
         teacher.phone,
         teacher.status,
+        teacher.reportingRole === "co_teacher_only"
+            ? "Co-teacher only"
+            : "Counted teacher",
         teacher.username,
         teacher.passwordStatus,
         teacher.isNewTeacher ? "Yes" : "No",

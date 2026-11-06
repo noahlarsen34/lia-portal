@@ -136,9 +136,8 @@ export function TeachersTable({ teachers, userRole }: TeacherTableProps) {
 
         try {
             const result = await exportTeachersToGoogleSheet(
-                filteredTeachers.filter(
-                    (teacher) => teacher.reportingRole !== "co_teacher_only",
-                ),
+                filteredTeachers,
+                selectedReportingRole,
             );
             setExportUrl(result.url);
             window.open(result.url, "_blank", "noopener,noreferrer");
@@ -348,12 +347,7 @@ export function TeachersTable({ teachers, userRole }: TeacherTableProps) {
                 <button
                     type="button"
                     onClick={exportTeachersGoogleSheet}
-                    disabled={
-                        isExporting ||
-                        filteredTeachers.every(
-                            (teacher) => teacher.reportingRole === "co_teacher_only",
-                        )
-                    }
+                    disabled={isExporting || filteredTeachers.length === 0}
                     className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-[#c8102e] px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-[#a70d25] disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                 >
                     <Download className="h-4 w-4" aria-hidden />
