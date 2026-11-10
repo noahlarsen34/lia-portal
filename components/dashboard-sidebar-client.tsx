@@ -42,6 +42,7 @@ const iconsByHref = {
   "/activity-log": ClipboardList,
   "/contacts": UserRound,
   "/teachers": GraduationCap,
+  "/liaisons": Users,
   "/documents": FileText,
   "/users": Users,
   "/announcements": Megaphone,

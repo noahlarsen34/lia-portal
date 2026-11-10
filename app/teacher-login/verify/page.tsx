@@ -3,6 +3,7 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { verifyTeacherCode } from "../actions";
+import { pendingPortalEmailCookie } from "@/utils/portal-account";
 import { EmailDeliveryStatus } from "./email-delivery-status";
 
 type VerifyTeacherCodePageProps = {
@@ -33,7 +34,7 @@ export default async function VerifyTeacherCodePage({
     const cookieStore = await cookies();
 
     const email = cookieStore.get(
-        "lia_pending_teacher_email",
+        pendingPortalEmailCookie,
     )?.value;
 
     if (!email) {

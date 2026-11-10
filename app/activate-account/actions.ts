@@ -3,8 +3,12 @@
 import { redirect } from "next/navigation";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
+import {
+    findPortalAccountByProfileId,
+    getPortalAccountHomePath,
+} from "@/utils/portal-account";
 
-export async function activateTeacherAccount(formData: FormData) {
+export async function activatePortalAccount(formData: FormData) {
     const tokenHash = String(formData.get("token_hash") ?? "").trim();
     const type = String(formData.get("type") ?? "").trim();
 
@@ -29,31 +33,36 @@ export async function activateTeacherAccount(formData: FormData) {
     const user = verification.user;
     const admin = createAdminClient();
 
-    const { data: teacher, error: teacherError } = await admin
-        .from("teachers")
-        .select("id, status, portal_access_status, activated_at")
-        .eq("profile_id", user.id)
-        .maybeSingle();
+    const account = await findPortalAccountByProfileId(user.id);
 
     if (
-        teacherError ||
-        !teacher ||
-        teacher.status !== "active" ||
-        teacher.portal_access_status === "disabled"
+        !account ||
+        account.status !== "active" ||
+        account.portalAccessStatus === "disabled"
     ) {
         await supabase.auth.signOut();
-        redirect("/activate-account?error=teacher-access-unavailable");
+        redirect("/activate-account?error=access-unavailable");
     }
 
+    const accountTable =
+        account.kind === "teacher" ? "teachers" : "district_liaisons";
+    const activationUpdate =
+        account.kind === "teacher"
+            ? {
+                portal_access_status: "active",
+                password_status: "active",
+                activated_at: account.activatedAt ?? new Date().toISOString(),
+                last_portal_login_at: new Date().toISOString(),
+            }
+            : {
+                portal_access_status: "active",
+                activated_at: account.activatedAt ?? new Date().toISOString(),
+                last_portal_login_at: new Date().toISOString(),
+            };
     const { error: activationError } = await admin
-        .from("teachers")
-        .update({
-            portal_access_status: "active",
-            password_status: "active",
-            activated_at: teacher.activated_at ?? new Date().toISOString(),
-            last_portal_login_at: new Date().toISOString(),
-        })
-        .eq("id", teacher.id)
+        .from(accountTable)
+        .update(activationUpdate)
+        .eq("id", account.id)
         .eq("profile_id", user.id);
 
     if (activationError) {
@@ -61,5 +70,5 @@ export async function activateTeacherAccount(formData: FormData) {
         redirect("/activate-account?error=activation-failed");
     }
 
-    redirect("/teacher");
+    redirect(getPortalAccountHomePath(account));
 }

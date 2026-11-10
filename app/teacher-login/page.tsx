@@ -8,6 +8,7 @@ import {
     requestTeacherCode,
     resendTeacherActivation,
 } from "./actions";
+import { pendingPortalEmailCookie } from "@/utils/portal-account";
 
 type TeacherLoginPageProps = {
     searchParams: Promise<{
@@ -17,11 +18,13 @@ type TeacherLoginPageProps = {
 };
 
 const errorMessages: Record<string, string> ={
-    "email-required": "Enter your registered teacher email.",
+    "email-required": "Enter the email registered with your LIA account.",
     "access-unavailable":
-        "We could not request a code for this email. Confirm that it matches your teacher record or contact LIA support.",
+        "We could not request a code for this email. Confirm that it matches your LIA account or contact LIA support.",
     "activation-required":
-        "This teacher account has not finished activation. Open your latest LIA invitation and select Activate My Account before requesting a login code.",
+        "This account has not finished activation. Open your latest LIA invitation and select Activate My Account before requesting a login code.",
+    "liaison-activation-required":
+        "This district liaison account has not finished activation. Contact an LIA administrator to resend your invitation.",
     "code-send-failed":
         "The login code could not be requested from our email service. Please wait a moment and try again. If this continues, contact LIA support.",
     "code-rate-limited":
@@ -52,7 +55,7 @@ export default async function TeacherLoginPage({
         : null;
     const cookieStore = await cookies();
     const pendingEmail = cookieStore.get(
-        "lia_pending_teacher_email",
+        pendingPortalEmailCookie,
     )?.value;
     const canResendActivation =
         Boolean(pendingEmail) &&
@@ -92,7 +95,7 @@ export default async function TeacherLoginPage({
                     </div>
 
                     <p className="text-center text-sm font-semibold uppercase tracking-wide text-[#c8102e]">
-                        Teacher Portal
+                        LIA Portal
                     </p>
 
                     <h1 className="mt-2 text-center text-2xl font-semibold">
@@ -100,7 +103,7 @@ export default async function TeacherLoginPage({
                     </h1>
 
                     <p className="mt-2 text-center text-sm leading-6 text-zinc-600">
-                        Enter the email address registered with your LIA teacher account.
+                        Enter the email address registered with your LIA account.
                         We will send you a six-digit login code.
                     </p>
                 </div>
@@ -164,7 +167,7 @@ export default async function TeacherLoginPage({
                             autoComplete="email"
                             required
                             autoFocus
-                            placeholder="teacher@school.org"
+                            placeholder="name@school.org"
                             className="mt-2 h-11 w-full rounded-md border border-zinc-300 px-3 text-sm outline-none transition focus:border-[#c8102e] focus:ring-4 focus:ring-red-100"
                         />
                     </label>
@@ -179,7 +182,7 @@ export default async function TeacherLoginPage({
 
                 <div className="mt-6 border-t border-zinc-100 pt-6">
                     <p className="text-center text-sm text-zinc-600">
-                        Are you an administrator or RPM
+                        Are you an administrator or RPM?
                     </p>
 
                     <Link
@@ -191,8 +194,7 @@ export default async function TeacherLoginPage({
                 </div>
 
                 <p className="mt-5 text-center text-xs leading-5 text-zinc-500">
-                    Only invited and activated teachers can request
-                    a login code.
+                    Only invited and activated portal users can request a login code.
                 </p>
             </section>
         </main>

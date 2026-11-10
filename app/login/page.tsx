@@ -4,6 +4,7 @@ import { signIn } from "./actions";
 import { createClient } from "@/utils/supabase/server";
 import { PasswordInput } from "./password-input";
 import Link from "next/link";
+import { getHomePathForRole } from "@/utils/role-guards";
 
 type LoginPageProps = {
   searchParams: Promise<{
@@ -14,11 +15,13 @@ type LoginPageProps = {
 const errorMessages: Record<string, string> = {
   "invalid-login": "The email or password was not correct.",
   "missing-fields": "Enter both your email and password.",
-  "invalid-invitation": "That teacher invitation link is invalid.",
-  "expired-invitation": "That teacher invitation has expired. Ask an administrator or RPM to send another invitation.",
+  "invalid-invitation": "That portal invitation link is invalid.",
+  "expired-invitation":
+    "That portal invitation has expired. Ask an administrator or RPM to send another invitation.",
   "teacher-access-unavailable":
-    "Portal access is unavailable for this teacher account. Please contact Latinos In Action support.",
-  "activation-failed": "Your email was verified, but the teacher account could not be activated. Please contact Latinos In Action support.",
+    "Portal access is unavailable for this account. Please contact Latinos In Action support.",
+  "activation-failed":
+    "Your email was verified, but the account could not be activated. Please contact Latinos In Action support.",
 };
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
@@ -28,7 +31,13 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   } = await supabase.auth.getUser();
 
   if (user) {
-    redirect("/dashboard");
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    redirect(getHomePathForRole(profile?.role));
   }
 
   const { error } = await searchParams;
@@ -88,7 +97,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
                 href="/teacher-login"
                 className="inline-flex h-11 w-full items-center justify-center rounded-md border border-[#c8102e] bg-white px-4 text-sm font-semibold text-[#c8102e] transition hover:bg-red-50 focus:outline-none focus:ring-4 focus:ring-red-100"
             >
-                Teacher Email Login
+                Email Code Login
             </Link>
 
             <Link
@@ -99,8 +108,9 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             </Link>
 
             <p className="pt-1 text-center text-xs leading-5 text-zinc-500">
-                Teachers receive a secure login code by email. New
-                students can open the application form without signing in.
+                Teachers and district liaisons receive a secure login code by
+                email. New students can open the application form without
+                signing in.
             </p>
         </div>
       </section>

@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { activateTeacherAccount } from "./actions";
+import { activatePortalAccount } from "./actions";
 
 export const metadata: Metadata = {
-    title: "Activate Teacher Account | LIA Portal",
+    title: "Activate Account | LIA Portal",
     robots: {
         index: false,
         follow: false,
@@ -23,8 +23,8 @@ const errorMessages: Record<string, string> = {
     "invalid-invitation": "This invitation link is invalid.",
     "expired-invitation":
         "This invitation has expired or was already used. Ask an administrator or RPM to resend it.",
-    "teacher-access-unavailable":
-        "Portal access is unavailable for this teacher account. Please contact Latinos In Action support.",
+    "access-unavailable":
+        "Portal access is unavailable for this account. Please contact Latinos In Action support.",
     "activation-failed":
         "Your account could not be activated. Please contact Latinos In Action support.",
 };
@@ -53,12 +53,12 @@ export default async function ActivateAccountPage({
                 </div>
 
                 <h1 className="mt-6 text-center text-2xl font-semibold">
-                    Activate your teacher account
+                    Activate your LIA account
                 </h1>
 
                 <p className="mt-3 text-center text-sm leading-6 text-zinc-600">
                     Press the button below to verify your invitation and open
-                    the LIA Teacher Portal.
+                    the LIA Portal.
                 </p>
 
                 {errorMessage ? (
@@ -68,7 +68,7 @@ export default async function ActivateAccountPage({
                 ) : null}
 
                 {hasValidParameters && !errorMessage ? (
-                    <form action={activateTeacherAccount} className="mt-6">
+                    <form action={activatePortalAccount} className="mt-6">
                         <input
                             type="hidden"
                             name="token_hash"
@@ -88,14 +88,13 @@ export default async function ActivateAccountPage({
                         href="/teacher-login"
                         className="mt-6 inline-flex h-11 w-full items-center justify-center rounded-md border border-[#c8102e] px-4 text-sm font-semibold text-[#c8102e] hover:bg-red-50"
                     >
-                        Go to Teacher Login
+                        Go to Portal Login
                     </Link>
                 )}
 
                 <p className="mt-5 text-center text-xs leading-5 text-zinc-500">
-                    If your invitation expired, ask your RPM or an
-                    administrator to select Resend Invitation on your teacher
-                    profile.
+                    If your invitation expired, ask your RPM or an administrator
+                    to resend your portal invitation.
                 </p>
             </section>
         </main>

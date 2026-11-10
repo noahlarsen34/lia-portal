@@ -17,6 +17,7 @@ const adminLinks: DashboardLink[] = [
     { href: "/activity-log", label: "Activity Log" },
     { href: "/contacts", label: "Contacts" },
     { href: "/teachers", label: "Teachers" },
+    { href: "/liaisons", label: "District Liaisons" },
     { href: "/documents", label: "Documents" },
     { href: "/users", label: "Users" },
 ];

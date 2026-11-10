@@ -1,12 +1,19 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 
-export type UserRole = "admin" | "rpm" | "teacher" | "student";
+export type UserRole =
+  | "admin"
+  | "rpm"
+  | "teacher"
+  | "district_liaison"
+  | "student";
 
 export function getHomePathForRole(role: string | null | undefined) {
   switch (role) {
     case "teacher":
       return "/teacher";
+    case "district_liaison":
+      return "/liaison";
     case "student":
       return "/student";
     case "admin":
@@ -63,6 +70,26 @@ export async function requireStaff(redirectTo?: string) {
 
 export async function requireTeacher(redirectTo?: string) {
   return requireRole(["admin", "teacher"], redirectTo);
+}
+
+export async function requireDistrictLiaison(redirectTo?: string) {
+  const session = await requireRole(["district_liaison"], redirectTo);
+  const { data: liaison } = await session.supabase
+    .from("district_liaisons")
+    .select("id, status, portal_access_status")
+    .eq("profile_id", session.profile.id)
+    .maybeSingle();
+
+  if (
+    !liaison ||
+    liaison.status !== "active" ||
+    liaison.portal_access_status !== "active"
+  ) {
+    await session.supabase.auth.signOut();
+    redirect("/teacher-login?error=access-unavailable");
+  }
+
+  return { ...session, liaison };
 }
 
 export async function requireStudent(redirectTo?: string) {

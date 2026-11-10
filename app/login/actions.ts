@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
+import { getHomePathForRole } from "@/utils/role-guards";
 
 export async function signIn(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim();
@@ -35,16 +36,7 @@ export async function signIn(formData: FormData) {
     .eq("id", user.id)
     .maybeSingle();
   
-  if (profile?.role === "teacher") {
-    redirect("/teacher");
-  }
-
-  if (profile?.role === "student") {
-    redirect("/student");
-  }
-
-
-  redirect("/dashboard");
+  redirect(getHomePathForRole(profile?.role));
 }
 
 export async function signOut() {

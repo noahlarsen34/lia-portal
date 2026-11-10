@@ -1,11 +1,10 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/utils/supabase/admin";
+import { pendingPortalEmailCookie } from "@/utils/portal-account";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-const pendingEmailCookie = "lia_pending_teacher_email";
 
 type PublicDeliveryStatus =
     | "pending"
@@ -36,7 +35,7 @@ function getPublicStatus(status: string): PublicDeliveryStatus {
 export async function GET() {
     const cookieStore = await cookies();
     const email = cookieStore
-        .get(pendingEmailCookie)
+        .get(pendingPortalEmailCookie)
         ?.value.trim()
         .toLowerCase();
 
@@ -66,7 +65,7 @@ export async function GET() {
         .maybeSingle();
 
     if (error) {
-        console.error("Could not check teacher login email status", {
+        console.error("Could not check portal login email status", {
             message: error.message,
         });
 
