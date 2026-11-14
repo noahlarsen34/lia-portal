@@ -103,8 +103,8 @@ export function DistrictClassesWorkspace({
     return (
         <>
             <section className="rounded-md border border-red-100 bg-white p-4 shadow-sm sm:p-5">
-                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-                    <label className="xl:col-span-2">
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(18rem,2fr)_repeat(4,minmax(9rem,1fr))]">
+                    <label>
                         <span className="sr-only">Search classes</span>
                         <input
                             value={search}
@@ -144,18 +144,18 @@ export function DistrictClassesWorkspace({
                         <option value="all">All school years</option>
                         {schoolYears.map((year) => <option key={year} value={year}>{year}</option>)}
                     </select>
-                </div>
-                <div className="mt-3 flex flex-col gap-3 border-t border-zinc-100 pt-3 sm:flex-row sm:items-center sm:justify-between">
                     <select
                         aria-label="Filter by class status"
                         value={status}
                         onChange={(event) => setStatus(event.target.value)}
-                        className="h-10 rounded-md border border-zinc-300 bg-white px-3 text-sm outline-none focus:border-[#c4122f] focus:ring-4 focus:ring-red-100 sm:w-44"
+                        className="h-10 rounded-md border border-zinc-300 bg-white px-3 text-sm outline-none focus:border-[#c4122f] focus:ring-4 focus:ring-red-100"
                     >
                         <option value="active">Active classes</option>
                         <option value="inactive">Inactive classes</option>
                         <option value="all">All statuses</option>
                     </select>
+                </div>
+                <div className="mt-3 flex justify-end border-t border-zinc-100 pt-3">
                     <p className="text-sm text-zinc-500">
                         {visibleSchools.length} school{visibleSchools.length === 1 ? "" : "s"} · {visibleClassCount} class{visibleClassCount === 1 ? "" : "es"}
                     </p>
