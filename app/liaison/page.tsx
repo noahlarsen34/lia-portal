@@ -1,14 +1,15 @@
 import Link from "next/link";
 import { School } from "lucide-react";
 import { requireDistrictLiaison } from "@/utils/role-guards";
+import { getLiaisonSchoolGroups } from "@/utils/district-liaison-data";
 
 export default async function LiaisonDashboardPage() {
-    const { supabase, profile, liaison } = await requireDistrictLiaison();
-    const { data: assignments } = await supabase
-        .from("district_liaison_districts")
-        .select("district_id, districts(name)")
-        .eq("liaison_id", liaison.id)
-        .order("assigned_at", { ascending: true });
+    const { profile, liaison } = await requireDistrictLiaison();
+    const { districts, schools } = await getLiaisonSchoolGroups(liaison.id);
+    const classCount = schools.reduce(
+        (total, school) => total + school.classes.length,
+        0,
+    );
 
     return (
         <div className="mx-auto max-w-6xl">
@@ -21,23 +22,24 @@ export default async function LiaisonDashboardPage() {
                 </h1>
                 <p className="mt-2 max-w-2xl text-zinc-600">
                     View the LIA schools and classes in your assigned district
-                    {assignments?.length === 1 ? "" : "s"}.
+                    {districts.length === 1 ? "" : "s"}.
                 </p>
             </header>
 
             <div className="grid gap-6 md:grid-cols-2">
                 <section className="rounded-md border border-red-100 bg-white p-6 shadow-sm">
                     <h2 className="text-lg font-semibold">Assigned districts</h2>
-                    {assignments?.length ? (
+                    {districts.length ? (
                         <ul className="mt-4 space-y-2 text-sm text-zinc-700">
-                            {assignments.map((assignment) => (
+                            {districts.map((district) => (
                                 <li
-                                    key={assignment.district_id}
+                                    key={district.id}
                                     className="rounded-md border border-zinc-200 px-4 py-3"
                                 >
-                                    {Array.isArray(assignment.districts)
-                                        ? assignment.districts[0]?.name ?? "Assigned district"
-                                        : "Assigned district"}
+                                    <span className="font-medium">{district.name}</span>
+                                    {district.state ? (
+                                        <span className="text-zinc-500"> · {district.state}</span>
+                                    ) : null}
                                 </li>
                             ))}
                         </ul>
@@ -55,8 +57,7 @@ export default async function LiaisonDashboardPage() {
                     <School className="h-9 w-9 text-[#c4122f]" aria-hidden />
                     <h2 className="mt-5 text-lg font-semibold">District Classes</h2>
                     <p className="mt-2 text-sm text-zinc-600">
-                        Open the district classes workspace. School grouping and class
-                        access will be added in the next milestone.
+                        Browse {schools.length} school{schools.length === 1 ? "" : "s"} and {classCount} class{classCount === 1 ? "" : "es"} across your assigned districts.
                     </p>
                     <p className="mt-5 text-sm font-semibold text-[#c4122f]">
                         Open District Classes →
