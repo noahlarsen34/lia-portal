@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { requireTeacher } from "@/utils/role-guards";
+import { requireClassViewer } from "@/utils/role-guards";
 import { formatStudentTier } from "@/utils/student-tier";
 import { getClassAccess } from "@/utils/class-access";
 import { createAdminClient } from "@/utils/supabase/admin";
@@ -59,7 +59,7 @@ export default async function StudentProfilePage({
     params,
 }: StudentProfilePageProps) {
     const { classId, enrollmentId } = await params;
-    const { profile } = await requireTeacher();
+    const { profile } = await requireClassViewer();
     const access = await getClassAccess(classId, profile.id);
 
     if (!access) notFound();
@@ -184,7 +184,7 @@ export default async function StudentProfilePage({
                     </Link>
                     ) : null}
                 </div>
-                {!access.isPrimaryTeacher ? <ReadOnlyBanner /> : null}
+                {!access.isPrimaryTeacher ? <ReadOnlyBanner role={access.role} /> : null}
             </header>
 
             <section className="mt-5 grid gap-5 lg:grid-cols-2">

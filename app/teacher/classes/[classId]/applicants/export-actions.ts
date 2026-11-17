@@ -1,7 +1,7 @@
 "use server";
 
 import { google } from "googleapis";
-import { requireTeacher } from "@/utils/role-guards";
+import { requireClassViewer } from "@/utils/role-guards";
 import { isApplicationFileAnswer } from "@/utils/application-form";
 import { getClassAccess } from "@/utils/class-access";
 import { createAdminClient } from "@/utils/supabase/admin";
@@ -32,7 +32,7 @@ export async function exportApplicantsToGoogleSheet(
     classId: string,
     requestedStatus: string,
 ) {
-    const { profile, user } = await requireTeacher();
+    const { profile, user } = await requireClassViewer();
     const access = await getClassAccess(classId, profile.id);
 
     if (!access) throw new Error("This class could not be found.");

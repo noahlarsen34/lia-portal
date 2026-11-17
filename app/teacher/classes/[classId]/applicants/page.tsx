@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
-import { requireTeacher } from "@/utils/role-guards";
+import { requireClassViewer } from "@/utils/role-guards";
 import { ApplicationQrCode } from "@/components/application-qr-code";
 import { ConfirmSubmitButton } from "@/components/confirm-submit-button";
 import { studentTierOptions } from "@/utils/student-tier";
@@ -62,7 +62,7 @@ export default async function ApplicantsPage({
     const statusFilter =
         status && validStatuses.includes(status) ? status : "all";
     const headerList = await headers();
-    const { profile } = await requireTeacher();
+    const { profile } = await requireClassViewer();
     const access = await getClassAccess(classId, profile.id);
 
     if (!access) notFound();
@@ -127,7 +127,7 @@ export default async function ApplicantsPage({
                 Back to class
             </Link>
 
-            {!access.isPrimaryTeacher ? <ReadOnlyBanner /> : null}
+            {!access.isPrimaryTeacher ? <ReadOnlyBanner role={access.role} /> : null}
 
             <header className="mt-5 rounded-md border border-red-100 bg-white p-5 shadow-sm sm:p-6">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">

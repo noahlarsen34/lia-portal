@@ -21,7 +21,10 @@ function LiaisonNav({ onNavigate }: { onNavigate?: () => void }) {
             {links.map((link) => {
                 const Icon = link.icon;
                 const isCurrent =
-                    link.href === "/liaison"
+                    link.href === "/liaison/classes" &&
+                    pathname.startsWith("/teacher/classes/")
+                        ? true
+                        : link.href === "/liaison"
                         ? pathname === link.href
                         : pathname === link.href || pathname.startsWith(`${link.href}/`);
 

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { requireTeacher } from "@/utils/role-guards";
+import { requireClassViewer } from "@/utils/role-guards";
 import {
     acceptApplication,
     updateApplicationReview,
@@ -95,7 +95,7 @@ export default async function ApplicantDetailPage({
 }: ApplicantDetailPageProps) {
     const { classId, applicationId } = await params;
     const { error, success } = await searchParams;
-    const { profile } = await requireTeacher();
+    const { profile } = await requireClassViewer();
     const access = await getClassAccess(classId, profile.id);
 
     if (!access) notFound();
@@ -336,7 +336,7 @@ export default async function ApplicantDetailPage({
                     <p className="mt-1 text-sm">{banner.message}</p>
                 </div>
 
-                {!access.isPrimaryTeacher ? <ReadOnlyBanner /> : null}
+                {!access.isPrimaryTeacher ? <ReadOnlyBanner role={access.role} /> : null}
 
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div className="min-w-0">

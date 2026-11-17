@@ -72,6 +72,10 @@ export async function requireTeacher(redirectTo?: string) {
   return requireRole(["admin", "teacher"], redirectTo);
 }
 
+export async function requireClassViewer(redirectTo?: string) {
+  return requireRole(["admin", "teacher", "district_liaison"], redirectTo);
+}
+
 export async function requireDistrictLiaison(redirectTo?: string) {
   const session = await requireRole(["district_liaison"], redirectTo);
   const { data: liaison } = await session.supabase

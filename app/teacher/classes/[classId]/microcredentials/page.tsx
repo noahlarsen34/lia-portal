@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Check, ExternalLink, X, Download } from "lucide-react";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
-import { requireTeacher } from "@/utils/role-guards";
+import { requireClassViewer } from "@/utils/role-guards";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { getClassAccess } from "@/utils/class-access";
 import { ReadOnlyBanner } from "../read-only-banner";
@@ -61,7 +61,7 @@ export default async function ClassMicrocredentialsPage({
     const { assignment } = await searchParams;
     const isIntermountainView =
         assignment === INTERMOUNTAIN_ASSIGNMENT_KEY;
-    const { profile } = await requireTeacher();
+    const { profile } = await requireClassViewer();
     const access = await getClassAccess(classId, profile.id);
 
     if (!access) notFound();
@@ -171,7 +171,7 @@ export default async function ClassMicrocredentialsPage({
                 Back to Microcredentials
             </Link>
 
-            {!access.isPrimaryTeacher ? <ReadOnlyBanner /> : null}
+            {!access.isPrimaryTeacher ? <ReadOnlyBanner role={access.role} /> : null}
 
             <header className="mt-5 rounded-md border border-red-100 bg-white p-6 shadow-sm">
                 <p className="text-sm font-semibold uppercase text-[#c4122f]">

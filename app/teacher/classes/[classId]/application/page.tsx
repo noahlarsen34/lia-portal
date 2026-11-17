@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { requireTeacher } from "@/utils/role-guards";
+import { requireClassViewer } from "@/utils/role-guards";
 import type { ApplicationQuestionType } from "@/utils/application-form";
 import { saveApplicationForm } from "./actions";
 import {
@@ -223,7 +223,7 @@ export default async function ApplicationBuilderPage({
 }: ApplicationBuilderPageProps) {
     const { classId } = await params;
     const { error, success } = await searchParams;
-    const { profile } = await requireTeacher();
+    const { profile } = await requireClassViewer();
     const access = await getClassAccess(classId, profile.id);
 
     if (!access) notFound();
@@ -298,7 +298,7 @@ export default async function ApplicationBuilderPage({
             </Link>
 
             <div className="mt-5">
-                {!access.isPrimaryTeacher ? <ReadOnlyBanner /> : null}
+                {!access.isPrimaryTeacher ? <ReadOnlyBanner role={access.role} /> : null}
                 {success === "saved" ? (
                     <div className="mb-5 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
                         Application draft saved.

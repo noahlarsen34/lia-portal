@@ -7,7 +7,7 @@ import {
     Users,
 } from 'lucide-react';
 import { notFound } from "next/navigation";
-import { requireTeacher } from "@/utils/role-guards";
+import { requireClassViewer } from "@/utils/role-guards";
 import { getClassAccess } from "@/utils/class-access";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { formatStudentTier } from "@/utils/student-tier";
@@ -74,7 +74,7 @@ export default async function TeacherClassPage({
 }: TeacherClassPageProps) {
     const { classId } = await params;
     const { error, coTeacherError, coTeacherSuccess } = await searchParams;
-    const { profile } = await requireTeacher();
+    const { profile } = await requireClassViewer();
     const access = await getClassAccess(classId, profile.id);
 
     if (!access) {
@@ -216,14 +216,18 @@ export default async function TeacherClassPage({
     const sections = [
         {
             title: "Applicants",
-            description: "Review student applications and accept students into this class.",
+            description: access.isDistrictLiaison
+                ? "View student applications submitted to this class."
+                : "Review student applications and accept students into this class.",
             href: `/teacher/classes/${liaClass.id}/applicants`,
             icon: UserCheck,
             count: String(applicantCount ?? 0),
         },
         {
             title: "Students",
-            description: "Add and manage students enrolled in this LIA class.",
+            description: access.isDistrictLiaison
+                ? "View students enrolled in this LIA class."
+                : "Add and manage students enrolled in this LIA class.",
             href: `/teacher/classes/${liaClass.id}/students`,
             icon: Users,
             count: String(studentCount ?? 0),
@@ -239,7 +243,9 @@ export default async function TeacherClassPage({
         },
         {
             title: "Tutoring",
-            description: "Track tutoring and service hours submitted by students.",
+            description: access.isDistrictLiaison
+                ? "View tutoring and service hours submitted by students."
+                : "Track tutoring and service hours submitted by students.",
             href: `/teacher/classes/${liaClass.id}/tutoring`,
             icon: Clock,
             count: formatLoggedHours(loggedMinutes),
@@ -251,12 +257,15 @@ export default async function TeacherClassPage({
             icon: FileText,
             count: null,
         },
-    ];
+    ].filter(
+        (section) =>
+            !access.isDistrictLiaison || section.title !== "Curriculum",
+    );
 
     return (
         <div className="mx-auto max-w-7xl">
             <Link
-                href="/teacher/classes"
+                href={access.isDistrictLiaison ? "/liaison/classes" : "/teacher/classes"}
                 className="text-sm font-semibold text-[#c4122f] hover:text-[#a70d25]"
             >
                 Back to classes
@@ -318,14 +327,16 @@ export default async function TeacherClassPage({
                             </span>
                             {!access.isPrimaryTeacher ? (
                                 <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
-                                    Co-Teacher
+                                    {access.isDistrictLiaison ? "District Liaison" : "Co-Teacher"}
                                 </span>
                             ) : null}
                         </div>
                         <p className="mt-2 text-sm text-zinc-600">
-                            Manage class roster, leadership, assignments, and curriculum.
+                            {access.isDistrictLiaison
+                                ? "View class roster, leadership, applications, and program activity."
+                                : "Manage class roster, leadership, assignments, and curriculum."}
                         </p>
-                        {!access.isPrimaryTeacher ? <ReadOnlyBanner /> : null}
+                        {!access.isPrimaryTeacher ? <ReadOnlyBanner role={access.role} /> : null}
                     </div>
 
                     {access.isPrimaryTeacher ? (
@@ -527,7 +538,9 @@ export default async function TeacherClassPage({
                     <div>
                         <h2 className="text-xl font-semibold">Student Roster</h2>
                         <p className="mt-1 text-sm text-zinc-600">
-                            Add and manage students enrolled in this LIA class.
+                            {access.isDistrictLiaison
+                                ? "View students enrolled in this LIA class."
+                                : "Add and manage students enrolled in this LIA class."}
                         </p>
                     </div>
 
@@ -541,7 +554,7 @@ export default async function TeacherClassPage({
                             href={`/teacher/classes/${liaClass.id}/students`}
                             className="inline-flex h-10 items-center justify-center whitespace-nowrap rounded-md border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-700 transition hover:bg-red-50 hover:text-[#c4122f]"
                         >
-                            Manage Students
+                            {access.isDistrictLiaison ? "View Students" : "Manage Students"}
                         </Link>
                     </div>
                 </div>

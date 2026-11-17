@@ -1,6 +1,7 @@
 "use client";
 
 import { ChevronDown, School } from "lucide-react";
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import type {
     LiaisonDistrict,
@@ -193,6 +194,7 @@ export function DistrictClassesWorkspace({
                                                 <th className="px-4 py-3 font-semibold">Grade</th>
                                                 <th className="px-4 py-3 font-semibold">Students</th>
                                                 <th className="px-4 py-3 font-semibold">Status</th>
+                                                <th className="px-4 py-3 text-right font-semibold">Action</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-zinc-100">
@@ -206,6 +208,15 @@ export function DistrictClassesWorkspace({
                                                     <td className="px-4 py-4 text-zinc-700">{liaClass.enrollmentCount}</td>
                                                     <td className="px-4 py-4">
                                                         <span className={liaClass.status === "active" ? "rounded-full bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700" : "rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-semibold text-zinc-600"}>{liaClass.status}</span>
+                                                    </td>
+                                                    <td className="px-4 py-4 text-right">
+                                                        <Link
+                                                            href={`/teacher/classes/${liaClass.id}`}
+                                                            prefetch={false}
+                                                            className="inline-flex h-8 items-center rounded-md border border-zinc-200 bg-white px-3 text-xs font-semibold text-[#c4122f] hover:bg-red-50"
+                                                        >
+                                                            View
+                                                        </Link>
                                                     </td>
                                                 </tr>
                                             ))}

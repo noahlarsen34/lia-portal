@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { headers } from "next/headers";
 import { Check, Download, ExternalLink, Pencil, X } from "lucide-react";
-import { requireTeacher } from "@/utils/role-guards";
+import { requireClassViewer } from "@/utils/role-guards";
 import {
     approveTutoringLog,
     rejectTutoringLog,
@@ -81,7 +81,7 @@ export default async function ClassTutoringPage({
         dateFrom,
         dateTo,
     } = await searchParams;
-    const { profile } = await requireTeacher();
+    const { profile } = await requireClassViewer();
     const access = await getClassAccess(classId, profile.id);
 
     if (!access) {
@@ -633,7 +633,7 @@ export default async function ClassTutoringPage({
                 Back to class
             </Link>
 
-            {!access.isPrimaryTeacher ? <ReadOnlyBanner /> : null}
+            {!access.isPrimaryTeacher ? <ReadOnlyBanner role={access.role} /> : null}
 
             <section className="mt-5 rounded-md border border-red-100 bg-white p-6 shadow-sm sm:p-8">
                 <p className="text-sm font-semibold uppercase tracking-wide text-[#c4122f]">

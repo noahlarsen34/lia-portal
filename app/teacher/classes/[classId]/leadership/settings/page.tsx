@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { requireTeacher } from "@/utils/role-guards";
+import { requireClassViewer } from "@/utils/role-guards";
 import {
     archiveCommittee,
     archiveRole,
@@ -41,7 +41,7 @@ export default async function LeadershipSettingsPage({
 }: LeadershipSettingsPageProps) {
     const { classId } = await params;
     const { error, success } = await searchParams;
-    const { profile } = await requireTeacher();
+    const { profile } = await requireClassViewer();
     const access = await getClassAccess(classId, profile.id);
 
     if (!access) notFound();
@@ -106,7 +106,7 @@ export default async function LeadershipSettingsPage({
                 <p className="mt-2 text-zinc-600">{liaClass.name}</p>
             </header>
 
-            {!access.isPrimaryTeacher ? <ReadOnlyBanner /> : null}
+            {!access.isPrimaryTeacher ? <ReadOnlyBanner role={access.role} /> : null}
 
             {error ? (
                 <div className="mt-5 rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-800">

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Eye, Pencil, UserMinus } from "lucide-react";
-import { requireTeacher } from "@/utils/role-guards";
+import { requireClassViewer } from "@/utils/role-guards";
 import { addStudentToClass, removeStudentFromClass } from "./actions";
 import { studentTierOptions, formatStudentTier } from "@/utils/student-tier";
 import { toLeadershipOptionValue } from "@/utils/class-leadership-options";
@@ -58,7 +58,7 @@ export default async function StudentsPage({
 }: StudentsPageProps) {
     const { classId } = await params;
     const { error } = await searchParams;
-    const { profile } = await requireTeacher();
+    const { profile } = await requireClassViewer();
     const access = await getClassAccess(classId, profile.id);
 
     if (!access) notFound();
@@ -142,7 +142,7 @@ export default async function StudentsPage({
                     </p>
                 </div>
 
-                {!access.isPrimaryTeacher ? <ReadOnlyBanner /> : null}
+                {!access.isPrimaryTeacher ? <ReadOnlyBanner role={access.role} /> : null}
 
                 {error ? (
                     <div className="mt-5 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">

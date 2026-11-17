@@ -15,7 +15,7 @@ export default async function LiaisonClassesPage() {
                 <h1 className="mt-2 text-3xl font-semibold">Classes by School</h1>
                 <p className="mt-2 max-w-2xl text-sm text-zinc-600">
                     Browse every LIA school and class in your assigned districts.
-                    Class details will become available in the next milestone.
+                    Select a class to open its read-only district liaison view.
                 </p>
             </header>
             {districts.length ? (

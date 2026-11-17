@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { requireTeacher } from "@/utils/role-guards";
+import { requireClassViewer } from "@/utils/role-guards";
 import { formatStudentTier } from "@/utils/student-tier";
 import { toLeadershipOptionValue } from "@/utils/class-leadership-options";
 import { LeadershipExportButton } from "./leadership-export-button";
@@ -46,7 +46,7 @@ export default async function LeadershipPage({
 }: LeadershipPageProps) {
     const { classId } = await params;
     const filters = await searchParams;
-    const { profile } = await requireTeacher();
+    const { profile } = await requireClassViewer();
     const access = await getClassAccess(classId, profile.id);
 
     if (!access) notFound();
@@ -261,7 +261,7 @@ export default async function LeadershipPage({
                 <p className="mt-1 text-sm text-zinc-600">
                     View class officers, committee members, and leadership assignments.
                 </p>
-                {!access.isPrimaryTeacher ? <ReadOnlyBanner /> : null}
+                {!access.isPrimaryTeacher ? <ReadOnlyBanner role={access.role} /> : null}
                 <Link
                     href={`/teacher/classes/${liaClass.id}/leadership/settings`}
                     className="mt-4 inline-flex h-10 items-center rounded-md border border-red-200 px-4 text-sm font-semibold text-[#c4122f] transition hover:bg-red-50"
