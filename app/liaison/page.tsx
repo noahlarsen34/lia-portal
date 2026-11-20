@@ -1,15 +1,31 @@
 import Link from "next/link";
-import { School } from "lucide-react";
+import { BookOpen, Map, School, Users, type LucideIcon } from "lucide-react";
 import { requireDistrictLiaison } from "@/utils/role-guards";
 import { getLiaisonSchoolGroups } from "@/utils/district-liaison-data";
 
 export default async function LiaisonDashboardPage() {
     const { profile, liaison } = await requireDistrictLiaison();
-    const { districts, schools } = await getLiaisonSchoolGroups(liaison.id);
+    const { districts, schools, studentCount } =
+        await getLiaisonSchoolGroups(liaison.id);
     const classCount = schools.reduce(
         (total, school) => total + school.classes.length,
         0,
     );
+    const activeClassCount = schools.reduce(
+        (total, school) =>
+            total + school.classes.filter((liaClass) => liaClass.status === "active").length,
+        0,
+    );
+    const summaryCards: Array<{
+        label: string;
+        value: number;
+        icon: LucideIcon;
+    }> = [
+        { label: "Assigned Districts", value: districts.length, icon: Map },
+        { label: "Schools", value: schools.length, icon: School },
+        { label: "Active Classes", value: activeClassCount, icon: BookOpen },
+        { label: "Students", value: studentCount, icon: Users },
+    ];
 
     return (
         <div className="mx-auto max-w-6xl">
@@ -25,6 +41,33 @@ export default async function LiaisonDashboardPage() {
                     {districts.length === 1 ? "" : "s"}.
                 </p>
             </header>
+
+            <section className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                {summaryCards.map((card) => {
+                    const Icon = card.icon;
+
+                    return (
+                        <div
+                            key={card.label}
+                            className="rounded-md border border-red-100 bg-white p-5 shadow-sm"
+                        >
+                            <div className="flex items-center justify-between gap-4">
+                                <div>
+                                    <p className="text-sm font-medium text-zinc-500">
+                                        {card.label}
+                                    </p>
+                                    <p className="mt-2 text-3xl font-semibold text-zinc-950">
+                                        {card.value.toLocaleString()}
+                                    </p>
+                                </div>
+                                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-red-50 text-[#c4122f]">
+                                    <Icon className="h-5 w-5" aria-hidden />
+                                </div>
+                            </div>
+                        </div>
+                    );
+                })}
+            </section>
 
             <div className="grid gap-6 md:grid-cols-2">
                 <section className="rounded-md border border-red-100 bg-white p-6 shadow-sm">

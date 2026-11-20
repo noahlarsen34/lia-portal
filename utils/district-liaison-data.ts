@@ -67,11 +67,14 @@ export async function getLiaisonSchoolGroups(
 ): Promise<{
     districts: LiaisonDistrict[];
     schools: LiaisonSchoolGroup[];
+    studentCount: number;
 }> {
     const admin = createAdminClient();
     const districts = await getLiaisonDistricts(liaisonId);
     const districtIds = districts.map((district) => district.id);
-    if (districtIds.length === 0) return { districts, schools: [] };
+    if (districtIds.length === 0) {
+        return { districts, schools: [], studentCount: 0 };
+    }
 
     const { data: schools, error: schoolsError } = await admin
         .from("schools")
@@ -87,7 +90,9 @@ export async function getLiaisonSchoolGroups(
     const districtById = new Map(
         districts.map((district) => [district.id, district]),
     );
-    if (schoolIds.length === 0) return { districts, schools: [] };
+    if (schoolIds.length === 0) {
+        return { districts, schools: [], studentCount: 0 };
+    }
 
     const [{ data: classes, error: classesError }, { data: teachers }] =
         await Promise.all([
@@ -113,7 +118,7 @@ export async function getLiaisonSchoolGroups(
     const { data: enrollments, error: enrollmentError } = classIds.length
         ? await admin
             .from("lia_class_students")
-            .select("lia_class_id, status")
+            .select("lia_class_id, student_id, status")
             .in("lia_class_id", classIds)
             .or("status.is.null,status.neq.removed")
         : { data: [], error: null };
@@ -132,7 +137,9 @@ export async function getLiaisonSchoolGroups(
         }),
     );
     const enrollmentCountByClassId = new Map<string, number>();
+    const studentIds = new Set<string>();
     for (const enrollment of enrollments ?? []) {
+        studentIds.add(enrollment.student_id);
         enrollmentCountByClassId.set(
             enrollment.lia_class_id,
             (enrollmentCountByClassId.get(enrollment.lia_class_id) ?? 0) + 1,
@@ -160,6 +167,7 @@ export async function getLiaisonSchoolGroups(
 
     return {
         districts,
+        studentCount: studentIds.size,
         schools: (schools ?? []).flatMap((school) => {
             const district = school.district_id
                 ? districtById.get(school.district_id)
