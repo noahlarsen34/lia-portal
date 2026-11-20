@@ -499,7 +499,13 @@ export default async function TeacherClassPage({
                 </div>
             </header>
 
-            <section className="mt-5 grid gap-5 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+            <section
+                className={
+                    access.isDistrictLiaison
+                        ? "mt-5 grid gap-5 md:grid-cols-2 xl:grid-cols-4"
+                        : "mt-5 grid gap-5 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5"
+                }
+            >
                 {sections.map((section) => {
                     const Icon = section.icon;
 

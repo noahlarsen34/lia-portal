@@ -11,7 +11,7 @@ import {
     Video,
     type LucideIcon,
 } from "lucide-react";
-import { requireTeacher } from "@/utils/role-guards";
+import { requireClassViewer } from "@/utils/role-guards";
 import { curriculumTabs } from "@/utils/curriculum-links";
 import {
     canViewCurriculumSection,
@@ -28,7 +28,7 @@ const curriculumIcons: Record<string, LucideIcon> = {
 };
 
 export default async function TeacherResourcesPage() {
-    const { supabase, profile } = await requireTeacher();
+    const { supabase, profile } = await requireClassViewer();
 
     let programLevel: string | null = null;
 
@@ -49,7 +49,7 @@ export default async function TeacherResourcesPage() {
     }
 
     const visibleCurriculumTabs =
-        profile.role === "admin"
+        profile.role === "admin" || profile.role === "district_liaison"
             ? curriculumTabs
             : curriculumTabs.filter((section) =>
                 canViewCurriculumSection(
@@ -62,7 +62,7 @@ export default async function TeacherResourcesPage() {
         <div className="mx-auto max-w-7xl">
             <section className="rounded-md border border-red-100 bg-white p-5 shadow-sm sm:p-6">
                 <p className="text-sm font-semibold uppercase tracking-wide text-[#c4122f]">
-                    Teacher Resources
+                    Educator Resources
                 </p>
 
                 <h1 className="mt-2 text-3xl font-semibold">
@@ -71,7 +71,7 @@ export default async function TeacherResourcesPage() {
 
                 <p className="mt-1 text-sm text-zinc-600">
                     Access Educator Institute materials, LIA curriculum, videos,
-                    documents, and other teacher resources.
+                    documents, and other educator resources.
                 </p>
             </section>
 
@@ -81,7 +81,7 @@ export default async function TeacherResourcesPage() {
                         Featured resources
                     </h2>
                     <p className="mt-1 text-sm text-zinc-500">
-                        Timely materials and frequently used teacher resources.
+                        Timely materials and frequently used educator resources.
                     </p>
                 </div>
 

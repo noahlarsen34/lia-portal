@@ -7,6 +7,7 @@ import type {
     LiaisonDistrict,
     LiaisonSchoolGroup,
 } from "@/utils/district-liaison-data";
+import { formatSchoolYear, normalizeSchoolYear } from "@/utils/school-year";
 
 type DistrictClassesWorkspaceProps = {
     districts: LiaisonDistrict[];
@@ -36,7 +37,9 @@ export function DistrictClassesWorkspace({
             Array.from(
                 new Set(
                     schools.flatMap((school) =>
-                        school.classes.map((liaClass) => liaClass.schoolYear),
+                        school.classes.map((liaClass) =>
+                            normalizeSchoolYear(liaClass.schoolYear),
+                        ),
                     ),
                 ),
             ).sort((a, b) => b.localeCompare(a)),
@@ -65,7 +68,7 @@ export function DistrictClassesWorkspace({
                         liaClass.gradeLevel?.toLowerCase().includes(query);
                     const matchesYear =
                         schoolYear === "all" ||
-                        liaClass.schoolYear === schoolYear;
+                        normalizeSchoolYear(liaClass.schoolYear) === schoolYear;
                     const matchesStatus =
                         status === "all" || liaClass.status === status;
                     return matchesQuery && matchesYear && matchesStatus;
@@ -143,7 +146,11 @@ export function DistrictClassesWorkspace({
                         className="h-10 rounded-md border border-zinc-300 bg-white px-3 text-sm outline-none focus:border-[#c4122f] focus:ring-4 focus:ring-red-100"
                     >
                         <option value="all">All school years</option>
-                        {schoolYears.map((year) => <option key={year} value={year}>{year}</option>)}
+                        {schoolYears.map((year) => (
+                            <option key={year} value={year}>
+                                {formatSchoolYear(year)}
+                            </option>
+                        ))}
                     </select>
                     <select
                         aria-label="Filter by class status"
@@ -202,7 +209,7 @@ export function DistrictClassesWorkspace({
                                                 <tr key={liaClass.id}>
                                                     <td className="px-5 py-4 font-semibold text-zinc-950">{liaClass.name}</td>
                                                     <td className="px-4 py-4 text-zinc-700">{liaClass.teacherName}</td>
-                                                    <td className="px-4 py-4 text-zinc-700">{liaClass.schoolYear}</td>
+                                                    <td className="px-4 py-4 text-zinc-700">{formatSchoolYear(liaClass.schoolYear)}</td>
                                                     <td className="px-4 py-4 text-zinc-700">{liaClass.period || "N/A"}</td>
                                                     <td className="px-4 py-4 text-zinc-700">{liaClass.gradeLevel || "N/A"}</td>
                                                     <td className="px-4 py-4 text-zinc-700">{liaClass.enrollmentCount}</td>

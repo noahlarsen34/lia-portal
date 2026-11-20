@@ -3,13 +3,22 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CircleUserRound, Home, LogOut, Menu, School, X } from "lucide-react";
+import {
+    CircleUserRound,
+    FolderOpen,
+    Home,
+    LogOut,
+    Menu,
+    School,
+    X,
+} from "lucide-react";
 import { useState } from "react";
 import { signOut } from "@/app/login/actions";
 
 const links = [
     { href: "/liaison", label: "Dashboard", icon: Home },
     { href: "/liaison/classes", label: "District Classes", icon: School },
+    { href: "/teacher/resources", label: "Resources", icon: FolderOpen },
     { href: "/liaison/profile", label: "Profile", icon: CircleUserRound },
 ];
 

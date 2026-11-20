@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { requireTeacher } from "@/utils/role-guards";
+import { requireClassViewer } from "@/utils/role-guards";
 import {
     getWordPressContent,
     type WordPressContentType,
@@ -961,7 +961,7 @@ function prepareWordPressHtml(html: string, pageTitle: string) {
 export default async function WordPressResourcesPage({
     params,
 }: WordPressResourcePageProps) {
-    const { supabase, profile } = await requireTeacher();
+    const { supabase, profile } = await requireClassViewer();
 
     const { type, id } = await params;
 
