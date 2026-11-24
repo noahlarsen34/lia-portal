@@ -15,6 +15,7 @@ import {
     deleteTeacher,
     updateSchoolProfileNotes,
 } from './actions';
+import { SchoolProfileNotes } from './school-profile-notes';
 
 
 type SchoolProfilePageProps = {
@@ -87,26 +88,47 @@ export default async function SchoolProfilePage({
 
     const { data: schoolClassRows } = await supabase
         .from("lia_classes")
-        .select("id")
-        .eq("school_id", school.id);
+        .select("id, name, teacher_profile_id, status")
+        .eq("school_id", school.id)
+        .order("name", { ascending: true });
     
     const schoolClassIds = schoolClassRows?.map((liaClass) => liaClass.id) ?? [];
 
     const { data: schoolEnrollmentRows } = schoolClassIds.length > 0
         ? await supabase
             .from("lia_class_students")
-            .select("student_id")
+            .select("lia_class_id, student_id")
             .in("lia_class_id", schoolClassIds)
             .or("status.is.null,status.neq.removed")
         : { data: [] };
-    
-    const uniqueActiveStudentIds = new Set(
-        (schoolEnrollmentRows ?? [])
-            .map((enrollment) => enrollment.student_id)
-            .filter(Boolean),
-    );
 
-    const classroomStudentCount = uniqueActiveStudentIds.size;
+    const { data: schoolServiceRows } = schoolClassIds.length > 0
+        ? await supabase
+            .from("tutoring_logs")
+            .select("lia_class_id, duration_minutes, status")
+            .in("lia_class_id", schoolClassIds)
+        : { data: [] };
+    
+    const enrollmentCountByClassId = new Map<string, number>();
+    for (const enrollment of schoolEnrollmentRows ?? []) {
+        enrollmentCountByClassId.set(
+            enrollment.lia_class_id,
+            (enrollmentCountByClassId.get(enrollment.lia_class_id) ?? 0) + 1,
+        );
+    }
+
+    const serviceMinutesByClassId = new Map<string, number>();
+    for (const log of schoolServiceRows ?? []) {
+        if (log.status === "rejected") {
+            continue;
+        }
+
+        serviceMinutesByClassId.set(
+            log.lia_class_id,
+            (serviceMinutesByClassId.get(log.lia_class_id) ?? 0) +
+                Number(log.duration_minutes ?? 0),
+        );
+    }
 
     const updateNotesForSchool = updateSchoolProfileNotes.bind(null, school.id);
 
@@ -151,7 +173,7 @@ export default async function SchoolProfilePage({
     
     const { data: teachers } = await supabase
         .from("teachers")
-        .select("id, name, first_name, last_name, email, phone, status, username, program_level, notes, password_status, is_new_teacher, reporting_role")
+        .select("id, profile_id, name, first_name, last_name, email, phone, status, username, program_level, notes, password_status, is_new_teacher, reporting_role")
         .eq("school_id", id)
         .order("name", { ascending: true });
     
@@ -170,6 +192,62 @@ export default async function SchoolProfilePage({
     
     const contactRows = contacts ?? [];
     const teacherRows = teachers ?? [];
+    const teacherNameByProfileId = new Map(
+        teacherRows.flatMap((teacher) => {
+            if (!teacher.profile_id) {
+                return [];
+            }
+
+            const displayName =
+                `${teacher.first_name ?? ""} ${teacher.last_name ?? ""}`.trim() ||
+                teacher.name ||
+                "Primary teacher";
+
+            return [[teacher.profile_id, displayName] as const];
+        }),
+    );
+    const snapshotClassRows = (schoolClassRows ?? [])
+        .filter((liaClass) =>
+            teacherNameByProfileId.has(liaClass.teacher_profile_id),
+        )
+        .map((liaClass) => ({
+            ...liaClass,
+            teacherName: teacherNameByProfileId.get(liaClass.teacher_profile_id)!,
+            studentCount: enrollmentCountByClassId.get(liaClass.id) ?? 0,
+            serviceMinutes: serviceMinutesByClassId.get(liaClass.id) ?? 0,
+        }))
+        .sort(
+            (firstClass, secondClass) =>
+                firstClass.teacherName.localeCompare(secondClass.teacherName) ||
+                firstClass.name.localeCompare(secondClass.name),
+        );
+    const snapshotClassIds = new Set(
+        snapshotClassRows.map((liaClass) => liaClass.id),
+    );
+    const classroomStudentCount = new Set(
+        (schoolEnrollmentRows ?? [])
+            .filter((enrollment) =>
+                snapshotClassIds.has(enrollment.lia_class_id),
+            )
+            .map((enrollment) => enrollment.student_id)
+            .filter(Boolean),
+    ).size;
+    const snapshotTeacherCount = new Set(
+        snapshotClassRows
+            .map((liaClass) => liaClass.teacher_profile_id)
+            .filter(Boolean),
+    ).size;
+    const totalServiceMinutes = snapshotClassRows.reduce(
+        (total, liaClass) => total + liaClass.serviceMinutes,
+        0,
+    );
+    const formatServiceHours = (minutes: number) => {
+        const hours = minutes / 60;
+
+        return new Intl.NumberFormat("en-US", {
+            maximumFractionDigits: 1,
+        }).format(hours);
+    };
     const activityRows = activites ?? [];
     const latestActivity = activityRows[0] ?? null;
     const supabaseAdmin = createSupabaseAdminClient(
@@ -295,85 +373,111 @@ export default async function SchoolProfilePage({
                     </div>
                 </header>
 
-                <section className='mt-5 grid gap-5 lg:grid-cols-3'>
-                    <div className="min-h-48 rounded-lg border border-red-100 bg-white p-4 shadow-sm sm:p-6 lg:col-span-2">
-                        <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
-                            <div>
-                                <h2 className="text-lg font-semibold">Profile Notes</h2>
-                                <p className="mt-1 text-sm text-zinc-500">
-                                    Internal notes for staff working with this school.
-                                </p>
-                            </div>
-
-                            {success === "notes-updated" ? (
-                                <span className="rounded-full bg-green-50 px-3 py-1 text-xs font-semibold text-green-700">
-                                    Saved
-                                </span>
-                            ) : null}
-                        </div>
-
-                        {error === "notes-update-failed" ? (
-                            <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                                Notes could not be saved. Please try again.
-                            </div>
-                        ) : null}
-
-                        <form action={updateNotesForSchool} className="space-y-4">
-                            <textarea
-                                name="notes"
-                                defaultValue={school.notes ?? ""}
-                                rows={7}
-                                placeholder="Add profile notes for this school..."
-                                className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm leading-6 outline-none focus:border-[#c8102e] focus:ring-4 focus:ring-red-100"
-                            />
-
-                            <div className="flex justify-end">
-                                <button
-                                    type="submit"
-                                    className="inline-flex h-10 items-center justify-center rounded-md bg-[#c8102e] px-4 text-sm font-semibold text-white hover:bg-[#a70d25]"
-                                >
-                                    Save Notes
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-
-                    <div className='min-h-48 rounded-lg border border-red-100 bg-white p-4 shadow-sm sm:p-6'>
-                        <h2 className='text-lg font-semibold'>School Snapshot</h2>
-                        <div className='mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-1'>
-                            <div>
-                                <p className='text-sm text-zinc-500'>
-                                    Chapter Size
-                                </p>
-
-                                <p className='mt-1 text-2xl font-semibold'>
-                                    {classroomStudentCount}
-                                </p>
-                            </div>
-
-                            <div className='border-t border-zinc-100 pt-4'>
-                                <p className='text-sm text-zinc-500'>
-                                    School Type
-                                </p>
-
-                                <p 
+                <section className='mt-5 grid items-start gap-5 lg:grid-cols-3'>
+                    <div className='min-w-0 rounded-lg border border-red-100 bg-white shadow-sm lg:col-span-2'>
+                        <div className='border-b border-zinc-100 p-4 sm:p-6'>
+                            <div className='flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between'>
+                                <div>
+                                    <h2 className='text-lg font-semibold'>School Snapshot</h2>
+                                    <p className='mt-1 text-sm text-zinc-500'>
+                                        Teachers, classes, enrollment, and service activity at this school.
+                                    </p>
+                                </div>
+                                <span
                                     className={
                                         schoolLifeCycleStatus === "new"
-                                            ?"mt-1 font-semibold text-amber-700"
-                                            :"mt-1 font-semibold text-zinc-900"
+                                            ? "w-fit rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700"
+                                            : "w-fit rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-700"
                                     }
                                 >
                                     {schoolLifeCycleLabel}
-                                </p>
+                                </span>
+                            </div>
 
-                                {schoolLifeCycleStatus === "new" ? (
-                                    <p className="mt-1 text-xs text-zinc-500">
-                                        Started during the 2026-2027 school year
-                                    </p>
-                                ) : null}
+                            <div className='mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4'>
+                                {[
+                                    { label: "Teachers", value: snapshotTeacherCount },
+                                    { label: "Classes", value: snapshotClassRows.length },
+                                    { label: "Total Students", value: classroomStudentCount },
+                                    {
+                                        label: "Total Service Hours",
+                                        value: formatServiceHours(totalServiceMinutes),
+                                    },
+                                ].map((metric) => (
+                                    <div
+                                        key={metric.label}
+                                        className='rounded-md border border-red-100 bg-red-50/40 px-4 py-3'
+                                    >
+                                        <p className='text-xs font-semibold uppercase tracking-wide text-zinc-500'>
+                                            {metric.label}
+                                        </p>
+                                        <p className='mt-1 text-2xl font-semibold text-zinc-950'>
+                                            {metric.value}
+                                        </p>
+                                    </div>
+                                ))}
                             </div>
                         </div>
+
+                        {snapshotClassRows.length > 0 ? (
+                            <div className='overflow-x-auto'>
+                                <table className='w-full min-w-[640px] text-left text-sm'>
+                                    <thead className='bg-zinc-50 text-xs uppercase tracking-wide text-zinc-500'>
+                                        <tr>
+                                            <th className='px-5 py-3 font-semibold'>Teacher</th>
+                                            <th className='px-4 py-3 font-semibold'>Class</th>
+                                            <th className='px-4 py-3 text-right font-semibold'>Students</th>
+                                            <th className='px-5 py-3 text-right font-semibold'>Service Hours</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className='divide-y divide-zinc-100'>
+                                        {snapshotClassRows.map((liaClass, index) => {
+                                            const previousClass = snapshotClassRows[index - 1];
+                                            const showTeacher =
+                                                !previousClass ||
+                                                previousClass.teacher_profile_id !== liaClass.teacher_profile_id;
+
+                                            return (
+                                                <tr key={liaClass.id} className='hover:bg-red-50/30'>
+                                                    <td className='px-5 py-4 font-medium text-zinc-900'>
+                                                        {showTeacher ? liaClass.teacherName : ""}
+                                                    </td>
+                                                    <td className='px-4 py-4'>
+                                                        <Link
+                                                            href={`/classes/${liaClass.id}`}
+                                                            className='font-semibold text-[#c8102e] hover:text-[#a70d25]'
+                                                        >
+                                                            {liaClass.name}
+                                                        </Link>
+                                                    </td>
+                                                    <td className='px-4 py-4 text-right tabular-nums text-zinc-700'>
+                                                        {liaClass.studentCount.toLocaleString("en-US")}
+                                                    </td>
+                                                    <td className='px-5 py-4 text-right tabular-nums text-zinc-700'>
+                                                        {formatServiceHours(liaClass.serviceMinutes)}
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+                        ) : (
+                            <div className='px-5 py-10 text-center'>
+                                <p className='font-semibold text-zinc-900'>No classes yet</p>
+                                <p className='mt-1 text-sm text-zinc-500'>
+                                    Class-level enrollment and service totals will appear here.
+                                </p>
+                            </div>
+                        )}
                     </div>
+
+                    <SchoolProfileNotes
+                        notes={school.notes}
+                        saved={success === "notes-updated"}
+                        saveError={error === "notes-update-failed"}
+                        updateNotesAction={updateNotesForSchool}
+                    />
                 </section>
 
                 <section className='mt-5 grid gap-5 lg:grid-cols-4'>
